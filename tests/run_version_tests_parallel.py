@@ -79,7 +79,7 @@ def resolve_python_exec(python_exec: str, project_root: str, script_dir: str) ->
     return python_exec
 
 
-def run_tests_for_version(version: str, workers: int = 10, test_dir: str = "tests", project_root: str = ".", python_exec: str = None) -> bool:
+def run_tests_for_version(version: str, workers: int = 10, test_dir: str = "tests", project_root: str = ".", python_exec: str = None, report_dir: str = None) -> bool:
     """Switch to version and run all tests for that version in parallel."""
     print(f"\n🔄 React {version}...", end=" ", flush=True)
     
@@ -152,6 +152,16 @@ def run_tests_for_version(version: str, workers: int = 10, test_dir: str = "test
         "--disable-warnings"  # Disable warnings for faster output
     ]
     
+    # Add report path if provided
+    if report_dir:
+        report_file = os.path.join(report_dir, f"version-{version.replace('.', '-')}-report.html")
+        pytest_cmd.extend([
+            "--html", report_file,
+            "--self-contained-html"
+        ])
+        # Set report directory in environment for screenshot paths
+        os.environ['PYTEST_REPORT_DIR'] = report_dir
+    
     result = subprocess.run(pytest_cmd, cwd=project_root)
     
     if result.returncode != 0:
@@ -168,6 +178,7 @@ def main():
     parser.add_argument("--test-dir", default="tests", help="Test directory (default: tests)")
     parser.add_argument("--project-root", default="..", help="Project root directory (default: ..)")
     parser.add_argument("--python", default=None, help="Python executable to use (default: sys.executable)")
+    parser.add_argument("--report-dir", default=None, help="Report directory for HTML reports (default: reports/)")
     parser.add_argument("--versions", nargs="+", help="Specific versions to test (default: all)")
     args = parser.parse_args()
     
@@ -191,8 +202,14 @@ def main():
         script_dir = os.path.dirname(os.path.abspath(__file__))
         python_exec = resolve_python_exec(args.python, project_root, script_dir)
         
+        # Ensure report directory exists
+        report_dir = args.report_dir
+        if report_dir:
+            os.makedirs(report_dir, exist_ok=True)
+            os.makedirs(os.path.join(report_dir, "screenshots"), exist_ok=True)
+        
         for version in versions_to_test:
-            success = run_tests_for_version(version, args.workers, test_dir, project_root, python_exec)
+            success = run_tests_for_version(version, args.workers, test_dir, project_root, python_exec, report_dir)
             if not success:
                 failed_versions.append(version)
     finally:

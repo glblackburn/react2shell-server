@@ -251,7 +251,21 @@ def pytest_runtest_makereport(item, call):
         if "driver" in item.fixturenames:
             driver = item.funcargs.get("driver")
             if driver:
-                screenshot_path = f"reports/screenshots/{item.name}_failure.png"
+                # Try to get report directory from environment or config, fallback to default
+                config = item.config
+                report_dir = os.environ.get('PYTEST_REPORT_DIR', "reports")
+                if hasattr(config, 'option') and hasattr(config.option, 'htmlpath'):
+                    # Extract directory from HTML report path if set
+                    html_path = config.option.htmlpath
+                    if html_path:
+                        report_dir = os.path.dirname(html_path)
+                elif hasattr(config, '_report_dir'):
+                    # Use custom report directory if set
+                    report_dir = config._report_dir
+                
+                screenshot_dir = os.path.join(report_dir, "screenshots")
+                os.makedirs(screenshot_dir, exist_ok=True)
+                screenshot_path = os.path.join(screenshot_dir, f"{item.name}_failure.png")
                 try:
                     driver.save_screenshot(screenshot_path)
                     print(f"\n📸 Screenshot saved: {screenshot_path}")

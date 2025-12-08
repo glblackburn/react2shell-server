@@ -338,22 +338,30 @@ test-quick: check-venv
 # Run tests in parallel (faster execution)
 # Version switch tests run in parallel within each version (versions switched sequentially)
 test-parallel: check-venv
-	@echo "Running tests in parallel (10 workers)..."
-	@echo "⚠️  Note: Version switch tests run in parallel within each version"
-	@# Ensure servers are running
-	@if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
+	@TIMESTAMP=$$(date +%Y-%m-%d_%H-%M-%S); \
+	REPORT_DIR_TIMESTAMPED="$(REPORT_DIR)/$$TIMESTAMP"; \
+	mkdir -p "$$REPORT_DIR_TIMESTAMPED/screenshots"; \
+	echo "📊 Reports will be saved to: $$REPORT_DIR_TIMESTAMPED"; \
+	echo ""; \
+	echo "Running tests in parallel (10 workers)..."; \
+	echo "⚠️  Note: Version switch tests run in parallel within each version"; \
+	if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
 		echo "⚠️  Servers not running. Starting servers..."; \
 		$(MAKE) start > /dev/null 2>&1; \
 		sleep 3; \
-	fi
-	@# Run non-version-switch tests in parallel
-	@echo "Running non-version-switch tests in parallel..."
-	@$(PYTEST) $(TEST_DIR)/ -n 10 -v -m "not version_switch" || true
-	@echo ""
-	@echo "Running version switch tests (parallel within each version)..."
-	@cd $(TEST_DIR) && ../$(VENV_BIN)/python3 run_version_tests_parallel.py --workers 6 --project-root .. --python ../$(VENV_BIN)/python3
-	@echo ""
-	@echo "✓ All tests completed!"
+	fi; \
+	echo "Running non-version-switch tests in parallel..."; \
+	PYTEST_REPORT_DIR="$$REPORT_DIR_TIMESTAMPED" $(PYTEST) $(TEST_DIR)/ -n 10 -v -m "not version_switch" \
+		--html="$$REPORT_DIR_TIMESTAMPED/non-version-switch-report.html" \
+		--self-contained-html || true; \
+	echo ""; \
+	echo "Running version switch tests (parallel within each version)..."; \
+	cd $(TEST_DIR) && PYTEST_REPORT_DIR="$$REPORT_DIR_TIMESTAMPED" ../$(VENV_BIN)/python3 run_version_tests_parallel.py \
+		--workers 6 --project-root .. --python ../$(VENV_BIN)/python3 \
+		--report-dir "$$REPORT_DIR_TIMESTAMPED"; \
+	echo ""; \
+	echo "✓ All tests completed!"; \
+	echo "📊 Reports saved to: $$REPORT_DIR_TIMESTAMPED"
 
 # Run tests and generate HTML report
 test-report: check-venv
