@@ -62,31 +62,21 @@ endef
 # Generic function to switch Next.js version
 # Usage: $(call switch_nextjs_version,version)
 define switch_nextjs_version
-	@FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
-	if [ "$$FRAMEWORK" != "nextjs" ]; then \
+	@if ! grep -q '^nextjs' .framework-mode 2>/dev/null; then \
 		echo "⚠️  Error: Next.js version switching only available in Next.js mode"; \
 		echo "   Run 'make use-nextjs' first to switch to Next.js mode"; \
 		exit 1; \
 	fi
-	@VERSION_VAR=$$(echo "$(1)" | sed 's/\./_/g'); \
-	if [ "$(1)" = "14.0.0" ]; then \
-		STATUS="VULNERABLE"; \
-	elif [ "$(1)" = "14.1.0" ]; then \
-		STATUS="VULNERABLE"; \
-	elif [ "$(1)" = "15.0.0" ]; then \
-		STATUS="VULNERABLE"; \
-	elif [ "$(1)" = "14.0.1" ]; then \
-		STATUS="FIXED"; \
-	elif [ "$(1)" = "14.1.1" ]; then \
-		STATUS="FIXED"; \
-	elif [ "$(1)" = "15.1.0" ]; then \
-		STATUS="FIXED"; \
-	else \
-		STATUS="UNKNOWN"; \
-	fi; \
-	echo "Switching to Next.js $(1) ($$STATUS - for security testing)..."; \
-	cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install; \
-	echo "✓ Switched to Next.js $(1) ($$STATUS)"
+	@case "$(1)" in \
+		14.0.0|14.1.0|15.0.0) \
+			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
+			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
+			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
+		*) \
+			echo "Switching to Next.js $(1) (FIXED - for security testing)..."; \
+			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
+			echo "✓ Switched to Next.js $(1) (FIXED)" ;; \
+	esac
 endef
 
 # Generate version switching targets dynamically
