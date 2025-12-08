@@ -1,0 +1,30 @@
+{
+  "name": "react2shell-server",
+  "version": "1.0.0",
+  "description": "React server with version switching capability",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server.js",
+    "start": "npm run build && node server.js"
+  },
+  "keywords": [
+    "react",
+    "express",
+    "server"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "react": "19.0",
+    "react-dom": "19.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.1.0"
+  }
+}
