@@ -491,11 +491,11 @@ See screenshots above for before/after comparison.
 
 ### BUG-2: Missing pytest Option Registration After Refactoring
 
-**Status:** Open  
+**Status:** Fixed  
 **Priority:** High  
 **Severity:** High  
 **Reported:** 2025-12-08  
-**Fixed:** Not yet fixed
+**Fixed:** 2025-12-08
 
 **Description:**
 After the DRY refactoring (Phase 3), all test execution fails with `ValueError: no option named '--update-baseline'`. The error occurs in `tests/conftest.py` line 65 when `pytest_configure` tries to access the `--update-baseline` option that was moved to `plugins/performance.py` during refactoring.
@@ -559,15 +559,21 @@ During Phase 3 refactoring, the `pytest_addoption` function that registers `--up
 - Affects all test targets: `test`, `test-parallel`, `test-smoke`, etc.
 - Blocks CI/CD pipelines
 
-**Proposed Solution:**
-1. **Option 1:** Move `pytest_addoption` for `--update-baseline` back to `conftest.py` to ensure it's registered before `pytest_configure` runs
-2. **Option 2:** Use `hasattr()` or `try/except` in `pytest_configure` to safely check for the option
-3. **Option 3:** Ensure `plugins/performance.py` is loaded and its `pytest_addoption` is called before `conftest.py`'s `pytest_configure`
+**Solution Implemented:**
+1. ✅ Added `pytest_addoption` function to `plugins/performance.py` to register `--update-baseline` option
+2. ✅ The option is now properly registered when the performance plugin is imported
+3. ✅ `pytest_configure` in `conftest.py` can now safely access the option
+
+**Files Modified:**
+- `tests/plugins/performance.py` - Added `pytest_addoption` function to register `--update-baseline` option
+
+**Verification:**
+✅ Fix verified - The `--update-baseline` option is now properly registered and accessible in `pytest_configure`
 
 **Additional Notes:**
-- This is a regression introduced during the refactoring (Phase 3: File Reorganization)
-- The refactoring moved performance tracking code to `plugins/performance.py` but didn't account for the option registration order
-- This defect blocks all testing functionality
+- This was a regression introduced during the refactoring (Phase 3: File Reorganization)
+- The refactoring moved performance tracking code to `plugins/performance.py` but the `pytest_addoption` function was not included
+- The fix ensures the option is registered before `pytest_configure` tries to access it
 
 ---
 
