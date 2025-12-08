@@ -44,6 +44,12 @@ def pytest_addoption(parser):
         choices=["true", "false"],
         help="Run browser in headless mode (default: true)"
     )
+    parser.addoption(
+        "--update-baseline",
+        action="store_true",
+        default=False,
+        help="Update performance baseline with current run results"
+    )
     # Note: --base-url is provided by pytest-selenium plugin, don't add it here
 
 

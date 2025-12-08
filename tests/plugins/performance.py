@@ -340,16 +340,6 @@ def pytest_sessionfinish(session, exitstatus):
             print(f"  {suite}: {total_time:.2f}s")
 
 
-def pytest_addoption(parser):
-    """Add command line options for performance tracking."""
-    parser.addoption(
-        "--update-baseline",
-        action="store_true",
-        default=False,
-        help="Update performance baseline with current run results"
-    )
-
-
 @pytest.fixture(autouse=True)
 def set_test_timeout(request):
     """Automatically set timeout based on test markers or individual test limits.
