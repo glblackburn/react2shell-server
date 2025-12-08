@@ -105,6 +105,9 @@ def driver(request, start_servers):
         options.add_argument("--disable-logging")
         options.add_argument("--log-level=3")  # Suppress logs
         options.add_argument("--window-size=1920,1080")
+        options.add_argument("--disable-background-timer-throttling")
+        options.add_argument("--disable-backgrounding-occluded-windows")
+        options.add_argument("--disable-renderer-backgrounding")
         
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
@@ -129,7 +132,7 @@ def driver(request, start_servers):
     else:
         pytest.fail(f"Unsupported browser: {browser}")
     
-    driver.implicitly_wait(5)  # Reduced from 10 to 5 seconds
+    driver.implicitly_wait(3)  # Reduced from 5 to 3 seconds for faster execution
     driver.maximize_window()
     
     yield driver

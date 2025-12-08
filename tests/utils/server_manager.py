@@ -17,7 +17,7 @@ BACKEND_URL = "http://localhost:3000"
 API_ENDPOINT = f"{BACKEND_URL}/api/hello"
 
 
-def check_server_running(url, timeout=2):
+def check_server_running(url, timeout=1):
     """Check if a server is running at the given URL."""
     try:
         response = requests.get(url, timeout=timeout)
@@ -29,7 +29,7 @@ def check_server_running(url, timeout=2):
 def wait_for_server(url, max_attempts=30, delay=1):
     """Wait for server to be ready."""
     for attempt in range(max_attempts):
-        if check_server_running(url):
+        if check_server_running(url, timeout=0.5):  # Reduced timeout
             logger.info(f"Server ready at {url}")
             return True
         if attempt < max_attempts - 1:  # Don't sleep on last attempt
@@ -43,24 +43,25 @@ def start_servers():
     logger.info("Starting servers...")
     
     # Check if servers are already running
-    if check_server_running(FRONTEND_URL) and check_server_running(API_ENDPOINT):
+    if check_server_running(FRONTEND_URL, timeout=0.5) and check_server_running(API_ENDPOINT, timeout=0.5):
         logger.info("Servers already running")
         return True
     
     try:
-        # Start servers using Makefile
+        # Start servers using Makefile (suppress output for speed)
         result = subprocess.run(
             ["make", "start"],
             check=True,
             capture_output=True,
-            text=True
+            text=True,
+            timeout=10  # Fail fast if start hangs
         )
         logger.info("Started servers with 'make start'")
         
-        # Wait for servers to be ready
+        # Wait for servers to be ready with shorter timeouts
         logger.info("Waiting for servers to be ready...")
-        frontend_ready = wait_for_server(FRONTEND_URL)
-        backend_ready = wait_for_server(API_ENDPOINT)
+        frontend_ready = wait_for_server(FRONTEND_URL, max_attempts=20, delay=0.5)
+        backend_ready = wait_for_server(API_ENDPOINT, max_attempts=20, delay=0.5)
         
         if frontend_ready and backend_ready:
             logger.info("Both servers are ready!")
@@ -69,6 +70,9 @@ def start_servers():
             logger.error("Servers failed to start or become ready")
             return False
             
+    except subprocess.TimeoutExpired:
+        logger.error("Server start timed out")
+        return False
     except subprocess.CalledProcessError as e:
         logger.error(f"Error starting servers: {e}")
         logger.error(f"stdout: {e.stdout}")

@@ -63,7 +63,7 @@ class TestHelloWorldButton:
         """Test that button can be clicked multiple times."""
         # First click
         app_page.click_hello_button()
-        message1 = app_page.get_message(timeout=5)
+        message1 = app_page.get_message(timeout=3)
         assert message1 == "Hello World!"
         
         # Reduced wait time
@@ -71,7 +71,7 @@ class TestHelloWorldButton:
         
         # Second click
         app_page.click_hello_button()
-        message2 = app_page.get_message(timeout=5)
+        message2 = app_page.get_message(timeout=3)
         assert message2 == "Hello World!"
     
     def test_message_appears_after_click(self, app_page):
@@ -84,10 +84,10 @@ class TestHelloWorldButton:
         app_page.click_hello_button()
         
         # Message should appear (reduced timeout)
-        assert app_page.is_element_visible(*app_page.MESSAGE_DIV, timeout=5), \
+        assert app_page.is_element_visible(*app_page.MESSAGE_DIV, timeout=3), \
             "Message should be visible after button click"
         
         # Verify message content
-        message = app_page.get_message(timeout=5)
+        message = app_page.get_message(timeout=3)
         assert message == "Hello World!", \
             f"Message should be 'Hello World!', got '{message}'"

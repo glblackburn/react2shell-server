@@ -39,14 +39,14 @@ class AppPage(BasePage):
         super().__init__(driver)
         self.logger = logger
     
-    def wait_for_version_info_to_load(self, timeout=10):
+    def wait_for_version_info_to_load(self, timeout=7):
         """Wait for version information to finish loading."""
         try:
             # Wait for either version details or error to appear
             wait = WebDriverWait(self.driver, timeout)
             wait.until(
-                lambda d: self.is_element_present(*self.VERSION_DETAILS, timeout=1) or 
-                         self.is_element_present(*self.VERSION_ERROR, timeout=1)
+                lambda d: self.is_element_present(*self.VERSION_DETAILS, timeout=0.5) or 
+                         self.is_element_present(*self.VERSION_ERROR, timeout=0.5)
             )
             # If loading indicator is present, wait for it to disappear
             if self.is_element_present(*self.VERSION_LOADING, timeout=1):
@@ -106,7 +106,7 @@ class AppPage(BasePage):
         self.click_element(*self.HELLO_BUTTON)
         self.logger.info("Clicked hello button")
     
-    def get_message(self, timeout=5):
+    def get_message(self, timeout=3):
         """Get the message displayed after clicking button."""
         try:
             wait = WebDriverWait(self.driver, timeout)

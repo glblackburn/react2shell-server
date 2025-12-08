@@ -336,10 +336,10 @@ test-quick: check-venv
 	@$(PYTEST) $(TEST_DIR)/ --headless=true -v --tb=short
 
 # Run tests in parallel (faster execution)
-# Note: Version switch tests are excluded from parallel execution to avoid conflicts
+# Version switch tests run in parallel within each version (versions switched sequentially)
 test-parallel: check-venv
 	@echo "Running tests in parallel (10 workers)..."
-	@echo "⚠️  Note: Version switch tests excluded from parallel (run sequentially after)"
+	@echo "⚠️  Note: Version switch tests run in parallel within each version"
 	@# Ensure servers are running
 	@if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
 		echo "⚠️  Servers not running. Starting servers..."; \
@@ -350,8 +350,8 @@ test-parallel: check-venv
 	@echo "Running non-version-switch tests in parallel..."
 	@$(PYTEST) $(TEST_DIR)/ -n 10 -v -m "not version_switch" || true
 	@echo ""
-	@echo "Running version switch tests sequentially (these modify React versions)..."
-	@$(PYTEST) $(TEST_DIR)/ -m version_switch -v
+	@echo "Running version switch tests (parallel within each version)..."
+	@cd $(TEST_DIR) && ../$(VENV_BIN)/python3 run_version_tests_parallel.py --workers 6 --project-root .. --python ../$(VENV_BIN)/python3
 	@echo ""
 	@echo "✓ All tests completed!"
 
