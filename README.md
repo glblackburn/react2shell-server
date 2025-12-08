@@ -122,6 +122,34 @@ To test your security scanner against vulnerable React versions:
    make react-19.2.1  # FIXED version
    ```
 
+### Scanner Verification
+
+This project includes automated scanner verification to ensure that security scanners correctly detect vulnerabilities when scanning different React versions.
+
+**Available Methods:**
+
+1. **Python Test Suite** (pytest-based):
+   ```bash
+   make test-scanner
+   ```
+   Runs pytest tests that switch between versions and verify scanner detection.
+
+2. **Standalone Script**:
+   ```bash
+   make test-scanner-script
+   ```
+   Runs a shell script that tests all vulnerable and fixed versions.
+
+**Requirements:**
+- Scanner must be available at: `/Users/lblackb/data/lblackb/git/third-party/react2shell-scanner`
+- Scanner dependencies must be installed (see scanner's `requirements.txt`)
+
+**What It Tests:**
+- ✅ Vulnerable versions (19.0, 19.1.0, 19.1.1, 19.2.0) are correctly detected as vulnerable
+- ✅ Fixed versions (19.0.1, 19.1.2, 19.2.1) are correctly identified as not vulnerable
+
+**Note:** Scanner verification is kept separate from the main test suite to avoid slowing down regular test execution. See `docs/SCANNER_INTEGRATION.md` for detailed analysis of pros/cons.
+
 ## Setup
 
 1. **Clone the repository** (if applicable) or navigate to the project directory

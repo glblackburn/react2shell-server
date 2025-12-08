@@ -67,6 +67,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "slow: Tests that take longer to run (timeout: 60s)"
     )
+    config.addinivalue_line(
+        "markers", "scanner: Scanner verification tests (requires external scanner)"
+    )
     
     if config.getoption("--update-baseline"):
         import os

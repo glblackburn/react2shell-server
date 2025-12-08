@@ -75,6 +75,8 @@ help:
 	@echo "  make test-version    - Run version information tests"
 	@echo "  make test-security   - Run security status tests"
 	@echo "  make test-version-switch - Run version switch tests (tests all React versions, slower)"
+	@echo "  make test-scanner   - Run scanner verification tests (requires external scanner)"
+	@echo "  make test-scanner-script - Run scanner verification script (standalone)"
 	@echo "  make test-browser    - Run tests with specific browser (use BROWSER=chrome|firefox|safari)"
 	@echo "  make test-clean      - Clean test artifacts (reports, screenshots, cache)"
 	@echo "  make test-open-report - Open test report in browser"
