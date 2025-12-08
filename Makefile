@@ -1,4 +1,4 @@
-.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-report test-smoke test-hello test-version test-security test-browser test-clean test-open-report
+.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report
 
 # Default target
 help:
@@ -33,11 +33,13 @@ help:
 	@echo "  make test-setup      - Set up Python virtual environment and install test dependencies"
 	@echo "  make test            - Run all tests (starts servers if needed)"
 	@echo "  make test-quick      - Run all tests quickly (headless, no report)"
+	@echo "  make test-parallel   - Run tests in parallel (faster execution)"
 	@echo "  make test-report     - Run all tests and generate HTML report"
 	@echo "  make test-smoke      - Run only smoke tests"
 	@echo "  make test-hello      - Run hello world button tests"
 	@echo "  make test-version    - Run version information tests"
 	@echo "  make test-security   - Run security status tests"
+	@echo "  make test-version-switch - Run version switch tests (tests all React versions, slower)"
 	@echo "  make test-browser    - Run tests with specific browser (use BROWSER=chrome|firefox|safari)"
 	@echo "  make test-clean      - Clean test artifacts (reports, screenshots, cache)"
 	@echo "  make test-open-report - Open test report in browser"
@@ -333,6 +335,26 @@ test-quick: check-venv
 	fi
 	@$(PYTEST) $(TEST_DIR)/ --headless=true -v --tb=short
 
+# Run tests in parallel (faster execution)
+# Note: Version switch tests are excluded from parallel execution to avoid conflicts
+test-parallel: check-venv
+	@echo "Running tests in parallel (4 workers)..."
+	@echo "⚠️  Note: Version switch tests excluded from parallel (run sequentially after)"
+	@# Ensure servers are running
+	@if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
+		echo "⚠️  Servers not running. Starting servers..."; \
+		$(MAKE) start > /dev/null 2>&1; \
+		sleep 3; \
+	fi
+	@# Run non-version-switch tests in parallel
+	@echo "Running non-version-switch tests in parallel..."
+	@$(PYTEST) $(TEST_DIR)/ -n 4 -v -m "not version_switch" || true
+	@echo ""
+	@echo "Running version switch tests sequentially (these modify React versions)..."
+	@$(PYTEST) $(TEST_DIR)/ -m version_switch -v
+	@echo ""
+	@echo "✓ All tests completed!"
+
 # Run tests and generate HTML report
 test-report: check-venv
 	@echo "Running tests with HTML report..."
@@ -391,6 +413,21 @@ test-security: check-venv
 		sleep 3; \
 	fi
 	@$(PYTEST) $(TEST_DIR)/test_suites/test_security_status.py -v
+
+# Run version switch tests (tests all React versions by switching to each)
+test-version-switch: check-venv
+	@echo "Running version switch tests (will test all React versions)..."
+	@echo "⚠️  Note: These tests are slower as they switch React versions (~2-5 minutes)"
+	@# Ensure servers are running
+	@if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
+		echo "⚠️  Servers not running. Starting servers..."; \
+		$(MAKE) start > /dev/null 2>&1; \
+		sleep 3; \
+	fi
+	@$(PYTEST) $(TEST_DIR)/test_suites/test_security_status.py -m version_switch -v
+	@echo ""
+	@echo "✓ Version switch tests completed!"
+	@echo "  Note: React version is now set to the last tested version"
 
 # Run tests with specific browser
 test-browser: check-venv

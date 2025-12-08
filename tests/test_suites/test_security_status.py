@@ -18,49 +18,52 @@ def get_current_react_version():
 
 
 @pytest.mark.version_switch
+@pytest.mark.slow
+# Note: These tests switch React versions and should not run in parallel
+# Use: pytest -m version_switch (without -n flag) to run sequentially
 class TestSecurityStatus:
     """Tests for security status display."""
     
-    @pytest.mark.parametrize("version,expected_status", [
+    @pytest.mark.parametrize("react_version,expected_status", [
         ("19.0", "VULNERABLE"),
         ("19.1.0", "VULNERABLE"),
         ("19.1.1", "VULNERABLE"),
         ("19.2.0", "VULNERABLE"),
-    ])
-    def test_vulnerable_versions_show_vulnerable_status(self, app_page, version, expected_status):
+    ], indirect=["react_version"])
+    def test_vulnerable_versions_show_vulnerable_status(self, app_page, react_version, expected_status):
         """Test that vulnerable React versions show VULNERABLE status."""
-        # Note: This test assumes the React version has been switched before running
-        # In a real scenario, you'd switch versions in a fixture
-        current_version = get_current_react_version()
+        # react_version fixture switches to the version and restarts servers
+        version_info = app_page.get_version_info()
         
-        if current_version == version:
-            version_info = app_page.get_version_info()
-            
-            assert version_info is not None, \
-                "Version info should be loaded"
-            
-            assert version_info.get("status") == expected_status, \
-                f"Version {version} should show {expected_status} status, " \
-                f"got {version_info.get('status')}"
+        assert version_info is not None, \
+            "Version info should be loaded"
+        
+        assert version_info.get("status") == expected_status, \
+            f"Version {react_version} should show {expected_status} status, " \
+            f"got {version_info.get('status')}"
+        
+        assert version_info.get("react") == react_version, \
+            f"Expected React version {react_version}, got {version_info.get('react')}"
     
-    @pytest.mark.parametrize("version,expected_status", [
+    @pytest.mark.parametrize("react_version,expected_status", [
         ("19.0.1", "FIXED"),
         ("19.1.2", "FIXED"),
         ("19.2.1", "FIXED"),
-    ])
-    def test_fixed_versions_show_fixed_status(self, app_page, version, expected_status):
+    ], indirect=["react_version"])
+    def test_fixed_versions_show_fixed_status(self, app_page, react_version, expected_status):
         """Test that fixed React versions show FIXED status."""
-        current_version = get_current_react_version()
+        # react_version fixture switches to the version and restarts servers
+        version_info = app_page.get_version_info()
         
-        if current_version == version:
-            version_info = app_page.get_version_info()
-            
-            assert version_info is not None, \
-                "Version info should be loaded"
-            
-            assert version_info.get("status") == expected_status, \
-                f"Version {version} should show {expected_status} status, " \
-                f"got {version_info.get('status')}"
+        assert version_info is not None, \
+            "Version info should be loaded"
+        
+        assert version_info.get("status") == expected_status, \
+            f"Version {react_version} should show {expected_status} status, " \
+            f"got {version_info.get('status')}"
+        
+        assert version_info.get("react") == react_version, \
+            f"Expected React version {react_version}, got {version_info.get('react')}"
     
     def test_vulnerable_indicator_displayed(self, app_page):
         """Test that vulnerable indicator (⚠️) is displayed for vulnerable versions."""

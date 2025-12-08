@@ -223,6 +223,9 @@ make test-setup
 # Run all tests (automatically starts servers if needed)
 make test
 
+# Run tests in parallel (faster - 4 workers)
+make test-parallel
+
 # Run tests with HTML report
 make test-report
 make test-open-report
@@ -234,11 +237,13 @@ make test-open-report
 - `make test-setup` - Set up Python virtual environment
 - `make test` - Run all tests
 - `make test-quick` - Quick test run (headless)
+- `make test-parallel` - Run tests in parallel (faster execution)
 - `make test-report` - Generate HTML report
 - `make test-smoke` - Run smoke tests only
 - `make test-hello` - Run hello world tests
 - `make test-version` - Run version info tests
 - `make test-security` - Run security status tests
+- `make test-version-switch` - Run version switch tests (tests all React versions, slower)
 - `make test-browser BROWSER=chrome` - Run with specific browser
 - `make test-clean` - Clean test artifacts
 

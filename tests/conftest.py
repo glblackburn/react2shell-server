@@ -132,8 +132,43 @@ def app_page(driver):
 
 @pytest.fixture(scope="function")
 def react_version(request):
-    """Parameterized fixture for React versions."""
-    return request.param if hasattr(request, 'param') else None
+    """Parameterized fixture that switches React versions for testing.
+    
+    Usage:
+        @pytest.mark.parametrize("react_version", ["19.0", "19.1.0"], indirect=True)
+        def test_something(app_page, react_version):
+            # react_version will be the version string, and servers will be restarted
+    """
+    from utils.server_manager import switch_react_version, stop_servers, start_servers as start_servers_func, wait_for_server
+    
+    # Get version from parameter if provided
+    version = request.param if hasattr(request, 'param') else None
+    
+    if version:
+        print(f"\n🔄 Switching to React {version}...")
+        # Stop servers before switching version
+        stop_servers()
+        
+        # Switch React version
+        if switch_react_version(version):
+            # Restart servers after version switch
+            print(f"🔄 Restarting servers for React {version}...")
+            start_servers_func()
+            # Wait for servers to be ready (BASE_URL and API_URL are defined at module level)
+            frontend_url = "http://localhost:5173"
+            api_url = "http://localhost:3000"
+            if not wait_for_server(frontend_url, max_attempts=60, delay=2):
+                pytest.fail(f"Frontend server not ready after switching to React {version}")
+            if not wait_for_server(f"{api_url}/api/hello", max_attempts=60, delay=2):
+                pytest.fail(f"Backend server not ready after switching to React {version}")
+            print(f"✓ React {version} ready for testing")
+        else:
+            pytest.skip(f"Failed to switch to React {version}")
+    
+    yield version
+    
+    # Note: We don't restore the original version here to avoid slowing down tests
+    # The original version should be restored manually or in CI/CD
 
 
 # Pytest command line options
