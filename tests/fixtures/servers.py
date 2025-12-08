@@ -10,7 +10,7 @@ from utils.server_manager import (
     wait_for_server,
     check_server_running
 )
-from utils.server_constants import FRONTEND_URL, API_ENDPOINT
+from utils.server_constants import get_frontend_url, get_api_endpoint
 
 
 @pytest.fixture(scope="session")
@@ -23,9 +23,11 @@ def start_servers():
     
     # Check if servers are already running
     try:
-        requests.get(FRONTEND_URL, timeout=2)
+        frontend_url = get_frontend_url()
+        requests.get(frontend_url, timeout=2)
         if framework == "vite":
-            requests.get(API_ENDPOINT, timeout=2)
+            api_endpoint = get_api_endpoint()
+            requests.get(api_endpoint, timeout=2)
         print("✓ Servers already running")
         yield
         return

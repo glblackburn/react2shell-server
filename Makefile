@@ -50,10 +50,11 @@ FRAMEWORK_MODE := $(shell cat .framework-mode 2>/dev/null || echo "vite")
 # Usage: $(call switch_react_version,version)
 define switch_react_version
 	@echo "Switching to React $(1) ($(VERSION_$(1)_STATUS) - for security testing)..."
-	@FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
-	if [ "$$FRAMEWORK" = "nextjs" ]; then \
-		cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.react='$(1)';pkg.dependencies['react-dom']='$(1)';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install; \
+	@if [ -f .framework-mode ] && grep -q "^nextjs" .framework-mode 2>/dev/null; then \
+		echo "Switching in Next.js framework..."; \
+		cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.react='$(1)';pkg.dependencies['react-dom']='$(1)';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps; \
 	else \
+		echo "Switching in Vite framework..."; \
 		cd frameworks/vite-react && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.react='$(1)';pkg.dependencies['react-dom']='$(1)';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install; \
 	fi
 	@echo "✓ Switched to React $(1) ($(VERSION_$(1)_STATUS))"

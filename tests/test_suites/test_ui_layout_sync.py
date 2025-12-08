@@ -98,7 +98,7 @@ class TestUILayoutSync:
         for class_name in expected_classes:
             # Use CSS selector to find elements with this class
             elements = app_page.find_elements(
-                (By.CSS_SELECTOR, f".{class_name}")
+                By.CSS_SELECTOR, f".{class_name}"
             )
             assert len(elements) > 0, \
                 f"Should have at least one element with class '{class_name}'"
@@ -184,10 +184,10 @@ class TestUILayoutSync:
     def test_overall_layout_structure(self, app_page):
         """Test that overall layout structure matches between frameworks."""
         # Check main container structure
-        app_container = app_page.find_element((By.CSS_SELECTOR, ".app"))
+        app_container = app_page.find_element(By.CSS_SELECTOR, ".app")
         assert app_container.is_displayed(), "App container should be displayed"
         
-        container = app_page.find_element((By.CSS_SELECTOR, ".container"))
+        container = app_page.find_element(By.CSS_SELECTOR, ".container")
         assert container.is_displayed(), "Container should be displayed"
         
         # Check that version-info is inside container

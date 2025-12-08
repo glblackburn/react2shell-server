@@ -8,9 +8,9 @@ import logging
 import json
 import os
 from .server_constants import (
-    FRONTEND_URL,
-    BACKEND_URL,
-    API_ENDPOINT
+    get_frontend_url,
+    get_backend_url,
+    get_api_endpoint
 )
 
 
@@ -46,14 +46,16 @@ def start_servers():
     logger.info(f"Starting servers (Framework: {framework})...")
     
     # Check if servers are already running
+    frontend_url = get_frontend_url()
     if framework == "nextjs":
         # Next.js: only check port 3000
-        if check_server_running(FRONTEND_URL, timeout=0.5):
+        if check_server_running(frontend_url, timeout=0.5):
             logger.info("Next.js server already running")
             return True
     else:
         # Vite: check both ports
-        if check_server_running(FRONTEND_URL, timeout=0.5) and check_server_running(API_ENDPOINT, timeout=0.5):
+        api_endpoint = get_api_endpoint()
+        if check_server_running(frontend_url, timeout=0.5) and check_server_running(api_endpoint, timeout=0.5):
             logger.info("Servers already running")
             return True
     
@@ -68,11 +70,12 @@ def start_servers():
         )
         logger.info("Started servers with 'make start'")
         
-        # Wait for servers to be ready with shorter timeouts
+        # Wait for servers to be ready with adequate timeouts
         logger.info("Waiting for servers to be ready...")
+        frontend_url = get_frontend_url()
         if framework == "nextjs":
-            # Next.js: only wait for port 3000
-            server_ready = wait_for_server(FRONTEND_URL, max_attempts=20, delay=0.5)
+            # Next.js: only wait for port 3000, with longer timeout for initial startup
+            server_ready = wait_for_server(frontend_url, max_attempts=60, delay=1)
             if server_ready:
                 logger.info("Next.js server is ready!")
                 return True
@@ -81,8 +84,9 @@ def start_servers():
                 return False
         else:
             # Vite: wait for both ports
-            frontend_ready = wait_for_server(FRONTEND_URL, max_attempts=20, delay=0.5)
-            backend_ready = wait_for_server(API_ENDPOINT, max_attempts=20, delay=0.5)
+            api_endpoint = get_api_endpoint()
+            frontend_ready = wait_for_server(frontend_url, max_attempts=60, delay=1)
+            backend_ready = wait_for_server(api_endpoint, max_attempts=60, delay=1)
             
             if frontend_ready and backend_ready:
                 logger.info("Both servers are ready!")
@@ -92,7 +96,22 @@ def start_servers():
                 return False
             
     except subprocess.TimeoutExpired:
-        logger.error("Server start timed out")
+        logger.error("Server start command timed out, but checking if server is running...")
+        # Even if make start timed out, the server might still be starting
+        # Give it a bit more time and check if it's actually running
+        import time
+        time.sleep(2)
+        frontend_url = get_frontend_url()
+        if framework == "nextjs":
+            if check_server_running(frontend_url, timeout=1):
+                logger.info("Next.js server is actually running despite timeout")
+                return True
+        else:
+            api_endpoint = get_api_endpoint()
+            if check_server_running(frontend_url, timeout=1) and check_server_running(api_endpoint, timeout=1):
+                logger.info("Servers are actually running despite timeout")
+                return True
+        logger.error("Server start timed out and server is not running")
         return False
     except subprocess.CalledProcessError as e:
         logger.error(f"Error starting servers: {e}")
@@ -121,8 +140,10 @@ def stop_servers():
 
 def get_server_status():
     """Get status of both servers."""
-    frontend_status = "running" if check_server_running(FRONTEND_URL) else "stopped"
-    backend_status = "running" if check_server_running(API_ENDPOINT) else "stopped"
+    frontend_url = get_frontend_url()
+    api_endpoint = get_api_endpoint()
+    frontend_status = "running" if check_server_running(frontend_url) else "stopped"
+    backend_status = "running" if check_server_running(api_endpoint) else "stopped"
     
     return {
         "frontend": frontend_status,

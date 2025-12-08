@@ -6,7 +6,7 @@ from utils.server_manager import (
     switch_react_version, stop_servers, start_servers as start_servers_func, 
     wait_for_server, check_server_running, get_current_react_version, check_version_installed
 )
-from utils.server_constants import FRONTEND_URL, API_ENDPOINT
+from utils.server_constants import get_frontend_url, get_api_endpoint
 
 
 @pytest.fixture(scope="function")
@@ -34,17 +34,20 @@ def react_version(request):
             
             if framework == "nextjs":
                 # Next.js: only check port 3000
-                if not check_server_running(FRONTEND_URL):
+                frontend_url = get_frontend_url()
+                if not check_server_running(frontend_url):
                     print(f"🔄 Server not running, starting for React {version}...")
                     start_servers_func()
-                    wait_for_server(FRONTEND_URL, max_attempts=20, delay=1)
+                    wait_for_server(frontend_url, max_attempts=20, delay=1)
             else:
                 # Vite: check both ports
-                if not check_server_running(FRONTEND_URL) or not check_server_running(API_ENDPOINT):
+                frontend_url = get_frontend_url()
+                api_endpoint = get_api_endpoint()
+                if not check_server_running(frontend_url) or not check_server_running(api_endpoint):
                     print(f"🔄 Servers not running, starting for React {version}...")
                     start_servers_func()
-                    wait_for_server(FRONTEND_URL, max_attempts=20, delay=1)
-                    wait_for_server(API_ENDPOINT, max_attempts=20, delay=1)
+                    wait_for_server(frontend_url, max_attempts=20, delay=1)
+                    wait_for_server(api_endpoint, max_attempts=20, delay=1)
         else:
             print(f"\n🔄 Switching to React {version}...")
             # Stop servers before switching version
@@ -60,14 +63,17 @@ def react_version(request):
                 framework = get_framework_mode()
                 
                 if framework == "nextjs":
-                    # Next.js: only wait for port 3000
-                    if not wait_for_server(FRONTEND_URL, max_attempts=20, delay=1):
+                    # Next.js: only wait for port 3000, with longer timeout for version switch
+                    frontend_url = get_frontend_url()
+                    if not wait_for_server(frontend_url, max_attempts=60, delay=1):
                         pytest.fail(f"Next.js server not ready after switching to React {version}")
                 else:
-                    # Vite: wait for both ports
-                    if not wait_for_server(FRONTEND_URL, max_attempts=20, delay=1):
+                    # Vite: wait for both ports, with longer timeout for version switch
+                    frontend_url = get_frontend_url()
+                    api_endpoint = get_api_endpoint()
+                    if not wait_for_server(frontend_url, max_attempts=60, delay=1):
                         pytest.fail(f"Frontend server not ready after switching to React {version}")
-                    if not wait_for_server(API_ENDPOINT, max_attempts=20, delay=1):
+                    if not wait_for_server(api_endpoint, max_attempts=60, delay=1):
                         pytest.fail(f"Backend server not ready after switching to React {version}")
                 print(f"✓ React {version} ready for testing")
             else:

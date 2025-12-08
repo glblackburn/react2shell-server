@@ -19,12 +19,29 @@ from fixtures.version import react_version
 import plugins.performance
 
 # Test configuration - import from server_constants for consistency
+# Use functions to get dynamic URLs
 from utils.server_constants import (
-    FRONTEND_URL as BASE_URL,
-    BACKEND_URL as API_URL,
-    FRONTEND_PORT,
-    BACKEND_PORT
+    get_frontend_url,
+    get_backend_url,
+    _get_urls
 )
+
+# Get URLs dynamically
+def get_base_url():
+    """Get the base URL dynamically."""
+    return get_frontend_url()
+
+def get_api_url():
+    """Get the API URL dynamically."""
+    return get_backend_url()
+
+# For backward compatibility, set BASE_URL and API_URL
+# These will be evaluated at import time, but tests should use the functions
+_urls = _get_urls()
+BASE_URL = _urls["FRONTEND_URL"]
+API_URL = _urls["BACKEND_URL"]
+FRONTEND_PORT = _urls["FRONTEND_PORT"]
+BACKEND_PORT = _urls["BACKEND_PORT"]
 
 
 # Pytest command line options

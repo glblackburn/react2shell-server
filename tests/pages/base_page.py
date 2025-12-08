@@ -25,9 +25,13 @@ class BasePage:
         if url:
             self.driver.get(url)
         else:
-            # Default to base URL from conftest
-            from conftest import BASE_URL
-            self.driver.get(BASE_URL)
+            # Default to base URL from server_constants (get dynamically)
+            from utils.server_constants import get_frontend_url
+            frontend_url = get_frontend_url()
+            if not frontend_url:
+                # Fallback to default
+                frontend_url = "http://localhost:3000"
+            self.driver.get(frontend_url)
         self.logger.info(f"Navigated to: {self.driver.current_url}")
     
     def find_element(self, by, value, timeout=3):
