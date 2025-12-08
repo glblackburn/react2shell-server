@@ -162,6 +162,9 @@ def run_tests_for_version(version: str, workers: int = 10, test_dir: str = "test
         # Set report directory in environment for screenshot paths
         os.environ['PYTEST_REPORT_DIR'] = report_dir
     
+    # Always save performance history
+    os.environ['PYTEST_SAVE_HISTORY'] = 'true'
+    
     result = subprocess.run(pytest_cmd, cwd=project_root)
     
     if result.returncode != 0:

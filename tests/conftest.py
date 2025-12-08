@@ -6,6 +6,7 @@ import time
 import subprocess
 import requests
 import os
+from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -521,6 +522,23 @@ def pytest_sessionfinish(session, exitstatus):
     
     # Use aggregated tracker for reporting
     tracker = aggregated_tracker if aggregated_tracker.current_run else _performance_tracker
+    
+    # Save to history (always save, even if some tests failed)
+    if tracker.current_run:
+        try:
+            from utils.performance_history import save_run_history
+            timestamp = datetime.now().isoformat()
+            history_file = save_run_history(
+                tracker.current_run,
+                tracker.suite_times,
+                timestamp=timestamp
+            )
+            # Only print if explicitly requested to reduce noise
+            if os.environ.get('PYTEST_SAVE_HISTORY') == 'true':
+                print(f"\n📊 Performance history saved: {history_file}")
+        except Exception as e:
+            # Silently fail - history is optional
+            pass
     
     # Save baseline if requested (always try, even if some tests failed)
     if os.environ.get('PYTEST_UPDATE_BASELINE') == 'true' and tracker.current_run:

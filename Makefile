@@ -1,4 +1,4 @@
-.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report test-update-baseline test-performance-check
+.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary
 
 # Default target
 help:
@@ -45,6 +45,11 @@ help:
 	@echo "  make test-open-report - Open test report in browser"
 	@echo "  make test-update-baseline - Update performance baseline with current test times"
 	@echo "  make test-performance-check - Check for performance regressions"
+	@echo "  make test-performance-trends [TEST_ID=test_id] [LIMIT=N] - Show performance trends"
+	@echo "  make test-performance-compare - Compare latest run against baseline"
+	@echo "  make test-performance-slowest [LIMIT=N] - List slowest tests"
+	@echo "  make test-performance-history [LIMIT=N] - List recent performance history"
+	@echo "  make test-performance-summary [LIMIT=N] - Show summary of recent runs"
 	@echo ""
 	@echo "Note: Versions 19.0, 19.1.0, 19.1.1, and 19.2.0 contain a critical"
 	@echo "      security vulnerability in React Server Components."
@@ -353,7 +358,7 @@ test-parallel: check-venv
 		sleep 3; \
 	fi; \
 	echo "Running non-version-switch tests in parallel..."; \
-	PYTEST_REPORT_DIR="$$REPORT_DIR_TIMESTAMPED" $(PYTEST) $(TEST_DIR)/ -n 10 -v -m "not version_switch" \
+	PYTEST_REPORT_DIR="$$REPORT_DIR_TIMESTAMPED" PYTEST_SAVE_HISTORY=true $(PYTEST) $(TEST_DIR)/ -n 10 -v -m "not version_switch" \
 		--html="$$REPORT_DIR_TIMESTAMPED/non-version-switch-report.html" \
 		--self-contained-html || true; \
 	echo ""; \
@@ -442,16 +447,37 @@ test-version-switch: check-venv
 # Update performance baseline
 test-update-baseline: check-venv
 	@echo "Updating performance baseline..."
-	@PYTEST_UPDATE_BASELINE=true $(PYTEST) $(TEST_DIR)/ -v
+	@PYTEST_UPDATE_BASELINE=true PYTEST_SAVE_HISTORY=true $(PYTEST) $(TEST_DIR)/ -v || true
 	@echo ""
 	@echo "✓ Performance baseline updated!"
 
 # Check for performance regressions
 test-performance-check: check-venv
 	@echo "Checking for performance regressions..."
-	@$(PYTEST) $(TEST_DIR)/ -v
+	@PYTEST_SAVE_HISTORY=true $(PYTEST) $(TEST_DIR)/ -v || true
 	@echo ""
 	@echo "✓ Performance check completed!"
+
+# Performance analysis commands
+test-performance-trends: check-venv
+	@echo "Performance Trends:"
+	@cd $(TEST_DIR) && $(VENV_BIN)/python3 performance_report.py trends $(TEST_ID) --limit $(or $(LIMIT),10)
+
+test-performance-compare: check-venv
+	@echo "Comparing latest run against baseline..."
+	@cd $(TEST_DIR) && $(VENV_BIN)/python3 performance_report.py compare
+
+test-performance-slowest: check-venv
+	@echo "Slowest tests:"
+	@cd $(TEST_DIR) && $(VENV_BIN)/python3 performance_report.py slowest --limit $(or $(LIMIT),10)
+
+test-performance-history: check-venv
+	@echo "Recent performance history:"
+	@cd $(TEST_DIR) && $(VENV_BIN)/python3 performance_report.py history --limit $(or $(LIMIT),10)
+
+test-performance-summary: check-venv
+	@echo "Performance summary:"
+	@cd $(TEST_DIR) && $(VENV_BIN)/python3 performance_report.py summary --limit $(or $(LIMIT),5)
 
 # Run tests with specific browser
 test-browser: check-venv

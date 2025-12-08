@@ -22,6 +22,7 @@ __pycache__/
 htmlcov/
 reports/
 tests/.performance_baseline.json
+tests/.performance_history/
 *.egg-info/
 dist/
 build/
