@@ -230,14 +230,43 @@ def pytest_addoption(parser):
 def pytest_configure(config):
     """Configure pytest."""
     config.addinivalue_line(
-        "markers", "smoke: Smoke tests - critical functionality"
+        "markers", "smoke: Smoke tests - critical functionality (timeout: 10s)"
     )
     config.addinivalue_line(
         "markers", "regression: Regression tests"
     )
     config.addinivalue_line(
-        "markers", "version_switch: Tests that switch React versions"
+        "markers", "version_switch: Tests that switch React versions (timeout: 120s)"
     )
+    config.addinivalue_line(
+        "markers", "slow: Tests that take longer to run (timeout: 60s)"
+    )
+
+
+@pytest.fixture(autouse=True)
+def set_test_timeout(request):
+    """Automatically set timeout based on test markers.
+    
+    This fixture applies per-marker timeouts to tests based on their markers.
+    Priority: smoke > slow > version_switch > default
+    """
+    # Timeout values in seconds for each marker
+    timeout_markers = {
+        'smoke': 10,           # Smoke tests should be fast
+        'slow': 60,            # Slow tests get 60s
+        'version_switch': 120, # Version switch tests get 2min
+    }
+    
+    # Check markers in priority order
+    for marker_name, timeout in timeout_markers.items():
+        marker = request.node.get_closest_marker(marker_name)
+        if marker:
+            # Apply timeout marker if not already set
+            if not request.node.get_closest_marker('timeout'):
+                request.node.add_marker(
+                    pytest.mark.timeout(timeout, method='thread')
+                )
+            break
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
