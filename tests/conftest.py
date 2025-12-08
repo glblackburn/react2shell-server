@@ -153,12 +153,7 @@ def pytest_addoption(parser):
         choices=["true", "false"],
         help="Run browser in headless mode (default: true)"
     )
-    parser.addoption(
-        "--base-url",
-        action="store",
-        default=BASE_URL,
-        help=f"Base URL for application (default: {BASE_URL})"
-    )
+    # Note: --base-url is provided by pytest-selenium plugin, don't add it here
 
 
 # Pytest hooks

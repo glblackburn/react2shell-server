@@ -71,7 +71,7 @@ class TestSecurityStatus:
             from selenium.webdriver.common.by import By
             assert app_page.is_vulnerable_indicator_visible() or \
                    app_page.is_element_present(
-                       (By.CSS_SELECTOR, ".version-value.vulnerable"),
+                       By.CSS_SELECTOR, ".version-value.vulnerable",
                        timeout=2
                    ), \
                 "Vulnerable indicator should be visible for vulnerable versions"
