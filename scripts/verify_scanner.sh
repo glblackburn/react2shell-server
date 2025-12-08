@@ -25,7 +25,20 @@ NC='\033[0m' # No Color
 # Configuration
 SCANNER_PATH="/Users/lblackb/data/lblackb/git/third-party/react2shell-scanner"
 SCANNER_SCRIPT="${SCANNER_PATH}/scanner.py"
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Get project root - handle both direct execution and Makefile execution
+# Use a more robust method that works when called from Makefile
+if [ -n "${BASH_SOURCE[0]}" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+else
+    # Fallback if BASH_SOURCE is not available
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+fi
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Clean any newlines or extra whitespace from path
+PROJECT_ROOT="$(echo "${PROJECT_ROOT}" | tr -d '\n\r' | xargs)"
+
 FRONTEND_URL="http://localhost:5173"
 SAFE_CHECK=false
 TEST_ALL_VERSIONS=false
@@ -98,12 +111,18 @@ switch_version() {
     local version=$1
     echo -e "${CYAN}Switching to React ${version}...${NC}"
     
-    cd "$PROJECT_ROOT"
+    local original_dir="$(pwd)"
+    cd "$PROJECT_ROOT" || {
+        echo -e "${RED}Error: Cannot change to project root: ${PROJECT_ROOT}${NC}"
+        return 1
+    }
     if make "react-${version}" > /dev/null 2>&1; then
         echo -e "${GREEN}✓ Switched to React ${version}${NC}"
+        cd "$original_dir"
         return 0
     else
         echo -e "${RED}✗ Failed to switch to React ${version}${NC}"
+        cd "$original_dir"
         return 1
     fi
 }
@@ -158,8 +177,13 @@ echo ""
 # Ensure server is running
 if ! check_server; then
     echo -e "${YELLOW}Server not running. Starting servers...${NC}"
-    cd "$PROJECT_ROOT"
+    local original_dir="$(pwd)"
+    cd "$PROJECT_ROOT" || {
+        echo -e "${RED}Error: Cannot change to project root: ${PROJECT_ROOT}${NC}"
+        exit 1
+    }
     make start > /dev/null 2>&1
+    cd "$original_dir"
     sleep 5
 fi
 
