@@ -238,7 +238,61 @@ To make testing easier, Makefile targets were added:
 - `make test-clean` - Clean test artifacts
 - `make test-open-report` - Open test report in browser
 
-## Phase 4: Documentation Consolidation
+## Phase 4: Documentation Review and Updates
+
+### The Requirement
+
+After implementing performance tracking, historical analysis, and per-test limits, documentation needed to be reviewed and updated to clearly explain:
+- How to set test time limits (individual, category-based, suite)
+- How to generate performance reports
+- Where limits are configured
+- How limits are calculated and applied
+
+### Implementation
+
+**Updated Documentation Files:**
+
+1. **`tests/PERFORMANCE_TRACKING.md`**
+   - Added comprehensive "Setting Test Time Limits" section
+   - Added "Generating Performance Reports" section
+   - Updated Quick Start to prioritize report generation
+   - Added instructions for automatic limit calculation
+   - Clarified individual vs category-based limits
+
+2. **`tests/README.md`**
+   - Added "Test Time Limits" section explaining all three types
+   - Updated "Reports" section to include performance reports
+   - Added reference to `make test-performance-report`
+
+3. **`README.md`**
+   - Added "Performance Tracking" subsection under Testing
+   - Added commands for generating reports and setting limits
+   - Cross-referenced performance tracking documentation
+
+4. **`tests/QUICKSTART.md`**
+   - Added `make test-performance-report` to common commands
+
+5. **`tests/PERFORMANCE_LIMITS_GUIDE.md` (New)**
+   - Comprehensive guide focused on setting and managing test time limits
+   - Explains all three types of limits (individual, category, suite)
+   - Provides scripts for automatic limit calculation
+   - Includes troubleshooting section
+   - Clear examples and best practices
+
+**Key Documentation Improvements:**
+- Clear explanation of limit priority (individual → marker → default)
+- Step-by-step instructions for setting limits (automatic and manual)
+- Comprehensive guide on generating performance reports
+- Troubleshooting sections for common issues
+- Consistent cross-referencing between documents
+
+**Result:**
+- All documentation now clearly explains performance tracking features
+- Users can easily understand how to set limits and generate reports
+- Comprehensive guide for limit management
+- Consistent information across all documentation files
+
+## Phase 5: Documentation Consolidation (Original)
 
 ### The Problem
 
@@ -268,7 +322,7 @@ As the project grew, documentation became scattered and duplicated across multip
 - Comprehensive cross-linking
 - Easier maintenance
 
-## Phase 5: Bug Fixes and Refinements
+## Phase 6: Bug Fixes and Refinements
 
 ### Issue: Duplicate pytest Option
 
@@ -295,7 +349,7 @@ To:
 is_element_present(By.CSS_SELECTOR, ".version-value.vulnerable", timeout=2)
 ```
 
-## Phase 6: Version Switching Tests Implementation
+## Phase 7: Version Switching Tests Implementation
 
 ### The Discovery
 
@@ -346,7 +400,7 @@ To properly test all React versions, tests needed to **actually switch** to each
 - No conflicts in parallel execution
 - Clear separation of test types
 
-## Phase 7: Performance Optimizations
+## Phase 8: Performance Optimizations
 
 ### The Goal
 
@@ -413,7 +467,7 @@ After implementing version switching tests, total test time was ~5 minutes 33 se
 4. **Parallel Strategy:** Not all tests can run in parallel - some require sequential execution
 5. **Version Grouping:** Running tests in parallel within each version provides significant speedup
 
-## Phase 8: Performance Metrics and Time Limits
+## Phase 9: Performance Metrics and Time Limits
 
 ### The Goal
 
@@ -513,6 +567,63 @@ Edit `tests/performance_config.yaml` to adjust:
 - Thread-based timeouts prevent signal issues with Selenium WebDriver
 - Suite times aggregated across all tests in a class/module
 
+### Phase 3.5: Per-Test Limits Implementation
+
+**The Requirement:**
+After initial performance tracking, it became clear that a global limit wasn't sufficient - individual tests needed their own personalized limits based on their actual execution times.
+
+**Implementation:**
+- Added `limits.tests` section to `performance_config.yaml` for individual test limits
+- Modified `set_test_timeout` fixture in `conftest.py` to prioritize individual limits:
+  1. Individual test limit (if configured)
+  2. Marker-based limit (smoke/slow/version_switch)
+  3. Default limit (7s)
+- Individual limits calculated with 10% buffer above max observed time
+- Suite limits calculated with 20% buffer above max observed suite time
+- Performance reports updated to highlight individual limits vs category-based limits
+
+**Result:**
+- Each test now has its own personalized timeout based on historical performance
+- More accurate timeout enforcement
+- Better visibility in reports (individual limits shown in blue/bold)
+
+### Phase 3.6: Historical Performance Tracking
+
+**The Requirement:**
+Users needed to track performance trends over time, not just compare against a single baseline.
+
+**Implementation:**
+- Created `tests/utils/performance_history.py` for historical data management
+- Stores timestamped performance data in `tests/.performance_history/` directory
+- Functions for loading history, calculating trends, comparing baselines
+- Created `tests/performance_report.py` CLI script for various report types:
+  - `trends` - Performance trends over time
+  - `compare` - Latest run vs baseline
+  - `slowest` - List slowest tests
+  - `history` - Recent performance history
+  - `summary` - Summary of recent runs
+- Created `tests/generate_performance_report.sh` for comprehensive HTML reports
+- Added Makefile targets:
+  - `make test-performance-trends` - View trends
+  - `make test-performance-compare` - Compare against baseline
+  - `make test-performance-slowest` - List slowest tests
+  - `make test-performance-history` - View history
+  - `make test-performance-summary` - Summary
+  - `make test-performance-report` - Generate HTML report
+
+**Features:**
+- Timestamped history files (one per test run)
+- Trend analysis showing performance changes over time
+- Baseline comparison with regression detection
+- Slowest tests identification
+- Comprehensive HTML report with all metrics
+
+**Result:**
+- Full historical tracking of test performance
+- Easy identification of performance regressions
+- Trend analysis to spot gradual degradation
+- Comprehensive reporting for performance review
+
 ## Key Technical Decisions
 
 ### 1. Technology Stack
@@ -596,12 +707,15 @@ Edit `tests/performance_config.yaml` to adjust:
 4. **Bug Fixes** - CORS and proxy configuration fixes
 5. **Testing Infrastructure** - Python Selenium tests with pytest
 6. **Test Automation** - Makefile targets for easy test execution
-7. **Documentation** - Comprehensive documentation with consolidation
+7. **Documentation Consolidation** - Consolidated duplicate documentation
 8. **Bug Fixes** - Duplicate pytest option, test method call errors
 9. **Version Switching Tests** - Implemented actual version switching during tests
 10. **Parallel Execution** - Added parallel test support with version switch isolation
 11. **Performance Optimization** - 52% faster test execution through various optimizations
 12. **Performance Metrics** - Added time limits, performance tracking, and regression detection
+13. **Per-Test Limits** - Individual test limits based on historical performance
+14. **Historical Tracking** - Performance history storage and trend analysis
+15. **Documentation Review** - Comprehensive documentation updates for performance features
 
 ## Lessons Learned
 
@@ -628,6 +742,12 @@ Edit `tests/performance_config.yaml` to adjust:
 11. **Performance Tracking is Valuable:** Having baselines and regression detection helps catch performance issues before they become problems.
 
 12. **Configuration Over Code:** Using config files (YAML) for thresholds makes it easy to adjust without code changes.
+
+13. **Individual Limits Beat Global Limits:** Per-test limits based on historical data are more accurate than category-based or global limits.
+
+14. **Historical Data Enables Trends:** Storing timestamped performance data allows trend analysis and early detection of gradual degradation.
+
+15. **Documentation Must Stay Current:** As features evolve, documentation must be reviewed and updated to remain useful and accurate.
 
 ## Current State
 
