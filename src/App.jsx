@@ -8,15 +8,27 @@ function App() {
 
   // Fetch version information on mount
   useEffect(() => {
-    const fetchVersion = async () => {
+    const fetchVersion = async (isRetry = false) => {
       try {
         const response = await fetch('/api/version');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         setVersionInfo(data);
+        setVersionLoading(false);
       } catch (error) {
         console.error('Error fetching version info:', error);
-      } finally {
-        setVersionLoading(false);
+        // Retry once after a short delay in case server is starting up
+        if (!isRetry) {
+          setTimeout(() => {
+            fetchVersion(true);
+          }, 1000);
+        } else {
+          // Retry failed, show error
+          setVersionInfo(null);
+          setVersionLoading(false);
+        }
       }
     };
     fetchVersion();

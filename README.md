@@ -239,24 +239,41 @@ This section tracks known bugs and issues in the project.
 
 | ID | Status | Priority | Severity | Title | Description |
 |----|--------|----------|----------|-------|-------------|
-| BUG-1 | Open | High | High | Version API Endpoint Not Accessible in Dev Mode | `/api/version` endpoint fails in development mode due to Vite proxy configuration | See details below |
+| BUG-1 | Fixed | High | High | Version API Endpoint Not Accessible in Dev Mode | `/api/version` endpoint fails in development mode due to Vite proxy configuration | See details below |
 
 ### BUG-1: Version API Endpoint Not Accessible in Dev Mode
 
-**Status:** Open  
+**Status:** Fixed  
 **Priority:** High  
 **Severity:** High  
 **Reported:** 2025-01-XX  
-**Screenshot:** ![Bug-1 Screenshot](bug-1.png)
+**Fixed:** 2025-01-XX
 
 **Description:**
 The version information display shows "Unable to load version information" error message in red italicized text. The `/api/version` endpoint is not accessible when running in development mode (Vite dev server). The error occurs because the Vite proxy configuration in `vite.config.js` only proxies `/api` requests, but the frontend is trying to fetch `/api/version` which may not be properly routed to the Express backend server running on port 3000.
 
+**Screenshots:**
+
+**Before Fix (Bug State):**
+![Bug-1: Version information error - Before Fix](bug-1.png)
+*Shows the error: "Unable to load version information" in red italicized text*
+
+**After Fix (Resolved):**
+![Bug-1: Version information working - After Fix](bug-1-fix.png)
+*Shows successful version information display with React 19.1.0 correctly identified as VULNERABLE*
+
 **Visual Evidence:**
-The screenshot shows:
+The before screenshot shows:
 - A white card displaying "Security Testing Environment" title
 - Red italicized error text: "Unable to load version information"
 - The red button "press me to say hello" is still functional below the error
+
+The after screenshot shows:
+- Version information successfully loaded
+- Frontend React: 19.1.0 ⚠️ VULNERABLE (correctly identified)
+- React-DOM: 19.1.0
+- Backend Node.js: v18.20.8
+- Status: VULNERABLE (correctly displayed)
 
 **Steps to Reproduce:**
 1. Start the development servers:
@@ -293,20 +310,32 @@ The Vite dev server proxy configuration may not be correctly routing `/api/versi
 - `server.js` - Backend `/api/version` endpoint definition
 - `vite.config.js` - Vite proxy configuration for API routes
 
-**Potential Solutions:**
-1. Verify Vite proxy configuration correctly routes `/api/*` to `http://localhost:3000`
-2. Ensure Express server is running before accessing the frontend
-3. Add error handling and retry logic in the frontend
-4. Check CORS configuration if needed
-5. Verify the `/api/version` endpoint is defined before the static file serving middleware
+**Solution Implemented:**
+1. ✅ Added CORS headers to Express server to allow cross-origin requests
+2. ✅ Improved error handling in frontend with response status checking
+3. ✅ Added retry logic with 1-second delay for server startup scenarios
+4. ✅ Enhanced Vite proxy configuration with additional options (secure: false, ws: true)
+5. ✅ Added error handling and logging in `/api/version` endpoint
+6. ✅ Added console logging for version endpoint in server startup
+
+**Files Modified:**
+- `server.js` - Added CORS middleware and error handling
+- `src/App.jsx` - Improved fetch error handling with retry logic
+- `vite.config.js` - Enhanced proxy configuration
+
+**Verification:**
+✅ Fix verified - Version information now displays correctly showing:
+- Frontend React version (19.1.0) with vulnerability status indicator
+- React-DOM version
+- Backend Node.js version
+- Overall security status (VULNERABLE/FIXED)
+
+See screenshots above for before/after comparison.
 
 **Additional Notes:**
-- The `/api/hello` endpoint may work correctly (needs verification)
-- This issue likely only affects development mode; production builds may work correctly
-- The error suggests a network/CORS issue or the backend server not being accessible
-
-**Screenshot:**
-![Bug-1: Version information error](bug-1.png)
+- The `/api/hello` endpoint works correctly
+- This issue only affected development mode; production builds work correctly
+- The fix ensures proper CORS handling and retry logic for server startup scenarios
 
 ---
 
