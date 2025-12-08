@@ -33,11 +33,11 @@ app.get('/api/version', (req, res) => {
     const reactVersion = packageJson.dependencies.react || 'unknown';
     const reactDomVersion = packageJson.dependencies['react-dom'] || 'unknown';
     const nodeVersion = process.version;
-    
+
     // Determine if vulnerable
     const vulnerableVersions = ['19.0', '19.1.0', '19.1.1', '19.2.0'];
     const isVulnerable = vulnerableVersions.includes(reactVersion);
-    
+
     res.json({
       react: reactVersion,
       reactDom: reactDomVersion,
