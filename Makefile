@@ -433,6 +433,32 @@ test-version-switch: check-venv
 	@echo "✓ Version switch tests completed!"
 	@echo "  Note: React version is now set to the last tested version"
 
+# Run scanner verification tests (requires external scanner)
+test-scanner: check-venv
+	@echo "Running scanner verification tests..."
+	@echo "⚠️  Note: This requires the scanner at:"
+	@echo "    /Users/lblackb/data/lblackb/git/third-party/react2shell-scanner"
+	@echo ""
+	@# Ensure servers are running
+	@if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
+		echo "⚠️  Servers not running. Starting servers..."; \
+		$(MAKE) start > /dev/null 2>&1; \
+		sleep 3; \
+	fi
+	@$(PYTEST) $(TEST_DIR)/ -m scanner -v
+
+# Run scanner verification script (standalone)
+test-scanner-script:
+	@echo "Running scanner verification script..."
+	@echo "⚠️  Note: This requires the scanner at:"
+	@echo "    /Users/lblackb/data/lblackb/git/third-party/react2shell-scanner"
+	@echo ""
+	@if [ ! -f scripts/verify_scanner.sh ]; then \
+		echo "Error: scripts/verify_scanner.sh not found"; \
+		exit 1; \
+	fi
+	@bash scripts/verify_scanner.sh
+
 # Update performance baseline
 test-update-baseline: check-venv
 	@echo "Updating performance baseline..."
