@@ -1,7 +1,7 @@
 ============================================================
 Scanner Verification Report
 ============================================================
-Generated: Mon Dec  8 15:02:42 EST 2025
+Generated: Mon Dec  8 15:59:20 EST 2025
 Project: react2shell-server
 Scanner: /Users/lblackb/data/lblackb/git/third-party/react2shell-scanner/scanner.py
 
@@ -314,6 +314,35 @@ SCAN SUMMARY
   Errors: 0
 ============================================================
 
+------------------------------------------------------------
+Framework: nextjs
+Version: 15.1.0
+Expected Status: VULNERABLE
+Detected Status: VULNERABLE
+Result: PASS
+URL: http://localhost:3000
+
+Scanner Output:
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[VULNERABLE] http://localhost:3000 - Status: 303
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 1
+  Not vulnerable: 0
+  Errors: 0
+============================================================
+
 --- FIXED VERSIONS ---
 
 ------------------------------------------------------------
@@ -375,45 +404,16 @@ SCAN SUMMARY
 ============================================================
 
 ------------------------------------------------------------
-Framework: nextjs
-Version: 15.1.0
-Expected Status: FIXED
-Detected Status: VULNERABLE
-Result: FAIL
-URL: http://localhost:3000
-
-Scanner Output:
-
-brought to you by assetnote
-
-[*] Loaded 1 host(s) to scan
-[*] Using 10 thread(s)
-[*] Timeout: 10s
-[*] Using RCE PoC check
-[!] SSL verification disabled
-
-[VULNERABLE] http://localhost:3000 - Status: 303
-
-============================================================
-SCAN SUMMARY
-============================================================
-  Total hosts scanned: 1
-  Vulnerable: 1
-  Not vulnerable: 0
-  Errors: 0
-============================================================
-
-------------------------------------------------------------
 NEXTJS Framework Summary:
-  Passed: 3
-  Failed: 3
+  Passed: 4
+  Failed: 2
 
 ============================================================
 FINAL SUMMARY
 ============================================================
-Total Tests Passed: 6
-Total Tests Failed: 7
+Total Tests Passed: 7
+Total Tests Failed: 6
 Total Tests: 13
 
-Report generated: Mon Dec  8 15:07:03 EST 2025
+Report generated: Mon Dec  8 16:04:30 EST 2025
 ============================================================

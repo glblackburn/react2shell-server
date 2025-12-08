@@ -25,12 +25,12 @@ VERSION_19.2.1_STATUS := FIXED
 # ============================================================================
 
 # Vulnerable Next.js versions (for security testing)
-# Note: These versions need verification against CVE-2025-55182/CVE-2025-66478
-NEXTJS_VULNERABLE_VERSIONS := 14.0.0 14.1.0 15.0.0
+# Note: These versions verified against scanner results
+NEXTJS_VULNERABLE_VERSIONS := 14.0.0 14.1.0 15.0.0 15.1.0
 
 # Fixed Next.js versions
-# Note: These versions need verification against CVE-2025-55182/CVE-2025-66478
-NEXTJS_FIXED_VERSIONS := 14.0.1 14.1.1 15.1.0
+# Note: These versions verified against scanner results
+NEXTJS_FIXED_VERSIONS := 14.0.1 14.1.1
 
 # All Next.js versions
 ALL_NEXTJS_VERSIONS := $(NEXTJS_VULNERABLE_VERSIONS) $(NEXTJS_FIXED_VERSIONS)
@@ -39,9 +39,9 @@ ALL_NEXTJS_VERSIONS := $(NEXTJS_VULNERABLE_VERSIONS) $(NEXTJS_FIXED_VERSIONS)
 NEXTJS_VERSION_14.0.0_STATUS := VULNERABLE
 NEXTJS_VERSION_14.1.0_STATUS := VULNERABLE
 NEXTJS_VERSION_15.0.0_STATUS := VULNERABLE
+NEXTJS_VERSION_15.1.0_STATUS := VULNERABLE
 NEXTJS_VERSION_14.0.1_STATUS := FIXED
 NEXTJS_VERSION_14.1.1_STATUS := FIXED
-NEXTJS_VERSION_15.1.0_STATUS := FIXED
 
 # Framework mode detection
 FRAMEWORK_MODE := $(shell cat .framework-mode 2>/dev/null || echo "vite")
@@ -61,6 +61,7 @@ endef
 
 # Generic function to switch Next.js version
 # Usage: $(call switch_nextjs_version,version)
+# Note: Next.js 14.x requires React 18, Next.js 15.x requires React 19
 define switch_nextjs_version
 	@if ! grep -q '^nextjs' .framework-mode 2>/dev/null; then \
 		echo "⚠️  Error: Next.js version switching only available in Next.js mode"; \
@@ -68,13 +69,23 @@ define switch_nextjs_version
 		exit 1; \
 	fi
 	@case "$(1)" in \
-		14.0.0|14.1.0|15.0.0) \
+		14.0.0|14.1.0) \
 			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
-			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
+			echo "Note: Next.js 14.x requires React 18, using React 19.2.0 (vulnerable) for testing..."; \
+			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.0';pkg.dependencies['react-dom']='19.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
 			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
+		15.0.0|15.1.0) \
+			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
+			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.0';pkg.dependencies['react-dom']='19.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
+			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
+		14.0.1|14.1.1) \
+			echo "Switching to Next.js $(1) (FIXED - for security testing)..."; \
+			echo "Note: Next.js 14.x requires React 18, using React 19.2.1 (fixed) for testing..."; \
+			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.1';pkg.dependencies['react-dom']='19.2.1';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
+			echo "✓ Switched to Next.js $(1) (FIXED)" ;; \
 		*) \
 			echo "Switching to Next.js $(1) (FIXED - for security testing)..."; \
-			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
+			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.1';pkg.dependencies['react-dom']='19.2.1';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
 			echo "✓ Switched to Next.js $(1) (FIXED)" ;; \
 	esac
 endef
@@ -85,7 +96,7 @@ $(foreach version,$(FIXED_VERSIONS),$(eval react-$(version):;$(call switch_react
 $(foreach version,$(NEXTJS_VULNERABLE_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 $(foreach version,$(NEXTJS_FIXED_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 
-.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.0 nextjs-14.0.1 nextjs-14.1.1 nextjs-15.1.0 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
+.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.0 nextjs-15.1.0 nextjs-14.0.1 nextjs-14.1.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
 
 # Set help as the default target when make is run without arguments
 .DEFAULT_GOAL := help
@@ -111,11 +122,11 @@ help:
 	@echo "  make nextjs-14.0.0   - Switch to Next.js 14.0.0 (VULNERABLE)"
 	@echo "  make nextjs-14.1.0   - Switch to Next.js 14.1.0 (VULNERABLE)"
 	@echo "  make nextjs-15.0.0   - Switch to Next.js 15.0.0 (VULNERABLE)"
+	@echo "  make nextjs-15.1.0   - Switch to Next.js 15.1.0 (VULNERABLE)"
 	@echo ""
 	@echo "NEXT.JS FIXED VERSIONS:"
 	@echo "  make nextjs-14.0.1   - Switch to Next.js 14.0.1 (FIXED)"
 	@echo "  make nextjs-14.1.1   - Switch to Next.js 14.1.1 (FIXED)"
-	@echo "  make nextjs-15.1.0   - Switch to Next.js 15.1.0 (FIXED)"
 	@echo ""
 	@echo "Server Management:"
 	@echo "  make start           - Start both frontend and backend servers"

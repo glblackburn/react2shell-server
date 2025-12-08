@@ -44,11 +44,11 @@ This project also supports Next.js framework mode for testing Next.js-specific v
 - Next.js 14.0.0
 - Next.js 14.1.0
 - Next.js 15.0.0
+- Next.js 15.1.0
 
 **Fixed Next.js versions:**
 - Next.js 14.0.1
 - Next.js 14.1.1
-- Next.js 15.1.0
 
 > **Note:** Next.js version switching is only available when in Next.js mode (`make use-nextjs`). See [Framework Switching](#framework-switching) section for details.
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 // Helper function to determine if Next.js version is vulnerable
 function isNextjsVulnerable(version: string): boolean {
-  const vulnerableVersions = ['14.0.0', '14.1.0', '15.0.0'];
+  const vulnerableVersions = ['14.0.0', '14.1.0', '15.0.0', '15.1.0'];
   return vulnerableVersions.includes(version);
 }
 

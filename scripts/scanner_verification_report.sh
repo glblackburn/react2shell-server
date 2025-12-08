@@ -25,11 +25,11 @@ SCANNER_SCRIPT="${SCANNER_PATH}/scanner.py"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPORT_FILE="${PROJECT_ROOT}/scanner_verification_report_$(date +%Y%m%d_%H%M%S).txt"
 
-# Version lists from Makefile
+# Version lists from Makefile (updated to match scanner results)
 VITE_VULNERABLE_VERSIONS=("19.0" "19.1.0" "19.1.1" "19.2.0")
 VITE_FIXED_VERSIONS=("19.0.1" "19.1.2" "19.2.1")
-NEXTJS_VULNERABLE_VERSIONS=("14.0.0" "14.1.0" "15.0.0")
-NEXTJS_FIXED_VERSIONS=("14.0.1" "14.1.1" "15.1.0")
+NEXTJS_VULNERABLE_VERSIONS=("14.0.0" "14.1.0" "15.0.0" "15.1.0")
+NEXTJS_FIXED_VERSIONS=("14.0.1" "14.1.1")
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -69,10 +69,11 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
-# Function to check if server is running
+# Function to check if server is running and responding
 check_server() {
     local url=$1
-    if curl -s -f "$url" > /dev/null 2>&1; then
+    # Try to get a response - check both root and API endpoint
+    if curl -s -f --max-time 5 "$url" > /dev/null 2>&1 || curl -s -f --max-time 5 "$url/api/version" > /dev/null 2>&1; then
         return 0
     else
         return 1
@@ -82,7 +83,7 @@ check_server() {
 # Function to wait for server
 wait_for_server() {
     local url=$1
-    local max_attempts=60
+    local max_attempts=90  # Increased from 60 to 90 for slower Next.js 14.x versions
     local attempt=0
     
     while [ $attempt -lt $max_attempts ]; do
@@ -226,7 +227,12 @@ test_framework_versions() {
         
         # Start servers
         cd "$PROJECT_ROOT" && make start > /dev/null 2>&1
-        sleep 5
+        # Wait longer for Next.js 14.x versions which may take more time to install
+        if [[ "$framework" == "nextjs" ]] && [[ "$version" == 14.* ]]; then
+            sleep 20  # Extra time for npm install and server startup
+        else
+            sleep 5
+        fi
         
         # Wait for server
         if ! wait_for_server "$url"; then
@@ -268,7 +274,12 @@ test_framework_versions() {
         
         # Start servers
         cd "$PROJECT_ROOT" && make start > /dev/null 2>&1
-        sleep 5
+        # Wait longer for Next.js 14.x versions which may take more time to install
+        if [[ "$framework" == "nextjs" ]] && [[ "$version" == 14.* ]]; then
+            sleep 20  # Extra time for npm install and server startup
+        else
+            sleep 5
+        fi
         
         # Wait for server
         if ! wait_for_server "$url"; then
