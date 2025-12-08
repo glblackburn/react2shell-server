@@ -19,6 +19,8 @@ This project is designed to provide **scannable vulnerable React versions** for 
 
 ## Security Vulnerability
 
+### React Server Components Vulnerability
+
 **CVE Reference:** [React Security Advisory - Critical Security Vulnerability in React Server Components](https://react.dev/blog/2025/12/03/critical-security-vulnerability-in-react-server-components)
 
 The vulnerability affects React Server Components in the following versions:
@@ -31,6 +33,24 @@ Fixed versions:
 - React 19.0.1
 - React 19.1.2
 - React 19.2.1
+
+### Next.js RSC Vulnerability
+
+**CVE Reference:** [Next.js Security Advisory - CVE-2025-66478](https://nextjs.org/blog/CVE-2025-66478)
+
+This project also supports Next.js framework mode for testing Next.js-specific vulnerabilities. The vulnerability affects Next.js applications using React Server Components.
+
+**Vulnerable Next.js versions:**
+- Next.js 14.0.0
+- Next.js 14.1.0
+- Next.js 15.0.0
+
+**Fixed Next.js versions:**
+- Next.js 14.0.1
+- Next.js 14.1.1
+- Next.js 15.1.0
+
+> **Note:** Next.js version switching is only available when in Next.js mode (`make use-nextjs`). See [Framework Switching](#framework-switching) section for details.
 
 ## Features
 
@@ -59,7 +79,9 @@ This project supports easy switching between different React versions using a Ma
 
 > **Security Note:** Versions 19.0, 19.1.0, 19.1.1, and 19.2.0 contain a critical security vulnerability in React Server Components. This project supports these versions for security scanner testing purposes.
 >
-> **CVE Documentation:** [React Security Advisory](https://react.dev/blog/2025/12/03/critical-security-vulnerability-in-react-server-components)
+> **CVE Documentation:** 
+> - [React Security Advisory](https://react.dev/blog/2025/12/03/critical-security-vulnerability-in-react-server-components)
+> - [Next.js Security Advisory - CVE-2025-66478](https://nextjs.org/blog/CVE-2025-66478)
 
 ### Makefile Commands
 
@@ -75,6 +97,20 @@ make react-19.2.0    # Switch to React 19.2.0 (VULNERABLE)
 make react-19.0.1    # Switch to React 19.0.1 (FIXED)
 make react-19.1.2    # Switch to React 19.1.2 (FIXED)
 make react-19.2.1    # Switch to React 19.2.1 (FIXED)
+
+# Framework Switching
+make use-vite        # Switch to Vite + React mode (default)
+make use-nextjs      # Switch to Next.js mode
+make current-framework # Show current framework mode
+
+# Next.js Version Switching (only available in Next.js mode)
+make use-nextjs      # First, switch to Next.js mode
+make nextjs-14.0.0   # Switch to Next.js 14.0.0 (VULNERABLE)
+make nextjs-14.1.0   # Switch to Next.js 14.1.0 (VULNERABLE)
+make nextjs-15.0.0   # Switch to Next.js 15.0.0 (VULNERABLE)
+make nextjs-14.0.1   # Switch to Next.js 14.0.1 (FIXED)
+make nextjs-14.1.1   # Switch to Next.js 14.1.1 (FIXED)
+make nextjs-15.1.0   # Switch to Next.js 15.1.0 (FIXED)
 
 # Check current React version
 make current-version

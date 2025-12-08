@@ -20,6 +20,29 @@ VERSION_19.0.1_STATUS := FIXED
 VERSION_19.1.2_STATUS := FIXED
 VERSION_19.2.1_STATUS := FIXED
 
+# ============================================================================
+# Next.js Version Configuration
+# ============================================================================
+
+# Vulnerable Next.js versions (for security testing)
+# Note: These versions need verification against CVE-2025-55182/CVE-2025-66478
+NEXTJS_VULNERABLE_VERSIONS := 14.0.0 14.1.0 15.0.0
+
+# Fixed Next.js versions
+# Note: These versions need verification against CVE-2025-55182/CVE-2025-66478
+NEXTJS_FIXED_VERSIONS := 14.0.1 14.1.1 15.1.0
+
+# All Next.js versions
+ALL_NEXTJS_VERSIONS := $(NEXTJS_VULNERABLE_VERSIONS) $(NEXTJS_FIXED_VERSIONS)
+
+# Next.js version status mapping (for display messages)
+NEXTJS_VERSION_14.0.0_STATUS := VULNERABLE
+NEXTJS_VERSION_14.1.0_STATUS := VULNERABLE
+NEXTJS_VERSION_15.0.0_STATUS := VULNERABLE
+NEXTJS_VERSION_14.0.1_STATUS := FIXED
+NEXTJS_VERSION_14.1.1_STATUS := FIXED
+NEXTJS_VERSION_15.1.0_STATUS := FIXED
+
 # Framework mode detection
 FRAMEWORK_MODE := $(shell cat .framework-mode 2>/dev/null || echo "vite")
 
@@ -36,11 +59,43 @@ define switch_react_version
 	@echo "✓ Switched to React $(1) ($(VERSION_$(1)_STATUS))"
 endef
 
+# Generic function to switch Next.js version
+# Usage: $(call switch_nextjs_version,version)
+define switch_nextjs_version
+	@FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
+	if [ "$$FRAMEWORK" != "nextjs" ]; then \
+		echo "⚠️  Error: Next.js version switching only available in Next.js mode"; \
+		echo "   Run 'make use-nextjs' first to switch to Next.js mode"; \
+		exit 1; \
+	fi
+	@VERSION_VAR=$$(echo "$(1)" | sed 's/\./_/g'); \
+	if [ "$(1)" = "14.0.0" ]; then \
+		STATUS="VULNERABLE"; \
+	elif [ "$(1)" = "14.1.0" ]; then \
+		STATUS="VULNERABLE"; \
+	elif [ "$(1)" = "15.0.0" ]; then \
+		STATUS="VULNERABLE"; \
+	elif [ "$(1)" = "14.0.1" ]; then \
+		STATUS="FIXED"; \
+	elif [ "$(1)" = "14.1.1" ]; then \
+		STATUS="FIXED"; \
+	elif [ "$(1)" = "15.1.0" ]; then \
+		STATUS="FIXED"; \
+	else \
+		STATUS="UNKNOWN"; \
+	fi; \
+	echo "Switching to Next.js $(1) ($$STATUS - for security testing)..."; \
+	cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install; \
+	echo "✓ Switched to Next.js $(1) ($$STATUS)"
+endef
+
 # Generate version switching targets dynamically
 $(foreach version,$(VULNERABLE_VERSIONS),$(eval react-$(version):;$(call switch_react_version,$(version))))
 $(foreach version,$(FIXED_VERSIONS),$(eval react-$(version):;$(call switch_react_version,$(version))))
+$(foreach version,$(NEXTJS_VULNERABLE_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
+$(foreach version,$(NEXTJS_FIXED_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 
-.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
+.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.0 nextjs-14.0.1 nextjs-14.1.1 nextjs-15.1.0 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
 
 # Set help as the default target when make is run without arguments
 .DEFAULT_GOAL := help
@@ -61,6 +116,16 @@ help:
 	@echo "  make react-19.0.1    - Switch to React 19.0.1 (FIXED)"
 	@echo "  make react-19.1.2    - Switch to React 19.1.2 (FIXED)"
 	@echo "  make react-19.2.1    - Switch to React 19.2.1 (FIXED)"
+	@echo ""
+	@echo "NEXT.JS VULNERABLE VERSIONS (for security testing):"
+	@echo "  make nextjs-14.0.0   - Switch to Next.js 14.0.0 (VULNERABLE)"
+	@echo "  make nextjs-14.1.0   - Switch to Next.js 14.1.0 (VULNERABLE)"
+	@echo "  make nextjs-15.0.0   - Switch to Next.js 15.0.0 (VULNERABLE)"
+	@echo ""
+	@echo "NEXT.JS FIXED VERSIONS:"
+	@echo "  make nextjs-14.0.1   - Switch to Next.js 14.0.1 (FIXED)"
+	@echo "  make nextjs-14.1.1   - Switch to Next.js 14.1.1 (FIXED)"
+	@echo "  make nextjs-15.1.0   - Switch to Next.js 15.1.0 (FIXED)"
 	@echo ""
 	@echo "Server Management:"
 	@echo "  make start           - Start both frontend and backend servers"
@@ -113,9 +178,13 @@ help:
 	@echo ""
 	@echo ""
 
-# Convenience target for switching to vulnerable version
+# Convenience target for switching to vulnerable React version
 vulnerable: react-19.0
-	@echo "⚠️  WARNING: This is a VULNERABLE version for security testing only!"
+	@echo "⚠️  WARNING: This is a VULNERABLE React version for security testing only!"
+
+# Convenience target for switching to vulnerable Next.js version (only in Next.js mode)
+vulnerable-nextjs: use-nextjs nextjs-15.0.0
+	@echo "⚠️  WARNING: This is a VULNERABLE Next.js version for security testing only!"
 
 # Framework switching
 use-vite:
