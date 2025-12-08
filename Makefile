@@ -40,9 +40,12 @@ endef
 $(foreach version,$(VULNERABLE_VERSIONS),$(eval react-$(version):;$(call switch_react_version,$(version))))
 $(foreach version,$(FIXED_VERSIONS),$(eval react-$(version):;$(call switch_react_version,$(version))))
 
-.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report
+.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
 
-# Default target
+# Set help as the default target when make is run without arguments
+.DEFAULT_GOAL := help
+
+# Default target - shows all available targets with descriptions
 help:
 	@echo "React Version Switcher"
 	@echo "======================"
@@ -104,6 +107,10 @@ help:
 	@echo "Note: Versions 19.0, 19.1.0, 19.1.1, and 19.2.0 contain a critical"
 	@echo "      security vulnerability in React Server Components."
 	@echo "      Fixed versions: 19.0.1, 19.1.2, 19.2.1"
+	@echo ""
+	@echo "Makefile Testing:"
+	@echo "  make test-makefile - Run BATS tests to verify Makefile help output"
+	@echo ""
 	@echo ""
 
 # Convenience target for switching to vulnerable version
@@ -597,6 +604,15 @@ test-performance-summary: check-venv
 test-performance-report: check-venv
 	@echo "Generating comprehensive performance history report..."
 	@cd $(TEST_DIR) && ./generate_performance_report.sh
+
+# Run BATS tests for Makefile
+test-makefile:
+	@echo "Running BATS tests for Makefile help output..."
+	@if ! command -v bats >/dev/null 2>&1; then \
+		echo "⚠️  BATS not installed. Install with: brew install bats-core (macOS) or apt-get install bats (Linux)"; \
+		exit 1; \
+	fi
+	@bats tests/makefile.bats
 
 # Run tests with specific browser
 test-browser: check-venv
