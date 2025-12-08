@@ -295,6 +295,117 @@ To:
 is_element_present(By.CSS_SELECTOR, ".version-value.vulnerable", timeout=2)
 ```
 
+## Phase 6: Version Switching Tests Implementation
+
+### The Discovery
+
+During test execution, it was discovered that the security status tests were parameterized but only ran assertions when the current React version matched the test parameter. This meant that if the project was on React 19.1.1, only tests for that version would actually execute - other versions were skipped.
+
+### The Requirement
+
+To properly test all React versions, tests needed to **actually switch** to each version during execution, not just check if the current version matches.
+
+### Implementation
+
+**Created `react_version` Fixture:**
+- Parameterized fixture that accepts version strings
+- Stops servers before version switch
+- Switches React version using Makefile commands
+- Restarts servers after version switch
+- Waits for servers to be ready
+- Skips switch if version is already active
+
+**Updated Security Status Tests:**
+- Changed from conditional execution (`if current_version == version`)
+- To actual version switching using `indirect=True` parameterization
+- All 7 React versions now tested by switching to each one
+- Tests verify correct version is displayed after switch
+
+**Key Features:**
+- Automatic version detection and skipping if already correct
+- Server lifecycle management during version switches
+- Proper error handling and retry logic
+- Sequential execution to avoid conflicts
+
+### Parallel Execution Challenge
+
+**Problem:** When running tests in parallel, version switch tests caused conflicts:
+- Multiple workers trying to modify `package.json` simultaneously
+- Servers being stopped/started by multiple workers
+- Race conditions causing test failures
+
+**Solution:**
+- Excluded version switch tests from parallel execution
+- Updated `make test-parallel` to:
+  1. Run non-version-switch tests in parallel (10 workers)
+  2. Run version switch tests sequentially after
+- Added `test-version-switch` target for dedicated version testing
+
+**Result:**
+- All 7 React versions properly tested
+- No conflicts in parallel execution
+- Clear separation of test types
+
+## Phase 7: Performance Optimizations
+
+### The Goal
+
+After implementing version switching tests, total test time was ~5 minutes 33 seconds. The goal was to optimize test execution while maintaining reliability.
+
+### Optimization Strategies
+
+**1. Skip Unnecessary Operations**
+- Check if React version already installed before `npm install`
+- Skip version switch if already on correct version
+- Skip server restart if version unchanged
+- **Impact:** Saves 10-30 seconds per version when already installed
+
+**2. Reduce Wait Times**
+- Implicit wait: 10s → 5s
+- Explicit waits: 10s → 5s (most cases)
+- Server wait attempts: 60 → 20-30
+- Server wait delay: 2s → 1s
+- Request timeout: 2s → 1s
+- **Impact:** Faster test execution without sacrificing reliability
+
+**3. Browser Optimizations**
+- Chrome: Use `--headless=new` (faster than old headless)
+- Disable extensions, logging, reduce log level
+- Firefox: Disable automation extensions
+- Default to headless mode
+- **Impact:** Faster browser startup and execution
+
+**4. Test Code Optimizations**
+- Reduced sleep times: 1s → 0.5s, 0.1s → 0.05s
+- Reduced timeouts in test assertions
+- Optimized version info loading wait logic
+- Faster server health checks
+- **Impact:** Eliminates unnecessary delays
+
+**5. Parallel Execution**
+- Increased workers from 4 to 10
+- Better CPU utilization
+- **Impact:** Parallel tests 29% faster (38.74s → 27.61s)
+
+### Performance Results
+
+**Before Optimizations:**
+- Parallel tests: 38.74s
+- Version switch tests: 4m51s (292.73s)
+- **Total: 5m33s**
+
+**After Optimizations:**
+- Parallel tests: 27.61s (29% faster)
+- Version switch tests: 2m49s (169.59s) (42% faster)
+- **Total: 3m19s (40% faster overall)**
+
+### Key Learnings
+
+1. **Smart Caching:** Checking if operations are needed before executing saves significant time
+2. **Balanced Waits:** Reducing wait times while maintaining reliability requires careful tuning
+3. **Browser Optimization:** Headless mode and disabling unnecessary features significantly speeds up execution
+4. **Parallel Strategy:** Not all tests can run in parallel - some require sequential execution
+
 ## Key Technical Decisions
 
 ### 1. Technology Stack
@@ -379,7 +490,10 @@ is_element_present(By.CSS_SELECTOR, ".version-value.vulnerable", timeout=2)
 5. **Testing Infrastructure** - Python Selenium tests with pytest
 6. **Test Automation** - Makefile targets for easy test execution
 7. **Documentation** - Comprehensive documentation with consolidation
-8. **Refinements** - Bug fixes and code improvements
+8. **Bug Fixes** - Duplicate pytest option, test method call errors
+9. **Version Switching Tests** - Implemented actual version switching during tests
+10. **Parallel Execution** - Added parallel test support with version switch isolation
+11. **Performance Optimization** - 40% faster test execution through various optimizations
 
 ## Lessons Learned
 
@@ -395,6 +509,14 @@ is_element_present(By.CSS_SELECTOR, ".version-value.vulnerable", timeout=2)
 
 6. **Consolidation is Important:** Removing duplication reduces maintenance burden.
 
+7. **Test What You Think You're Testing:** Initially, version tests only ran when the current version matched - we needed to actually switch versions to test all scenarios.
+
+8. **Parallel Execution Requires Care:** Not all tests can run in parallel - some modify shared state and must run sequentially.
+
+9. **Performance Optimization is Iterative:** Multiple small optimizations (reduced waits, smart caching, browser tweaks) compound into significant improvements.
+
+10. **Measure Before Optimizing:** Tracking actual performance metrics (before: 5m33s, after: 3m19s) validates optimization efforts.
+
 ## Current State
 
 The project now includes:
@@ -406,11 +528,14 @@ The project now includes:
 - Server management commands
 
 ✅ **Testing Infrastructure:**
-- Comprehensive Selenium test suite
+- Comprehensive Selenium test suite (28 tests)
 - Page Object Model implementation
 - Automated server management
+- Version switching tests (tests all 7 React versions)
+- Parallel execution support (10 workers)
 - HTML test reports
 - Screenshot on failure
+- Performance optimized (40% faster)
 
 ✅ **Documentation:**
 - Main README with overview
@@ -423,6 +548,9 @@ The project now includes:
 - Automatic dependency management
 - Clear error messages
 - Helpful troubleshooting guides
+- Fast test execution (3m19s for full suite)
+- Parallel test execution (10 workers)
+- Version switch test isolation
 
 ## Future Considerations
 
@@ -432,8 +560,9 @@ Potential enhancements for the future:
 2. **Additional Test Coverage:** More edge cases and error scenarios
 3. **Performance Testing:** Load testing and performance benchmarks
 4. **Cross-Browser Matrix:** Automated testing across all supported browsers
-5. **Version Switching Tests:** Automated tests that switch React versions
-6. **API Testing:** Direct API endpoint testing (not just E2E)
+5. **API Testing:** Direct API endpoint testing (not just E2E)
+6. **Test Caching:** Cache npm installs across test runs to further speed up version switching
+7. **Incremental Testing:** Only run tests for changed components
 
 ## Conclusion
 
@@ -458,4 +587,5 @@ This project serves as both a functional tool and a learning resource for securi
 
 **Project Status:** Active Development  
 **Last Updated:** 2025-12-07  
+**Test Performance:** 3m19s for full suite (28 tests, 7 React versions)  
 **Maintainer:** Development Team
