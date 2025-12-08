@@ -1,5 +1,29 @@
 # Development Narrative: React2Shell Server
 
+## Table of Contents
+
+- [Project Overview](#project-overview)
+- [The Genesis: Initial Idea](#the-genesis-initial-idea)
+- [Phase 1: Core Application Development](#phase-1-core-application-development)
+- [Phase 2: Version Information Display](#phase-2-version-information-display)
+- [Phase 3: Testing Infrastructure](#phase-3-testing-infrastructure)
+- [Phase 4: Documentation Review and Updates](#phase-4-documentation-review-and-updates)
+- [Phase 5: Documentation Consolidation (Original)](#phase-5-documentation-consolidation-original)
+- [Phase 6: Bug Fixes and Refinements](#phase-6-bug-fixes-and-refinements)
+- [Phase 7: Version Switching Tests Implementation](#phase-7-version-switching-tests-implementation)
+- [Phase 8: Performance Optimizations](#phase-8-performance-optimizations)
+- [Phase 9: Performance Metrics and Time Limits](#phase-9-performance-metrics-and-time-limits)
+  - [Phase 3.5: Per-Test Limits Implementation](#phase-35-per-test-limits-implementation)
+  - [Phase 3.6: Historical Performance Tracking](#phase-36-historical-performance-tracking)
+- [Phase 10: DRY Refactoring and Code Quality Improvements](#phase-10-dry-refactoring-and-code-quality-improvements)
+- [Key Technical Decisions](#key-technical-decisions)
+- [Challenges and Solutions](#challenges-and-solutions)
+- [Project Evolution Timeline](#project-evolution-timeline)
+- [Lessons Learned](#lessons-learned)
+- [Current State](#current-state)
+- [Future Considerations](#future-considerations)
+- [Conclusion](#conclusion)
+
 ## Project Overview
 
 **React2Shell Server** is a security testing project designed to provide a controlled environment for testing security scanners against vulnerable React versions. The project enables easy switching between vulnerable and fixed React versions to validate that security scanners correctly identify the React Server Components security vulnerability (CVE).
@@ -14,6 +38,9 @@ The project began with a clear need: **create a testbed for security scanners** 
 4. A simple UI to demonstrate functionality
 
 ## Phase 1: Core Application Development
+
+**Timeline:** 2025-12-07 20:43 - 2025-12-07 21:30  
+**Duration:** ~47 minutes
 
 ### Initial Implementation
 
@@ -67,6 +94,9 @@ To simplify development workflow, server management commands were added to the M
 
 ## Phase 2: Version Information Display
 
+**Timeline:** 2025-12-07 21:10 - 2025-12-07 21:19  
+**Duration:** ~9 minutes
+
 ### The Requirement
 
 Users needed to see which React version was currently installed and whether it was vulnerable or fixed. This led to the addition of a version information display feature.
@@ -112,6 +142,9 @@ Users needed to see which React version was currently installed and whether it w
 **Result:** Version information now displays correctly in both development and production modes.
 
 ## Phase 3: Testing Infrastructure
+
+**Timeline:** 2025-12-07 21:54 - 2025-12-07 22:24  
+**Duration:** ~30 minutes
 
 ### The Decision to Use Python Selenium
 
@@ -240,6 +273,9 @@ To make testing easier, Makefile targets were added:
 
 ## Phase 4: Documentation Review and Updates
 
+**Timeline:** 2025-12-08 08:07 - 2025-12-08 08:16  
+**Duration:** ~9 minutes
+
 ### The Requirement
 
 After implementing performance tracking, historical analysis, and per-test limits, documentation needed to be reviewed and updated to clearly explain:
@@ -294,6 +330,9 @@ After implementing performance tracking, historical analysis, and per-test limit
 
 ## Phase 5: Documentation Consolidation (Original)
 
+**Timeline:** 2025-12-07 21:59 - 2025-12-07 21:59  
+**Duration:** ~1 minute (single commit)
+
 ### The Problem
 
 As the project grew, documentation became scattered and duplicated across multiple files:
@@ -324,6 +363,9 @@ As the project grew, documentation became scattered and duplicated across multip
 
 ## Phase 6: Bug Fixes and Refinements
 
+**Timeline:** 2025-12-07 22:24 - 2025-12-07 22:24  
+**Duration:** ~1 minute (single commit)
+
 ### Issue: Duplicate pytest Option
 
 **Problem:** `ValueError: option names {'--base-url'} already added`
@@ -350,6 +392,9 @@ is_element_present(By.CSS_SELECTOR, ".version-value.vulnerable", timeout=2)
 ```
 
 ## Phase 7: Version Switching Tests Implementation
+
+**Timeline:** 2025-12-07 22:51 - 2025-12-07 22:51  
+**Duration:** ~1 minute (single commit)
 
 ### The Discovery
 
@@ -401,6 +446,9 @@ To properly test all React versions, tests needed to **actually switch** to each
 - Clear separation of test types
 
 ## Phase 8: Performance Optimizations
+
+**Timeline:** 2025-12-07 22:58 - 2025-12-08 03:45  
+**Duration:** ~4 hours 47 minutes
 
 ### The Goal
 
@@ -468,6 +516,9 @@ After implementing version switching tests, total test time was ~5 minutes 33 se
 5. **Version Grouping:** Running tests in parallel within each version provides significant speedup
 
 ## Phase 9: Performance Metrics and Time Limits
+
+**Timeline:** 2025-12-08 04:00 - 2025-12-08 08:07  
+**Duration:** ~4 hours 7 minutes
 
 ### The Goal
 
@@ -569,6 +620,9 @@ Edit `tests/performance_config.yaml` to adjust:
 
 ### Phase 3.5: Per-Test Limits Implementation
 
+**Timeline:** 2025-12-08 05:48 - 2025-12-08 05:48  
+**Duration:** Part of Phase 9
+
 **The Requirement:**
 After initial performance tracking, it became clear that a global limit wasn't sufficient - individual tests needed their own personalized limits based on their actual execution times.
 
@@ -588,6 +642,9 @@ After initial performance tracking, it became clear that a global limit wasn't s
 - Better visibility in reports (individual limits shown in blue/bold)
 
 ### Phase 3.6: Historical Performance Tracking
+
+**Timeline:** 2025-12-08 05:48 - 2025-12-08 08:07  
+**Duration:** Part of Phase 9
 
 **The Requirement:**
 Users needed to track performance trends over time, not just compare against a single baseline.
@@ -761,6 +818,9 @@ Users needed to track performance trends over time, not just compare against a s
 
 ## Phase 10: DRY Refactoring and Code Quality Improvements
 
+**Timeline:** 2025-12-08 08:16 - 2025-12-08 08:54  
+**Duration:** ~38 minutes
+
 ### The Requirement
 
 After implementing all features and performance optimizations, the codebase had accumulated code duplication and maintainability issues. A comprehensive DRY (Don't Repeat Yourself) analysis was conducted to identify refactoring opportunities.
@@ -835,6 +895,9 @@ After implementing all features and performance optimizations, the codebase had 
 - Overall: ~40% complexity reduction
 
 ### Bug Fix: BUG-2
+
+**Timeline:** 2025-12-08 08:46 - 2025-12-08 08:54  
+**Duration:** ~8 minutes
 
 **Issue Discovered:**
 During refactoring (Phase 3), `pytest_addoption` for `--update-baseline` was removed from `conftest.py` but not properly registered in the new plugin structure, causing `ValueError: no option named '--update-baseline'` and blocking all test execution.
