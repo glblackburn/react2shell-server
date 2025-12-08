@@ -21,6 +21,7 @@ __pycache__/
 .coverage
 htmlcov/
 reports/
+tests/.performance_baseline.json
 *.egg-info/
 dist/
 build/
