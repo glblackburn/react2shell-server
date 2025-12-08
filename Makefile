@@ -1,4 +1,4 @@
-.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report
+.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report test-update-baseline test-performance-check
 
 # Default target
 help:
@@ -436,6 +436,20 @@ test-version-switch: check-venv
 	@echo ""
 	@echo "✓ Version switch tests completed!"
 	@echo "  Note: React version is now set to the last tested version"
+
+# Update performance baseline
+test-update-baseline: check-venv
+	@echo "Updating performance baseline..."
+	@PYTEST_UPDATE_BASELINE=true $(PYTEST) $(TEST_DIR)/ -v
+	@echo ""
+	@echo "✓ Performance baseline updated!"
+
+# Check for performance regressions
+test-performance-check: check-venv
+	@echo "Checking for performance regressions..."
+	@$(PYTEST) $(TEST_DIR)/ -v
+	@echo ""
+	@echo "✓ Performance check completed!"
 
 # Run tests with specific browser
 test-browser: check-venv

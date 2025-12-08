@@ -22,8 +22,28 @@ from collections import defaultdict
 from typing import Dict, List, Optional
 
 PERFORMANCE_BASELINE_FILE = Path("tests/.performance_baseline.json")
+PERFORMANCE_CONFIG_FILE = Path("tests/performance_config.yaml")
 PERFORMANCE_REGRESSION_THRESHOLD = 1.5  # 50% slower = regression
 PERFORMANCE_WARNING_THRESHOLD = 1.2  # 20% slower = warning
+
+# Load performance config if available
+_performance_config = {}
+if PERFORMANCE_CONFIG_FILE.exists():
+    try:
+        import yaml
+        with open(PERFORMANCE_CONFIG_FILE) as f:
+            _performance_config = yaml.safe_load(f) or {}
+        # Override thresholds from config if present
+        if _performance_config.get('regression', {}).get('threshold'):
+            PERFORMANCE_REGRESSION_THRESHOLD = _performance_config['regression']['threshold']
+        if _performance_config.get('regression', {}).get('warning_threshold'):
+            PERFORMANCE_WARNING_THRESHOLD = _performance_config['regression']['warning_threshold']
+    except ImportError:
+        # YAML not available - use defaults
+        pass
+    except Exception:
+        # Invalid config - use defaults
+        pass
 
 class PerformanceTracker:
     """Tracks test execution times and compares against baselines."""
@@ -360,7 +380,9 @@ def set_test_timeout(request):
 def pytest_runtest_call(item):
     """Track test execution start time for performance tracking."""
     test_id = item.nodeid
-    _performance_tracker.test_start_times[test_id] = time.time()
+    # Only track if not a setup/teardown phase
+    if hasattr(item, 'function') or hasattr(item, 'cls'):
+        _performance_tracker.test_start_times[test_id] = time.time()
     outcome = yield
 
 
@@ -417,10 +439,13 @@ def pytest_runtest_makereport(item, call):
 
 def pytest_sessionfinish(session, exitstatus):
     """Generate performance report at end of session."""
-    # Save baseline if requested
+    # Save baseline if requested (always try, even if some tests failed)
     if os.environ.get('PYTEST_UPDATE_BASELINE') == 'true' and _performance_tracker.current_run:
-        _performance_tracker.save_baseline()
-        print(f"\n✓ Baseline updated: {PERFORMANCE_BASELINE_FILE}")
+        try:
+            _performance_tracker.save_baseline()
+            print(f"\n✓ Baseline updated: {PERFORMANCE_BASELINE_FILE}")
+        except Exception as e:
+            print(f"\n⚠️  Failed to update baseline: {e}")
     
     if not _performance_tracker.current_run:
         return

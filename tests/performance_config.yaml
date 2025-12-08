@@ -1,0 +1,38 @@
+# Performance Limits and Baselines Configuration
+# This file configures time limits and performance tracking behavior
+
+# Per-test time limits (in seconds)
+# Tests exceeding these limits will fail (via pytest-timeout)
+limits:
+  default: 30      # Default timeout for tests without specific markers
+  smoke: 10        # Smoke tests must complete quickly
+  slow: 60         # Slow tests allowed up to 60 seconds
+  version_switch: 120  # Version switch tests allowed up to 2 minutes
+  
+  # Per-suite limits (in seconds)
+  # Total time allowed for all tests in a suite
+  suites:
+    TestHelloWorldButton: 60
+    TestVersionInformation: 90
+    TestSecurityStatus: 300  # Includes version switching, so longer
+
+# Regression detection settings
+regression:
+  enabled: true
+  threshold: 1.5      # 50% slower triggers regression warning
+  warning_threshold: 1.2  # 20% slower triggers warning
+  fail_on_regression: false  # Set to true to fail tests on regression (for CI)
+  
+# Baseline management
+baseline:
+  file: tests/.performance_baseline.json
+  auto_update: false  # Set to true to auto-update after successful runs
+  min_runs: 3         # Minimum runs before establishing baseline (for averaging)
+  
+# Performance reporting
+reporting:
+  show_suite_times: true
+  show_slow_tests: true
+  slow_test_threshold: 5.0  # Tests taking longer than this are highlighted
+  generate_json: false  # Generate JSON performance report
+  json_report_path: tests/reports/performance.json
