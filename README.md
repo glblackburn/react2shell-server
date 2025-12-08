@@ -237,7 +237,7 @@ make test-open-report
 - `make test-setup` - Set up Python virtual environment
 - `make test` - Run all tests
 - `make test-quick` - Quick test run (headless)
-- `make test-parallel` - Run tests in parallel (faster execution)
+- `make test-parallel` - Run tests in parallel (10 workers, faster execution)
 - `make test-report` - Generate HTML report
 - `make test-smoke` - Run smoke tests only
 - `make test-hello` - Run hello world tests

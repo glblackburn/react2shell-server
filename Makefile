@@ -33,7 +33,7 @@ help:
 	@echo "  make test-setup      - Set up Python virtual environment and install test dependencies"
 	@echo "  make test            - Run all tests (starts servers if needed)"
 	@echo "  make test-quick      - Run all tests quickly (headless, no report)"
-	@echo "  make test-parallel   - Run tests in parallel (faster execution)"
+	@echo "  make test-parallel   - Run tests in parallel (10 workers, faster execution)"
 	@echo "  make test-report     - Run all tests and generate HTML report"
 	@echo "  make test-smoke      - Run only smoke tests"
 	@echo "  make test-hello      - Run hello world button tests"
@@ -338,7 +338,7 @@ test-quick: check-venv
 # Run tests in parallel (faster execution)
 # Note: Version switch tests are excluded from parallel execution to avoid conflicts
 test-parallel: check-venv
-	@echo "Running tests in parallel (4 workers)..."
+	@echo "Running tests in parallel (10 workers)..."
 	@echo "⚠️  Note: Version switch tests excluded from parallel (run sequentially after)"
 	@# Ensure servers are running
 	@if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
@@ -348,7 +348,7 @@ test-parallel: check-venv
 	fi
 	@# Run non-version-switch tests in parallel
 	@echo "Running non-version-switch tests in parallel..."
-	@$(PYTEST) $(TEST_DIR)/ -n 4 -v -m "not version_switch" || true
+	@$(PYTEST) $(TEST_DIR)/ -n 10 -v -m "not version_switch" || true
 	@echo ""
 	@echo "Running version switch tests sequentially (these modify React versions)..."
 	@$(PYTEST) $(TEST_DIR)/ -m version_switch -v
