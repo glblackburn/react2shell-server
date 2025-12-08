@@ -439,45 +439,128 @@ def pytest_runtest_makereport(item, call):
 
 def pytest_sessionfinish(session, exitstatus):
     """Generate performance report at end of session."""
-    # Save baseline if requested (always try, even if some tests failed)
-    if os.environ.get('PYTEST_UPDATE_BASELINE') == 'true' and _performance_tracker.current_run:
+    import tempfile
+    import glob
+    
+    # Check if we're in a worker process (pytest-xdist)
+    # Workers have a 'workerinput' attribute, master doesn't
+    is_worker = hasattr(session.config, 'workerinput')
+    
+    if is_worker:
+        # Worker process: write performance data to temp file
+        worker_id = session.config.workerinput.get('workerid', 'unknown')
+        temp_dir = tempfile.gettempdir()
+        perf_file = os.path.join(temp_dir, f"pytest_perf_{os.getpid()}_{worker_id}.json")
+        
         try:
-            _performance_tracker.save_baseline()
+            perf_data = {
+                'current_run': _performance_tracker.current_run,
+                'suite_times': dict(_performance_tracker.suite_times),
+                'regressions': _performance_tracker.regressions,
+                'warnings': _performance_tracker.warnings
+            }
+            with open(perf_file, 'w') as f:
+                json.dump(perf_data, f)
+        except Exception as e:
+            # Silently fail in worker - master will handle reporting
+            pass
+        return
+    
+    # Master process: aggregate data from all workers
+    aggregated_tracker = PerformanceTracker()
+    temp_dir = tempfile.gettempdir()
+    perf_files = glob.glob(os.path.join(temp_dir, "pytest_perf_*.json"))
+    
+    # Aggregate data from worker files
+    for perf_file in perf_files:
+        try:
+            with open(perf_file, 'r') as f:
+                worker_data = json.load(f)
+            
+            # Aggregate current_run
+            for test_id, times in worker_data.get('current_run', {}).items():
+                if test_id not in aggregated_tracker.current_run:
+                    aggregated_tracker.current_run[test_id] = []
+                if isinstance(times, list):
+                    aggregated_tracker.current_run[test_id].extend(times)
+                else:
+                    aggregated_tracker.current_run[test_id].append(times)
+            
+            # Aggregate suite times
+            for suite, duration in worker_data.get('suite_times', {}).items():
+                aggregated_tracker.suite_times[suite] += duration
+            
+            # Aggregate regressions and warnings
+            aggregated_tracker.regressions.extend(worker_data.get('regressions', []))
+            aggregated_tracker.warnings.extend(worker_data.get('warnings', []))
+            
+            # Clean up worker file
+            try:
+                os.remove(perf_file)
+            except:
+                pass
+        except Exception:
+            # Skip invalid files
+            continue
+    
+    # Also include master process data if any (for non-xdist runs)
+    if _performance_tracker.current_run:
+        for test_id, times in _performance_tracker.current_run.items():
+            if test_id not in aggregated_tracker.current_run:
+                aggregated_tracker.current_run[test_id] = []
+            if isinstance(times, list):
+                aggregated_tracker.current_run[test_id].extend(times)
+            else:
+                aggregated_tracker.current_run[test_id].append(times)
+        
+        for suite, duration in _performance_tracker.suite_times.items():
+            aggregated_tracker.suite_times[suite] += duration
+        
+        aggregated_tracker.regressions.extend(_performance_tracker.regressions)
+        aggregated_tracker.warnings.extend(_performance_tracker.warnings)
+    
+    # Use aggregated tracker for reporting
+    tracker = aggregated_tracker if aggregated_tracker.current_run else _performance_tracker
+    
+    # Save baseline if requested (always try, even if some tests failed)
+    if os.environ.get('PYTEST_UPDATE_BASELINE') == 'true' and tracker.current_run:
+        try:
+            tracker.save_baseline()
             print(f"\n✓ Baseline updated: {PERFORMANCE_BASELINE_FILE}")
         except Exception as e:
             print(f"\n⚠️  Failed to update baseline: {e}")
     
-    if not _performance_tracker.current_run:
+    if not tracker.current_run:
         return
     
     # Print performance summary
-    has_issues = _performance_tracker.regressions or _performance_tracker.warnings
+    has_issues = tracker.regressions or tracker.warnings
     
-    if has_issues or _performance_tracker.suite_times:
+    if has_issues or tracker.suite_times:
         print("\n" + "="*70)
         print("PERFORMANCE REPORT")
         print("="*70)
         
-        if _performance_tracker.regressions:
+        if tracker.regressions:
             print("\n❌ Performance Regressions Detected (>50% slower):")
-            for reg in _performance_tracker.regressions:
+            for reg in tracker.regressions:
                 print(f"  {reg['test_id']}")
                 print(f"    Current: {reg['current']:.2f}s")
                 print(f"    Baseline: {reg['baseline']:.2f}s")
                 print(f"    Slower by: {reg['slower_by']:.2f}s ({reg['percent_slower']:.1f}%)")
         
-        if _performance_tracker.warnings:
+        if tracker.warnings:
             print("\n⚠️  Performance Warnings (>20% slower):")
-            for warn in _performance_tracker.warnings:
+            for warn in tracker.warnings:
                 print(f"  {warn['test_id']}")
                 print(f"    Current: {warn['current']:.2f}s")
                 print(f"    Baseline: {warn['baseline']:.2f}s")
                 print(f"    Slower by: {warn['slower_by']:.2f}s ({warn['percent_slower']:.1f}%)")
     
     # Print suite execution times
-    if _performance_tracker.suite_times:
+    if tracker.suite_times:
         print("\n📊 Suite Execution Times:")
-        for suite, total_time in sorted(_performance_tracker.suite_times.items(), 
+        for suite, total_time in sorted(tracker.suite_times.items(), 
                                          key=lambda x: x[1], reverse=True):
             print(f"  {suite}: {total_time:.2f}s")
 
