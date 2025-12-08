@@ -2,6 +2,12 @@
 
 import { useState, useEffect } from 'react';
 
+// Helper function to determine if Next.js version is vulnerable
+function isNextjsVulnerable(version: string): boolean {
+  const vulnerableVersions = ['14.0.0', '14.1.0', '15.0.0'];
+  return vulnerableVersions.includes(version);
+}
+
 export default function HomePage() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -60,6 +66,15 @@ export default function HomePage() {
             <div className="version-loading">Loading version information...</div>
           ) : versionInfo ? (
             <div className="version-details">
+              {versionInfo.nextjs && (
+                <div className="version-item">
+                  <span className="version-label">Next.js:</span>
+                  <span className={`version-value ${isNextjsVulnerable(versionInfo.nextjs) ? 'vulnerable' : 'fixed'}`}>
+                    {versionInfo.nextjs} {isNextjsVulnerable(versionInfo.nextjs) && '⚠️ VULNERABLE'}
+                    {!isNextjsVulnerable(versionInfo.nextjs) && '✅ FIXED'}
+                  </span>
+                </div>
+              )}
               <div className="version-item">
                 <span className="version-label">Frontend React:</span>
                 <span className={`version-value ${versionInfo.vulnerable ? 'vulnerable' : 'fixed'}`}>

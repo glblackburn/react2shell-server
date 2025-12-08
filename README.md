@@ -455,7 +455,8 @@ This section tracks known bugs and issues in the project.
 | ID | Status | Priority | Severity | Title | Description |
 |----|--------|----------|----------|-------|-------------|
 | BUG-1 | Fixed | High | High | Version API Endpoint Not Accessible in Dev Mode | `/api/version` endpoint fails in development mode due to Vite proxy configuration | See details below |
-| BUG-2 | Open | High | High | Missing pytest Option Registration After Refactoring | `--update-baseline` option not registered, causing `ValueError: no option named '--update-baseline'` when running tests | See details below |
+| BUG-2 | Fixed | High | High | Missing pytest Option Registration After Refactoring | `--update-baseline` option not registered, causing `ValueError: no option named '--update-baseline'` when running tests | See details below |
+| BUG-3 | Open | Medium | Medium | Next.js Version Not Displayed in UI | Next.js version is returned by API but not displayed in the UI. Should match React version display format with vulnerability status indicator | See details below |
 
 ### BUG-1: Version API Endpoint Not Accessible in Dev Mode
 
@@ -638,6 +639,69 @@ During Phase 3 refactoring, the `pytest_addoption` function that registers `--up
 - This was a regression introduced during the refactoring (Phase 3: File Reorganization)
 - The refactoring moved performance tracking code to `plugins/performance.py` but the `pytest_addoption` function was not included
 - The fix ensures the option is registered before `pytest_configure` tries to access it
+
+### BUG-3: Next.js Version Not Displayed in UI
+
+**Status:** Open  
+**Priority:** Medium  
+**Severity:** Medium  
+**Reported:** 2025-12-08
+
+**Description:**
+When running in Next.js mode, the version information display does not show the Next.js version, even though the API endpoint (`/api/version`) returns it in the response. The React version is displayed with vulnerability status indicators (⚠️ VULNERABLE or ✅ FIXED), but the Next.js version is missing from the UI.
+
+**Expected Behavior:**
+- Next.js version should be displayed in the version information card
+- Next.js version should follow the same format as React version display
+- Next.js version should show vulnerability status indicator if applicable (⚠️ VULNERABLE or ✅ FIXED)
+- Format should be: "Next.js: 14.0.0 ⚠️ VULNERABLE" or "Next.js: 15.1.0 ✅ FIXED"
+
+**Actual Behavior:**
+- Next.js version is not displayed in the UI
+- Only React, React-DOM, and Node.js versions are shown
+- API returns `nextjs` field in JSON response, but frontend doesn't render it
+
+**Screenshots:**
+![Next.js version missing from UI](nextjs-render-defect.png)
+*Shows version information display without Next.js version*
+
+**Steps to Reproduce:**
+1. Switch to Next.js mode:
+   ```bash
+   make use-nextjs
+   ```
+2. Start the Next.js server:
+   ```bash
+   make start
+   ```
+3. Open browser to `http://localhost:3000`
+4. Observe the version information card
+5. Notice that Next.js version is not displayed
+
+**Root Cause:**
+The Next.js page component (`frameworks/nextjs/app/page.tsx`) does not include a version item for Next.js, even though the API response includes `nextjs` field.
+
+**Environment:**
+- Framework: Next.js mode
+- Next.js Version: Any version (14.0.0, 15.0.0, 15.1.0, etc.)
+- Browser: Any browser
+- OS: Any OS
+
+**Files Affected:**
+- `frameworks/nextjs/app/page.tsx` - Missing Next.js version display in version-details section
+- `frameworks/nextjs/app/api/version/route.ts` - API correctly returns nextjs field (no changes needed)
+
+**Solution:**
+Add Next.js version display to `frameworks/nextjs/app/page.tsx`:
+1. Add a new `version-item` div for Next.js version
+2. Display `versionInfo.nextjs` with appropriate vulnerability status
+3. Determine Next.js vulnerability status (vulnerable versions: 14.0.0, 14.1.0, 15.0.0)
+4. Apply same styling and format as React version display
+
+**Impact:**
+- **User Experience:** Users cannot see which Next.js version is running
+- **Security Testing:** Makes it harder to verify which Next.js version is active for vulnerability testing
+- **Consistency:** Inconsistent with React version display format
 
 ---
 
