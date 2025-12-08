@@ -361,11 +361,11 @@ After implementing version switching tests, total test time was ~5 minutes 33 se
 - **Impact:** Saves 10-30 seconds per version when already installed
 
 **2. Reduce Wait Times**
-- Implicit wait: 10s → 5s
-- Explicit waits: 10s → 5s (most cases)
-- Server wait attempts: 60 → 20-30
-- Server wait delay: 2s → 1s
-- Request timeout: 2s → 1s
+- Implicit wait: 10s → 5s → 3s
+- Explicit waits: 10s → 5s → 3s (most cases)
+- Server wait attempts: 60 → 20-30 → 8-10
+- Server wait delay: 2s → 1s → 0.3s
+- Request timeout: 2s → 1s → 0.5s
 - **Impact:** Faster test execution without sacrificing reliability
 
 **3. Browser Optimizations**
@@ -383,8 +383,9 @@ After implementing version switching tests, total test time was ~5 minutes 33 se
 - **Impact:** Eliminates unnecessary delays
 
 **5. Parallel Execution**
-- Increased workers from 4 to 10
+- Increased workers from 4 to 10, then optimized to 6 per version
 - Better CPU utilization
+- Parallel execution within each version
 - **Impact:** Parallel tests 29% faster (38.74s → 27.61s)
 
 ### Performance Results
@@ -399,12 +400,118 @@ After implementing version switching tests, total test time was ~5 minutes 33 se
 - Version switch tests: 2m49s (169.59s) (42% faster)
 - **Total: 3m19s (40% faster overall)**
 
+**After Parallel Version Testing:**
+- Parallel tests: ~25s
+- Version switch tests: ~2m27s (with parallel execution within versions)
+- **Total: ~2m44s (52% faster than original)**
+
 ### Key Learnings
 
 1. **Smart Caching:** Checking if operations are needed before executing saves significant time
 2. **Balanced Waits:** Reducing wait times while maintaining reliability requires careful tuning
 3. **Browser Optimization:** Headless mode and disabling unnecessary features significantly speeds up execution
 4. **Parallel Strategy:** Not all tests can run in parallel - some require sequential execution
+5. **Version Grouping:** Running tests in parallel within each version provides significant speedup
+
+## Phase 8: Performance Metrics and Time Limits
+
+### The Goal
+
+Add comprehensive performance tracking and time limit enforcement to detect tests running too long and track performance regressions over time.
+
+### Implementation
+
+**Phase 1: Enhanced pytest-timeout**
+- Configured `timeout_method = thread` for Selenium compatibility
+- Added automatic timeout fixture based on test markers:
+  - `smoke` tests: 10 seconds
+  - `slow` tests: 60 seconds
+  - `version_switch` tests: 120 seconds
+- Updated marker descriptions to include timeout information
+- Tests automatically fail if they exceed their marker-specific timeout
+
+**Phase 2: Performance Tracking Plugin**
+- Integrated performance tracking directly into `conftest.py`
+- Tracks execution times for all tests automatically
+- Maintains baseline file (`.performance_baseline.json`)
+- Detects performance regressions (>50% slower) and warnings (>20% slower)
+- Tracks suite-level execution times
+- Generates performance reports at end of test runs
+- Supports `PYTEST_UPDATE_BASELINE=true` environment variable to update baselines
+
+**Phase 3: Configuration and Integration**
+- Created `performance_config.yaml` for configurable limits and thresholds
+- Added PyYAML dependency for config file parsing
+- Integrated config file loading with fallback to defaults
+- Added Makefile targets:
+  - `make test-update-baseline` - Update performance baseline
+  - `make test-performance-check` - Check for performance regressions
+- Configuration supports:
+  - Per-test and per-suite time limits
+  - Configurable regression/warning thresholds
+  - Baseline management settings
+  - Performance reporting options
+
+### Features
+
+**Time Limit Enforcement:**
+- Global default: 300 seconds (5 minutes)
+- Per-marker timeouts applied automatically
+- Tests fail immediately if timeout exceeded
+- Thread-based timeout method (more reliable for Selenium)
+
+**Performance Tracking:**
+- Automatic time tracking for all tests
+- Baseline comparison on subsequent runs
+- Suite execution time aggregation
+- Performance regression detection (>50% slower)
+- Warning system for tests running 20%+ slower
+- Historical baseline storage in JSON format
+
+**Reporting:**
+- Performance reports generated at end of test runs
+- Shows suite execution times (sorted by duration)
+- Highlights regressions and warnings with details
+- Baseline update confirmation messages
+
+### Usage
+
+**Update Baseline:**
+```bash
+PYTEST_UPDATE_BASELINE=true make test-parallel
+# or
+make test-update-baseline
+```
+
+**Check for Regressions:**
+```bash
+make test-parallel
+# Performance report automatically shown at end
+```
+
+**Configure Limits:**
+Edit `tests/performance_config.yaml` to adjust:
+- Per-test time limits
+- Per-suite time limits
+- Regression/warning thresholds
+- Baseline management settings
+
+### Key Benefits
+
+1. **Early Detection:** Tests that start running too long are immediately identified
+2. **Regression Prevention:** Performance regressions detected before they become problems
+3. **Historical Tracking:** Baseline comparison shows performance trends over time
+4. **Configurable:** All thresholds and limits can be adjusted via config file
+5. **Automatic:** No code changes needed - works with existing tests
+6. **Non-Intrusive:** Performance tracking doesn't affect test execution
+
+### Technical Details
+
+- Performance tracking uses pytest hooks (`pytest_runtest_call`, `pytest_runtest_makereport`, `pytest_sessionfinish`)
+- Baseline file stored in `tests/.performance_baseline.json` (gitignored)
+- Configuration file: `tests/performance_config.yaml` (version controlled)
+- Thread-based timeouts prevent signal issues with Selenium WebDriver
+- Suite times aggregated across all tests in a class/module
 
 ## Key Technical Decisions
 
@@ -493,7 +600,8 @@ After implementing version switching tests, total test time was ~5 minutes 33 se
 8. **Bug Fixes** - Duplicate pytest option, test method call errors
 9. **Version Switching Tests** - Implemented actual version switching during tests
 10. **Parallel Execution** - Added parallel test support with version switch isolation
-11. **Performance Optimization** - 40% faster test execution through various optimizations
+11. **Performance Optimization** - 52% faster test execution through various optimizations
+12. **Performance Metrics** - Added time limits, performance tracking, and regression detection
 
 ## Lessons Learned
 
@@ -515,7 +623,11 @@ After implementing version switching tests, total test time was ~5 minutes 33 se
 
 9. **Performance Optimization is Iterative:** Multiple small optimizations (reduced waits, smart caching, browser tweaks) compound into significant improvements.
 
-10. **Measure Before Optimizing:** Tracking actual performance metrics (before: 5m33s, after: 3m19s) validates optimization efforts.
+10. **Measure Before Optimizing:** Tracking actual performance metrics (before: 5m33s, after: 2m44s) validates optimization efforts.
+
+11. **Performance Tracking is Valuable:** Having baselines and regression detection helps catch performance issues before they become problems.
+
+12. **Configuration Over Code:** Using config files (YAML) for thresholds makes it easy to adjust without code changes.
 
 ## Current State
 
@@ -532,10 +644,12 @@ The project now includes:
 - Page Object Model implementation
 - Automated server management
 - Version switching tests (tests all 7 React versions)
-- Parallel execution support (10 workers)
-- HTML test reports
+- Parallel execution support (6 workers per version)
+- HTML test reports with timestamped folders
 - Screenshot on failure
-- Performance optimized (40% faster)
+- Performance optimized (52% faster)
+- Performance tracking and regression detection
+- Per-marker time limits (smoke: 10s, slow: 60s, version_switch: 120s)
 
 ✅ **Documentation:**
 - Main README with overview
@@ -548,9 +662,11 @@ The project now includes:
 - Automatic dependency management
 - Clear error messages
 - Helpful troubleshooting guides
-- Fast test execution (3m19s for full suite)
-- Parallel test execution (10 workers)
+- Fast test execution (~2m44s for full suite)
+- Parallel test execution (6 workers per version)
 - Version switch test isolation
+- Performance metrics and baseline tracking
+- Configurable time limits and thresholds
 
 ## Future Considerations
 
@@ -586,6 +702,7 @@ This project serves as both a functional tool and a learning resource for securi
 ---
 
 **Project Status:** Active Development  
-**Last Updated:** 2025-12-07  
-**Test Performance:** 3m19s for full suite (28 tests, 7 React versions)  
+**Last Updated:** 2025-12-08  
+**Test Performance:** ~2m44s for full suite (28 tests, 7 React versions)  
+**Performance Tracking:** Enabled with baseline comparison and regression detection  
 **Maintainer:** Development Team
