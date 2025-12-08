@@ -457,6 +457,7 @@ This section tracks known bugs and issues in the project.
 | BUG-1 | Fixed | High | High | Version API Endpoint Not Accessible in Dev Mode | `/api/version` endpoint fails in development mode due to Vite proxy configuration | See details below |
 | BUG-2 | Fixed | High | High | Missing pytest Option Registration After Refactoring | `--update-baseline` option not registered, causing `ValueError: no option named '--update-baseline'` when running tests | See details below |
 | BUG-3 | Open | Medium | Medium | Next.js Version Not Displayed in UI | Next.js version is returned by API but not displayed in the UI. Should match React version display format with vulnerability status indicator | See details below |
+| BUG-4 | Open | Medium | Medium | Next.js Frontend Layout Mismatch | Next.js UI layout does not match React frontend layout. Visual differences in spacing, alignment, or component structure | See details below |
 
 ### BUG-1: Version API Endpoint Not Accessible in Dev Mode
 
@@ -702,6 +703,76 @@ Add Next.js version display to `frameworks/nextjs/app/page.tsx`:
 - **User Experience:** Users cannot see which Next.js version is running
 - **Security Testing:** Makes it harder to verify which Next.js version is active for vulnerability testing
 - **Consistency:** Inconsistent with React version display format
+
+### BUG-4: Next.js Frontend Layout Mismatch
+
+**Status:** Open  
+**Priority:** Medium  
+**Severity:** Medium  
+**Reported:** 2025-12-08
+
+**Description:**
+The Next.js frontend UI layout does not visually match the React (Vite) frontend layout. There are visual differences in spacing, alignment, component structure, or overall appearance that make the two frameworks look different to users, even though they should appear identical except for framework-specific version information.
+
+**Expected Behavior:**
+- Next.js UI should look visually identical to React UI
+- Same spacing, alignment, colors, fonts, and component structure
+- Only difference should be the framework version information displayed (Next.js version in Next.js mode, no Next.js version in React mode)
+- All other visual elements (button, message, version card) should be identical
+
+**Actual Behavior:**
+- Next.js UI has different visual appearance compared to React UI
+- Layout differences may include: spacing, alignment, component positioning, or styling inconsistencies
+- Users can visually distinguish between the two frameworks beyond just version information
+
+**Screenshots:**
+- **Incorrect Layout (Next.js):** ![Bug-4: Next.js layout mismatch](bug-4.png)
+- **Correct Layout (React):** ![Bug-4: Correct React layout](bug-4-correct.png)
+
+**Steps to Reproduce:**
+1. Switch to React mode:
+   ```bash
+   make use-vite
+   make start
+   ```
+2. Open browser to `http://localhost:5173` and capture screenshot
+3. Switch to Next.js mode:
+   ```bash
+   make use-nextjs
+   make start
+   ```
+4. Open browser to `http://localhost:3000` and capture screenshot
+5. Compare the two screenshots - visual differences should be apparent
+
+**Root Cause:**
+The Next.js component structure or CSS may not exactly match the React component structure, causing visual layout differences. This could be due to:
+- Different CSS class names or structure
+- Missing or different CSS rules
+- Component rendering differences between React and Next.js
+- Different default styles applied by Next.js
+
+**Environment:**
+- Framework: Both Vite+React and Next.js modes
+- Browser: Any browser
+- OS: Any OS
+
+**Files Affected:**
+- `frameworks/nextjs/app/page.tsx` - Next.js page component structure
+- `frameworks/nextjs/app/globals.css` - Next.js global styles
+- `frameworks/vite-react/src/App.jsx` - React component structure (reference)
+- `frameworks/vite-react/src/App.css` - React styles (reference)
+
+**Solution:**
+1. Compare React and Next.js component structures side-by-side
+2. Ensure CSS files are identical (except for framework-specific comments)
+3. Verify component JSX structure matches exactly
+4. Test visual appearance in both frameworks
+5. Add automated tests to ensure layouts stay in sync
+
+**Impact:**
+- **User Experience:** Inconsistent UI between frameworks may confuse users
+- **Testing:** Makes it harder to verify that both frameworks work correctly
+- **Maintenance:** Requires keeping two separate implementations in sync
 
 ---
 
