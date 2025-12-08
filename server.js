@@ -12,6 +12,28 @@ const PORT = process.env.PORT || 3000;
 // Parse JSON bodies
 app.use(express.json());
 
+// Read package.json for version info
+const packageJson = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf-8'));
+
+// Version info endpoint
+app.get('/api/version', (req, res) => {
+  const reactVersion = packageJson.dependencies.react || 'unknown';
+  const reactDomVersion = packageJson.dependencies['react-dom'] || 'unknown';
+  const nodeVersion = process.version;
+  
+  // Determine if vulnerable
+  const vulnerableVersions = ['19.0', '19.1.0', '19.1.1', '19.2.0'];
+  const isVulnerable = vulnerableVersions.includes(reactVersion);
+  
+  res.json({
+    react: reactVersion,
+    reactDom: reactDomVersion,
+    node: nodeVersion,
+    vulnerable: isVulnerable,
+    status: isVulnerable ? 'VULNERABLE' : 'FIXED'
+  });
+});
+
 // API endpoint
 app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello World!' });

@@ -18,11 +18,107 @@ body {
   justify-content: center;
   align-items: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem 1rem;
 }
 
 .container {
   text-align: center;
   padding: 2rem;
+  max-width: 800px;
+  width: 100%;
+}
+
+.version-info {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.version-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.version-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.version-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 6px;
+}
+
+.version-label {
+  font-weight: 600;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.version-value {
+  font-weight: bold;
+  font-size: 1rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  color: #1a1a1a;
+}
+
+.version-value.vulnerable {
+  color: #dc2626;
+  animation: pulse 2s infinite;
+}
+
+.version-value.fixed {
+  color: #16a34a;
+}
+
+.version-status {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 2px solid rgba(0, 0, 0, 0.1);
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.status-vulnerable {
+  color: #dc2626;
+  font-size: 1.2rem;
+}
+
+.status-fixed {
+  color: #16a34a;
+  font-size: 1.2rem;
+}
+
+.version-loading,
+.version-error {
+  text-align: center;
+  padding: 1rem;
+  color: #666;
+  font-style: italic;
+}
+
+.version-error {
+  color: #dc2626;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .big-red-button {

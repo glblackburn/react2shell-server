@@ -233,6 +233,83 @@ If port 3000 or 5173 is already in use, you can:
 - Change the port in `server.js` (PORT environment variable)
 - Change the port in `vite.config.js` (server.port)
 
+## Defect Tracking
+
+This section tracks known bugs and issues in the project.
+
+| ID | Status | Priority | Severity | Title | Description |
+|----|--------|----------|----------|-------|-------------|
+| BUG-1 | Open | High | High | Version API Endpoint Not Accessible in Dev Mode | `/api/version` endpoint fails in development mode due to Vite proxy configuration | See details below |
+
+### BUG-1: Version API Endpoint Not Accessible in Dev Mode
+
+**Status:** Open  
+**Priority:** High  
+**Severity:** High  
+**Reported:** 2025-01-XX  
+**Screenshot:** ![Bug-1 Screenshot](bug-1.png)
+
+**Description:**
+The version information display shows "Unable to load version information" error message in red italicized text. The `/api/version` endpoint is not accessible when running in development mode (Vite dev server). The error occurs because the Vite proxy configuration in `vite.config.js` only proxies `/api` requests, but the frontend is trying to fetch `/api/version` which may not be properly routed to the Express backend server running on port 3000.
+
+**Visual Evidence:**
+The screenshot shows:
+- A white card displaying "Security Testing Environment" title
+- Red italicized error text: "Unable to load version information"
+- The red button "press me to say hello" is still functional below the error
+
+**Steps to Reproduce:**
+1. Start the development servers:
+   ```bash
+   npm run dev      # Terminal 1 - Vite dev server on port 5173
+   npm run server   # Terminal 2 - Express server on port 3000
+   ```
+2. Open browser to `http://localhost:5173`
+3. Observe the version information card at the top of the page
+4. Error message "Unable to load version information" is displayed
+
+**Expected Behavior:**
+- Version information should load successfully
+- Display Frontend React version, React-DOM version, Backend Node.js version
+- Show vulnerability status (VULNERABLE/FIXED) with appropriate indicators
+
+**Actual Behavior:**
+- Error message "Unable to load version information" displayed in red italicized text
+- Version details are not shown
+- The `/api/version` endpoint request fails
+
+**Root Cause:**
+The Vite dev server proxy configuration may not be correctly routing `/api/version` requests to the Express backend, or the Express server may not be running when the frontend tries to fetch version information.
+
+**Environment:**
+- React Version: 19.1.0 (or any version)
+- Node.js Version: [To be determined]
+- Browser: [To be determined]
+- OS: macOS (based on workspace path)
+- Development Mode: Vite dev server (port 5173) + Express server (port 3000)
+
+**Files Affected:**
+- `src/App.jsx` - Frontend code that fetches `/api/version`
+- `server.js` - Backend `/api/version` endpoint definition
+- `vite.config.js` - Vite proxy configuration for API routes
+
+**Potential Solutions:**
+1. Verify Vite proxy configuration correctly routes `/api/*` to `http://localhost:3000`
+2. Ensure Express server is running before accessing the frontend
+3. Add error handling and retry logic in the frontend
+4. Check CORS configuration if needed
+5. Verify the `/api/version` endpoint is defined before the static file serving middleware
+
+**Additional Notes:**
+- The `/api/hello` endpoint may work correctly (needs verification)
+- This issue likely only affects development mode; production builds may work correctly
+- The error suggests a network/CORS issue or the backend server not being accessible
+
+**Screenshot:**
+![Bug-1: Version information error](bug-1.png)
+
+---
+
 ## License
 
 ISC
