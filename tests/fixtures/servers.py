@@ -15,13 +15,17 @@ from utils.server_constants import FRONTEND_URL, API_ENDPOINT
 
 @pytest.fixture(scope="session")
 def start_servers():
-    """Start both frontend and backend servers before tests."""
-    print("\n🚀 Starting servers...")
+    """Start servers before tests (framework-aware)."""
+    from utils.framework_detector import get_framework_mode
+    
+    framework = get_framework_mode()
+    print(f"\n🚀 Starting servers (Framework: {framework})...")
     
     # Check if servers are already running
     try:
         requests.get(FRONTEND_URL, timeout=2)
-        requests.get(API_ENDPOINT, timeout=2)
+        if framework == "vite":
+            requests.get(API_ENDPOINT, timeout=2)
         print("✓ Servers already running")
         yield
         return

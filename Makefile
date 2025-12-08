@@ -20,12 +20,19 @@ VERSION_19.0.1_STATUS := FIXED
 VERSION_19.1.2_STATUS := FIXED
 VERSION_19.2.1_STATUS := FIXED
 
-# Generic function to switch React version
+# Framework mode detection
+FRAMEWORK_MODE := $(shell cat .framework-mode 2>/dev/null || echo "vite")
+
+# Generic function to switch React version (works for both frameworks)
 # Usage: $(call switch_react_version,version)
 define switch_react_version
 	@echo "Switching to React $(1) ($(VERSION_$(1)_STATUS) - for security testing)..."
-	@node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.react='$(1)';pkg.dependencies['react-dom']='$(1)';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));"
-	@npm install
+	@FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
+	if [ "$$FRAMEWORK" = "nextjs" ]; then \
+		cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.react='$(1)';pkg.dependencies['react-dom']='$(1)';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install; \
+	else \
+		cd frameworks/vite-react && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.react='$(1)';pkg.dependencies['react-dom']='$(1)';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install; \
+	fi
 	@echo "✓ Switched to React $(1) ($(VERSION_$(1)_STATUS))"
 endef
 
@@ -64,6 +71,11 @@ help:
 	@echo "  make install         - Install dependencies for current version"
 	@echo "  make clean           - Remove node_modules and package-lock.json"
 	@echo ""
+	@echo "Framework Switching:"
+	@echo "  make use-vite        - Switch to Vite + React mode (default)"
+	@echo "  make use-nextjs     - Switch to Next.js mode"
+	@echo "  make current-framework - Show current framework mode"
+	@echo ""
 	@echo "Testing (Python Selenium):"
 	@echo "  make test-setup      - Set up Python virtual environment and install test dependencies"
 	@echo "  make test            - Run all tests (starts servers if needed)"
@@ -98,9 +110,27 @@ help:
 vulnerable: react-19.0
 	@echo "⚠️  WARNING: This is a VULNERABLE version for security testing only!"
 
+# Framework switching
+use-vite:
+	@echo "vite" > .framework-mode
+	@echo "✓ Switched to Vite + React mode"
+
+use-nextjs:
+	@echo "nextjs" > .framework-mode
+	@echo "✓ Switched to Next.js mode"
+
+current-framework:
+	@FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
+	echo "Current framework: $$FRAMEWORK"
+
 # Show current React version
 current-version:
-	@node -e "const pkg=require('./package.json');console.log('React:',pkg.dependencies.react||'not set');console.log('React-DOM:',pkg.dependencies['react-dom']||'not set');"
+	@FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
+	if [ "$$FRAMEWORK" = "nextjs" ]; then \
+		cd frameworks/nextjs && node -e "const pkg=require('./package.json');console.log('Framework: Next.js');console.log('React:',pkg.dependencies.react||'not set');console.log('React-DOM:',pkg.dependencies['react-dom']||'not set');console.log('Next.js:',pkg.dependencies.next||'not set');"; \
+	else \
+		cd frameworks/vite-react && node -e "const pkg=require('./package.json');console.log('Framework: Vite + React');console.log('React:',pkg.dependencies.react||'not set');console.log('React-DOM:',pkg.dependencies['react-dom']||'not set');"; \
+	fi
 
 # Install dependencies
 install:
@@ -127,79 +157,131 @@ $(PID_DIR):
 $(LOG_DIR):
 	@mkdir -p $(LOG_DIR)
 
-# Start both servers
+# Start servers (framework-aware)
 start: $(PID_DIR) $(LOG_DIR)
-	@echo "Starting development servers..."
-	@if [ -f $(VITE_PID) ] && kill -0 `cat $(VITE_PID)` 2>/dev/null; then \
-		echo "⚠️  Vite dev server is already running (PID: $$(cat $(VITE_PID)))"; \
-	else \
-		nohup npm run dev > $(VITE_LOG) 2>&1 & \
-		echo $$! > $(VITE_PID); \
-		echo "✓ Started Vite dev server (PID: $$(cat $(VITE_PID)))"; \
-	fi
-	@if [ -f $(SERVER_PID) ] && kill -0 `cat $(SERVER_PID)` 2>/dev/null; then \
-		echo "⚠️  Express server is already running (PID: $$(cat $(SERVER_PID)))"; \
-	else \
-		nohup npm run server > $(SERVER_LOG) 2>&1 & \
-		echo $$! > $(SERVER_PID); \
-		echo "✓ Started Express server (PID: $$(cat $(SERVER_PID)))"; \
-	fi
-	@echo ""
-	@echo "=========================================="
-	@echo "🚀 Servers are starting up..."
-	@echo "=========================================="
-	@echo ""
-	@echo "Frontend (Vite):  http://localhost:5173"
-	@echo "Backend (Express): http://localhost:3000"
-	@echo "API Endpoint:    http://localhost:3000/api/hello"
-	@echo "Version API:     http://localhost:3000/api/version"
-	@echo ""
-	@echo "Log files:"
-	@echo "  Frontend: $(VITE_LOG)"
-	@echo "  Backend:  $(SERVER_LOG)"
-	@echo ""
-	@echo "Check status:  make status"
-	@echo "Stop servers:  make stop"
-	@echo ""
-	@sleep 2
-	@echo "Waiting for servers to be ready..."
-	@for i in 1 2 3 4 5; do \
-		if lsof -ti:5173 >/dev/null 2>&1 && lsof -ti:3000 >/dev/null 2>&1; then \
-			echo "✓ Both servers are ready!"; \
-			break; \
+	@FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
+	echo "Starting servers (Framework: $$FRAMEWORK)..."; \
+	if [ "$$FRAMEWORK" = "nextjs" ]; then \
+		if [ -f $(SERVER_PID) ] && kill -0 `cat $(SERVER_PID)` 2>/dev/null; then \
+			echo "⚠️  Next.js server is already running (PID: $$(cat $(SERVER_PID)))"; \
+		else \
+			cd frameworks/nextjs && nohup npm run dev > ../../$(SERVER_LOG) 2>&1 & \
+			PID=$$!; \
+			echo $$PID > ../../$(SERVER_PID); \
+			echo "✓ Started Next.js server (PID: $$PID)"; \
 		fi; \
-		sleep 1; \
-	done
+		echo ""; \
+		echo "=========================================="; \
+		echo "🚀 Next.js server is starting up..."; \
+		echo "=========================================="; \
+		echo ""; \
+		echo "Application: http://localhost:3000"; \
+		echo "API Endpoint: http://localhost:3000/api/hello"; \
+		echo "Version API:  http://localhost:3000/api/version"; \
+		echo ""; \
+		echo "Log file: $(SERVER_LOG)"; \
+		echo ""; \
+		echo "Check status:  make status"; \
+		echo "Stop server:   make stop"; \
+		echo ""; \
+		sleep 2; \
+		echo "Waiting for server to be ready..."; \
+		for i in 1 2 3 4 5; do \
+			if lsof -ti:3000 >/dev/null 2>&1; then \
+				echo "✓ Next.js server is ready!"; \
+				break; \
+			fi; \
+			sleep 1; \
+		done; \
+	else \
+		if [ -f $(VITE_PID) ] && kill -0 `cat $(VITE_PID)` 2>/dev/null; then \
+			echo "⚠️  Vite dev server is already running (PID: $$(cat $(VITE_PID)))"; \
+		else \
+			cd frameworks/vite-react && nohup npm run dev > ../../$(VITE_LOG) 2>&1 & \
+			PID=$$!; \
+			echo $$PID > ../../$(VITE_PID); \
+			echo "✓ Started Vite dev server (PID: $$PID)"; \
+		fi; \
+		if [ -f $(SERVER_PID) ] && kill -0 `cat $(SERVER_PID)` 2>/dev/null; then \
+			echo "⚠️  Express server is already running (PID: $$(cat $(SERVER_PID)))"; \
+		else \
+			nohup node server.js > $(SERVER_LOG) 2>&1 & \
+			echo $$! > $(SERVER_PID); \
+			echo "✓ Started Express server (PID: $$(cat $(SERVER_PID)))"; \
+		fi; \
+		echo ""; \
+		echo "=========================================="; \
+		echo "🚀 Servers are starting up..."; \
+		echo "=========================================="; \
+		echo ""; \
+		echo "Frontend (Vite):  http://localhost:5173"; \
+		echo "Backend (Express): http://localhost:3000"; \
+		echo "API Endpoint:    http://localhost:3000/api/hello"; \
+		echo "Version API:     http://localhost:3000/api/version"; \
+		echo ""; \
+		echo "Log files:"; \
+		echo "  Frontend: $(VITE_LOG)"; \
+		echo "  Backend:  $(SERVER_LOG)"; \
+		echo ""; \
+		echo "Check status:  make status"; \
+		echo "Stop servers:  make stop"; \
+		echo ""; \
+		sleep 2; \
+		echo "Waiting for servers to be ready..."; \
+		for i in 1 2 3 4 5; do \
+			if lsof -ti:5173 >/dev/null 2>&1 && lsof -ti:3000 >/dev/null 2>&1; then \
+				echo "✓ Both servers are ready!"; \
+				break; \
+			fi; \
+			sleep 1; \
+		done; \
+	fi
 
-# Stop both servers
+# Stop servers (framework-aware)
 stop:
-	@echo "Stopping servers..."
-	@if [ -f $(VITE_PID) ]; then \
-		PID=$$(cat $(VITE_PID) 2>/dev/null); \
-		if kill -0 $$PID 2>/dev/null; then \
-			kill $$PID 2>/dev/null && echo "✓ Stopped Vite dev server (PID: $$PID)"; \
+	@FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
+	echo "Stopping servers (Framework: $$FRAMEWORK)..."; \
+	if [ "$$FRAMEWORK" = "nextjs" ]; then \
+		if [ -f $(SERVER_PID) ]; then \
+			PID=$$(cat $(SERVER_PID) 2>/dev/null); \
+			if kill -0 $$PID 2>/dev/null; then \
+				kill $$PID 2>/dev/null && echo "✓ Stopped Next.js server (PID: $$PID)"; \
+			else \
+				echo "⚠️  Next.js server was not running"; \
+			fi; \
+			rm -f $(SERVER_PID); \
 		else \
-			echo "⚠️  Vite dev server was not running"; \
+			echo "⚠️  No Next.js PID file found"; \
 		fi; \
-		rm -f $(VITE_PID); \
+		lsof -ti:3000 2>/dev/null | xargs kill -9 2>/dev/null && echo "✓ Killed process on port 3000" || true; \
+		echo "✓ Server stopped"; \
 	else \
-		echo "⚠️  No Vite PID file found"; \
-	fi
-	@if [ -f $(SERVER_PID) ]; then \
-		PID=$$(cat $(SERVER_PID) 2>/dev/null); \
-		if kill -0 $$PID 2>/dev/null; then \
-			kill $$PID 2>/dev/null && echo "✓ Stopped Express server (PID: $$PID)"; \
+		if [ -f $(VITE_PID) ]; then \
+			PID=$$(cat $(VITE_PID) 2>/dev/null); \
+			if kill -0 $$PID 2>/dev/null; then \
+				kill $$PID 2>/dev/null && echo "✓ Stopped Vite dev server (PID: $$PID)"; \
+			else \
+				echo "⚠️  Vite dev server was not running"; \
+			fi; \
+			rm -f $(VITE_PID); \
 		else \
-			echo "⚠️  Express server was not running"; \
+			echo "⚠️  No Vite PID file found"; \
 		fi; \
-		rm -f $(SERVER_PID); \
-	else \
-		echo "⚠️  No Express PID file found"; \
+		if [ -f $(SERVER_PID) ]; then \
+			PID=$$(cat $(SERVER_PID) 2>/dev/null); \
+			if kill -0 $$PID 2>/dev/null; then \
+				kill $$PID 2>/dev/null && echo "✓ Stopped Express server (PID: $$PID)"; \
+			else \
+				echo "⚠️  Express server was not running"; \
+			fi; \
+			rm -f $(SERVER_PID); \
+		else \
+			echo "⚠️  No Express PID file found"; \
+		fi; \
+		lsof -ti:5173 2>/dev/null | xargs kill -9 2>/dev/null && echo "✓ Killed process on port 5173" || true; \
+		lsof -ti:3000 2>/dev/null | xargs kill -9 2>/dev/null && echo "✓ Killed process on port 3000" || true; \
+		echo "✓ Servers stopped"; \
 	fi
-	@# Also try to kill by port in case PID file is missing
-	@lsof -ti:5173 2>/dev/null | xargs kill -9 2>/dev/null && echo "✓ Killed process on port 5173" || true
-	@lsof -ti:3000 2>/dev/null | xargs kill -9 2>/dev/null && echo "✓ Killed process on port 3000" || true
-	@echo "✓ Servers stopped"
 
 # Check server status
 status:
@@ -310,11 +392,20 @@ test-setup:
 test: check-venv
 	@echo "Running all Selenium tests..."
 	@echo ""
-	@# Ensure servers are running
-	@if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
-		echo "⚠️  Servers not running. Starting servers..."; \
-		$(MAKE) start > /dev/null 2>&1; \
-		sleep 3; \
+	@# Ensure servers are running (framework-aware)
+	@FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
+	if [ "$$FRAMEWORK" = "nextjs" ]; then \
+		if ! lsof -ti:3000 >/dev/null 2>&1; then \
+			echo "⚠️  Server not running. Starting Next.js server..."; \
+			$(MAKE) start > /dev/null 2>&1; \
+			sleep 5; \
+		fi; \
+	else \
+		if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
+			echo "⚠️  Servers not running. Starting servers..."; \
+			$(MAKE) start > /dev/null 2>&1; \
+			sleep 3; \
+		fi; \
 	fi
 	@$(PYTEST) $(TEST_DIR)/ -v
 	@echo ""
@@ -341,10 +432,19 @@ test-parallel: check-venv
 	echo ""; \
 	echo "Running tests in parallel (10 workers)..."; \
 	echo "⚠️  Note: Version switch tests run in parallel within each version"; \
-	if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
-		echo "⚠️  Servers not running. Starting servers..."; \
-		$(MAKE) start > /dev/null 2>&1; \
-		sleep 3; \
+	FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
+	if [ "$$FRAMEWORK" = "nextjs" ]; then \
+		if ! lsof -ti:3000 >/dev/null 2>&1; then \
+			echo "⚠️  Server not running. Starting Next.js server..."; \
+			$(MAKE) start > /dev/null 2>&1; \
+			sleep 5; \
+		fi; \
+	else \
+		if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
+			echo "⚠️  Servers not running. Starting servers..."; \
+			$(MAKE) start > /dev/null 2>&1; \
+			sleep 3; \
+		fi; \
 	fi; \
 	echo "Running non-version-switch tests in parallel..."; \
 	PYTEST_REPORT_DIR="$$REPORT_DIR_TIMESTAMPED" PYTEST_SAVE_HISTORY=true $(PYTEST) $(TEST_DIR)/ -n 10 -v -m "not version_switch" \

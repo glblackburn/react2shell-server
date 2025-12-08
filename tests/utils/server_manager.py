@@ -39,13 +39,23 @@ def wait_for_server(url, max_attempts=30, delay=1):
 
 
 def start_servers():
-    """Start both frontend and backend servers using Makefile."""
-    logger.info("Starting servers...")
+    """Start servers using Makefile (framework-aware)."""
+    from .framework_detector import get_framework_mode
+    
+    framework = get_framework_mode()
+    logger.info(f"Starting servers (Framework: {framework})...")
     
     # Check if servers are already running
-    if check_server_running(FRONTEND_URL, timeout=0.5) and check_server_running(API_ENDPOINT, timeout=0.5):
-        logger.info("Servers already running")
-        return True
+    if framework == "nextjs":
+        # Next.js: only check port 3000
+        if check_server_running(FRONTEND_URL, timeout=0.5):
+            logger.info("Next.js server already running")
+            return True
+    else:
+        # Vite: check both ports
+        if check_server_running(FRONTEND_URL, timeout=0.5) and check_server_running(API_ENDPOINT, timeout=0.5):
+            logger.info("Servers already running")
+            return True
     
     try:
         # Start servers using Makefile (suppress output for speed)
@@ -60,15 +70,26 @@ def start_servers():
         
         # Wait for servers to be ready with shorter timeouts
         logger.info("Waiting for servers to be ready...")
-        frontend_ready = wait_for_server(FRONTEND_URL, max_attempts=20, delay=0.5)
-        backend_ready = wait_for_server(API_ENDPOINT, max_attempts=20, delay=0.5)
-        
-        if frontend_ready and backend_ready:
-            logger.info("Both servers are ready!")
-            return True
+        if framework == "nextjs":
+            # Next.js: only wait for port 3000
+            server_ready = wait_for_server(FRONTEND_URL, max_attempts=20, delay=0.5)
+            if server_ready:
+                logger.info("Next.js server is ready!")
+                return True
+            else:
+                logger.error("Next.js server failed to start or become ready")
+                return False
         else:
-            logger.error("Servers failed to start or become ready")
-            return False
+            # Vite: wait for both ports
+            frontend_ready = wait_for_server(FRONTEND_URL, max_attempts=20, delay=0.5)
+            backend_ready = wait_for_server(API_ENDPOINT, max_attempts=20, delay=0.5)
+            
+            if frontend_ready and backend_ready:
+                logger.info("Both servers are ready!")
+                return True
+            else:
+                logger.error("Servers failed to start or become ready")
+                return False
             
     except subprocess.TimeoutExpired:
         logger.error("Server start timed out")
@@ -110,9 +131,17 @@ def get_server_status():
 
 
 def get_current_react_version():
-    """Get current React version from package.json."""
+    """Get current React version from package.json (framework-aware)."""
+    from .framework_detector import get_framework_mode
+    
+    framework = get_framework_mode()
     try:
-        with open("package.json", "r") as f:
+        if framework == "nextjs":
+            package_path = "frameworks/nextjs/package.json"
+        else:
+            package_path = "frameworks/vite-react/package.json"
+        
+        with open(package_path, "r") as f:
             package = json.load(f)
             return package.get("dependencies", {}).get("react", "unknown")
     except Exception:
@@ -120,9 +149,17 @@ def get_current_react_version():
 
 
 def check_version_installed(version):
-    """Check if React version is already installed by checking node_modules."""
+    """Check if React version is already installed by checking node_modules (framework-aware)."""
+    from .framework_detector import get_framework_mode
+    
+    framework = get_framework_mode()
+    if framework == "nextjs":
+        node_modules_path = "frameworks/nextjs/node_modules"
+    else:
+        node_modules_path = "frameworks/vite-react/node_modules"
+    
     try:
-        react_path = os.path.join("node_modules", "react", "package.json")
+        react_path = os.path.join(node_modules_path, "react", "package.json")
         if os.path.exists(react_path):
             with open(react_path, "r") as f:
                 react_pkg = json.load(f)
@@ -135,48 +172,50 @@ def check_version_installed(version):
 
 
 def switch_react_version(version):
-    """Switch React version using Makefile, skipping npm install if already installed."""
-    import json
+    """Switch React version using Makefile (framework-aware)."""
+    from .framework_detector import get_framework_mode
+    
+    framework = get_framework_mode()
+    logger.info(f"Switching to React {version} (Framework: {framework})...")
     
     # Check current version
     current_version = get_current_react_version()
     
     # If already on this version and installed, skip switch
-    if current_version == version and check_version_installed(version):
-        logger.info(f"React {version} already installed, skipping switch")
-        return True
+    if framework == "nextjs":
+        package_path = "frameworks/nextjs/package.json"
+        node_modules_path = "frameworks/nextjs/node_modules"
+    else:
+        package_path = "frameworks/vite-react/package.json"
+        node_modules_path = "frameworks/vite-react/node_modules"
     
-    logger.info(f"Switching to React {version}...")
+    # Check if version is already installed
+    react_path = os.path.join(node_modules_path, "react", "package.json")
+    if os.path.exists(react_path):
+        try:
+            with open(react_path, "r") as f:
+                react_pkg = json.load(f)
+                installed_version = react_pkg.get("version", "")
+                if installed_version == version or installed_version.startswith(f"{version}."):
+                    if current_version == version:
+                        logger.info(f"React {version} already installed, skipping switch")
+                        return True
+        except Exception:
+            pass
     
+    # Use Makefile to switch version (it handles framework detection)
     try:
-        # Update package.json only if version differs
-        if current_version != version:
-            with open("package.json", "r") as f:
-                package = json.load(f)
-            package["dependencies"]["react"] = version
-            package["dependencies"]["react-dom"] = version
-            with open("package.json", "w") as f:
-                json.dump(package, f, indent=2)
-            logger.info(f"Updated package.json to React {version}")
-        
-        # Only run npm install if version not already installed
-        if not check_version_installed(version):
-            logger.info(f"Installing React {version}...")
-            result = subprocess.run(
-                ["npm", "install"],
-                check=True,
-                capture_output=True,
-                text=True,
-                timeout=120  # 2 minute timeout
-            )
-            logger.info(f"Installed React {version}")
-        else:
-            logger.info(f"React {version} already installed, skipping npm install")
-        
+        result = subprocess.run(
+            ["make", f"react-{version}"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=120  # 2 minute timeout
+        )
         logger.info(f"Switched to React {version}")
         return True
     except subprocess.TimeoutExpired:
-        logger.error(f"npm install timed out for React {version}")
+        logger.error(f"Version switch timed out for React {version}")
         return False
     except subprocess.CalledProcessError as e:
         logger.error(f"Error switching React version: {e}")

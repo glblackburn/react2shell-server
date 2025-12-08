@@ -27,18 +27,27 @@ def ensure_history_dir():
     PERFORMANCE_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def save_run_history(current_run: Dict, suite_times: Dict, timestamp: Optional[str] = None):
+def save_run_history(current_run: Dict, suite_times: Dict, timestamp: Optional[str] = None, framework_mode: Optional[str] = None):
     """Save performance data from a test run to history.
     
     Args:
         current_run: Dictionary of test_id -> list of run data
         suite_times: Dictionary of suite_name -> total_time
         timestamp: Optional timestamp string (ISO format). If None, uses current time.
+        framework_mode: Optional framework mode ('vite' or 'nextjs')
     """
     ensure_history_dir()
     
     if timestamp is None:
         timestamp = datetime.now().isoformat()
+    
+    # Detect framework mode if not provided
+    if framework_mode is None:
+        try:
+            from utils.framework_detector import get_framework_mode
+            framework_mode = get_framework_mode()
+        except Exception:
+            framework_mode = "unknown"
     
     history_file = PERFORMANCE_HISTORY_DIR / f"run_{timestamp.replace(':', '-').replace('.', '-')}.json"
     
@@ -66,6 +75,7 @@ def save_run_history(current_run: Dict, suite_times: Dict, timestamp: Optional[s
     
     history_data = {
         'timestamp': timestamp,
+        'framework_mode': framework_mode,
         'tests': test_data,
         'suites': dict(suite_times),
         'total_tests': len(test_data),

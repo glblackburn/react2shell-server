@@ -1,4 +1,7 @@
-node_modules/
+node_modules
+.next
+frameworks/*/node_modules
+frameworks/*/.next/
 dist/
 package-lock.json
 .DS_Store

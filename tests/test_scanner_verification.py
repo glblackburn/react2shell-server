@@ -23,8 +23,8 @@ sys.path.insert(0, str(SCANNER_PATH))
 
 try:
     from scanner import check_vulnerability
-except ImportError:
-    pytest.skip("Failed to import scanner module", allow_module_level=True)
+except (ImportError, SystemExit):
+    pytest.skip("Failed to import scanner module (missing dependencies)", allow_module_level=True)
 
 from tests.utils.version_constants import VULNERABLE_VERSIONS, FIXED_VERSIONS, ALL_VERSIONS
 from tests.utils.server_constants import FRONTEND_URL

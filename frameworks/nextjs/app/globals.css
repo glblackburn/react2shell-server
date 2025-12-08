@@ -1,0 +1,175 @@
+/* Global styles for Next.js app */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.app {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.container {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+}
+
+.version-info {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+  border: 2px solid #e9ecef;
+}
+
+.version-title {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 1.5em;
+}
+
+.version-loading {
+  color: #666;
+  font-style: italic;
+}
+
+.version-details {
+  text-align: left;
+}
+
+.version-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.version-item:last-child {
+  border-bottom: none;
+}
+
+.version-label {
+  font-weight: 600;
+  color: #555;
+}
+
+.version-value {
+  color: #333;
+}
+
+.version-value.vulnerable {
+  color: #dc3545;
+  font-weight: bold;
+  animation: pulse 2s infinite;
+}
+
+.version-value.fixed {
+  color: #28a745;
+  font-weight: bold;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.version-status {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 2px solid #e9ecef;
+  text-align: center;
+  font-size: 1.1em;
+}
+
+.status-vulnerable {
+  color: #dc3545;
+}
+
+.status-fixed {
+  color: #28a745;
+}
+
+.version-error {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.big-red-button {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  color: white;
+  border: none;
+  padding: 20px 40px;
+  font-size: 1.5em;
+  font-weight: bold;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+  text-transform: lowercase;
+  min-width: 300px;
+}
+
+.big-red-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(255, 107, 107, 0.6);
+}
+
+.big-red-button:active:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 20px rgba(255, 107, 107, 0.4);
+}
+
+.big-red-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.message {
+  margin-top: 30px;
+  padding: 20px;
+  background: #e7f3ff;
+  border-radius: 10px;
+  color: #0066cc;
+  font-size: 1.2em;
+  font-weight: bold;
+  animation: slideIn 0.5s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

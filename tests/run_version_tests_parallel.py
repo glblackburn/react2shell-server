@@ -91,28 +91,50 @@ def run_tests_for_version(version: str, workers: int = 10, test_dir: str = "test
     os.chdir(project_root)
     try:
         current = get_current_react_version()
+        already_installed = check_version_installed(version)
     finally:
         os.chdir(original_cwd)
-    already_installed = check_version_installed(version)
+    
+    # Framework-aware server checking
+    from utils.framework_detector import get_framework_mode
+    framework = get_framework_mode()
     
     if current == version and already_installed:
         # Just ensure servers are running
-        if not check_server_running(FRONTEND_URL) or not check_server_running(API_ENDPOINT):
-            original_cwd = os.getcwd()
-            os.chdir(project_root)
-            try:
-                start_servers()
-                wait_for_server(FRONTEND_URL, max_attempts=8, delay=0.3)
-                wait_for_server(API_ENDPOINT, max_attempts=8, delay=0.3)
-            finally:
-                os.chdir(original_cwd)
+        if framework == "nextjs":
+            # Next.js: only check port 3000
+            if not check_server_running(FRONTEND_URL):
+                original_cwd = os.getcwd()
+                os.chdir(project_root)
+                try:
+                    start_servers()
+                    wait_for_server(FRONTEND_URL, max_attempts=8, delay=0.3)
+                finally:
+                    os.chdir(original_cwd)
+        else:
+            # Vite: check both ports
+            if not check_server_running(FRONTEND_URL) or not check_server_running(API_ENDPOINT):
+                original_cwd = os.getcwd()
+                os.chdir(project_root)
+                try:
+                    start_servers()
+                    wait_for_server(FRONTEND_URL, max_attempts=8, delay=0.3)
+                    wait_for_server(API_ENDPOINT, max_attempts=8, delay=0.3)
+                finally:
+                    os.chdir(original_cwd)
     else:
         original_cwd = os.getcwd()
         os.chdir(project_root)
         try:
-            # Stop servers before switching (only if needed)
-            if check_server_running(FRONTEND_URL) or check_server_running(API_ENDPOINT):
-                stop_servers()
+            # Stop servers before switching (framework-aware)
+            if framework == "nextjs":
+                # Next.js: only check port 3000
+                if check_server_running(FRONTEND_URL):
+                    stop_servers()
+            else:
+                # Vite: check both ports
+                if check_server_running(FRONTEND_URL) or check_server_running(API_ENDPOINT):
+                    stop_servers()
             # Switch version (this skips npm install if already installed)
             if not switch_react_version(version):
                 print(f"❌ Failed")

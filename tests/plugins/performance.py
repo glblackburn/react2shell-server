@@ -284,15 +284,23 @@ def pytest_sessionfinish(session, exitstatus):
     # Save to history (always save, even if some tests failed)
     if tracker.current_run:
         try:
+            # Get framework mode for history
+            try:
+                from utils.framework_detector import get_framework_mode
+                framework_mode = get_framework_mode()
+            except Exception:
+                framework_mode = "unknown"
+            
             timestamp = datetime.now().isoformat()
             history_file = save_run_history(
                 tracker.current_run,
                 tracker.suite_times,
-                timestamp=timestamp
+                timestamp=timestamp,
+                framework_mode=framework_mode
             )
             # Only print if explicitly requested to reduce noise
             if os.environ.get('PYTEST_SAVE_HISTORY') == 'true':
-                print(f"\n📊 Performance history saved: {history_file}")
+                print(f"\n📊 Performance history saved: {history_file} (Framework: {framework_mode})")
         except Exception as e:
             # Silently fail - history is optional
             pass
