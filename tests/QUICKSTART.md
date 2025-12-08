@@ -29,6 +29,9 @@ make test-security  # Security status tests
 
 # Run with specific browser
 make test-browser BROWSER=chrome
+
+# Generate performance report
+make test-performance-report  # Comprehensive HTML report with metrics and limits
 ```
 
 ## Example Test

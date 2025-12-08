@@ -12,9 +12,38 @@ The performance tracking system:
 
 ## Quick Start
 
-### 1. Update Baseline (First Time)
+### 1. Collect Performance Data
 
-Before tracking performance, establish a baseline:
+Run tests to collect performance metrics (history is saved automatically):
+
+```bash
+make test-smoke        # Quick - runs smoke tests
+make test-parallel     # Comprehensive - runs all tests
+make test             # Runs all tests sequentially
+```
+
+Each test run automatically saves performance data to `tests/.performance_history/`.
+
+### 2. Generate Performance Report
+
+Generate and view a comprehensive HTML performance report:
+
+```bash
+make test-performance-report
+```
+
+This generates an HTML report with:
+- Recent test runs summary
+- Suite performance trends with limits
+- Slowest tests with individual limits
+- Performance trends over time
+- Baseline comparison
+
+The report automatically opens in your browser.
+
+### 3. Update Baseline (Optional)
+
+Before tracking performance regressions, establish a baseline:
 
 ```bash
 make test-update-baseline
@@ -22,17 +51,7 @@ make test-update-baseline
 
 This runs all tests and saves their execution times as the baseline for future comparisons.
 
-### 2. Run Tests (History is Saved Automatically)
-
-When you run tests, performance data is automatically saved to history:
-
-```bash
-make test-parallel        # Saves history automatically
-make test                 # Saves history automatically
-make test-performance-check  # Explicitly saves history
-```
-
-### 3. View Performance Data
+### 4. View Performance Data (Command Line)
 
 ```bash
 # Compare latest run against baseline
@@ -63,6 +82,10 @@ make test-performance-summary LIMIT=5
 
 ### Performance Analysis
 
+- **`make test-performance-report`** - **Generate and open comprehensive HTML performance report** (recommended)
+  - Includes all metrics, trends, limits, and comparisons
+  - Automatically opens in browser
+  - Shows individual test limits vs category-based limits
 - **`make test-performance-compare`** - Compare the latest test run against the baseline
 - **`make test-performance-trends [TEST_ID=...] [LIMIT=N]`** - Show performance trends
   - `TEST_ID`: Optional specific test to analyze
@@ -185,6 +208,123 @@ Regressed (>50% slower): 1
 - **Location**: `tests/performance_config.yaml`
 - **Purpose**: Configure thresholds, limits, and reporting options
 
+## Setting Test Time Limits
+
+Test time limits are configured in `tests/performance_config.yaml`. There are three types of limits:
+
+### 1. Individual Test Limits (Recommended)
+
+Each test can have its own time limit based on historical performance data. These are stored under `limits.tests`:
+
+```yaml
+limits:
+  tests:
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_button_is_visible": 1
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_button_multiple_clicks": 3
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_message_appears_after_click": 5
+```
+
+**How individual limits are applied:**
+- Priority: Individual test limit → Marker-based limit → Default limit
+- Tests automatically fail if they exceed their individual limit
+- Limits are calculated with 10% buffer above max observed time
+
+**To update individual limits:**
+1. Collect performance data by running tests multiple times (at least 10 runs recommended)
+2. Run the limit calculation script (see "Updating Limits" section below)
+
+### 2. Category-Based Limits (Fallback)
+
+For tests without individual limits, category-based limits apply:
+
+```yaml
+limits:
+  default: 7      # Default timeout for tests without specific markers
+  smoke: 10       # Smoke tests must complete quickly
+  slow: 60        # Slow tests allowed up to 60 seconds
+  version_switch: 120  # Version switch tests allowed up to 2 minutes
+```
+
+### 3. Suite Limits
+
+Total time allowed for all tests in a test suite:
+
+```yaml
+limits:
+  suites:
+    TestHelloWorldButton: 9
+    TestVersionInformation: 49
+    TestSecurityStatus: 90
+```
+
+Suite limits are calculated with 20% buffer above max observed suite time.
+
+## Updating Limits
+
+Limits are automatically calculated based on historical performance data. To update limits:
+
+1. **Collect sufficient data** (at least 10 runs per test):
+   ```bash
+   # Run tests multiple times to collect data
+   for i in {1..12}; do make test-smoke; done
+   ```
+
+2. **Calculate and update limits**:
+   ```bash
+   cd tests
+   ../venv/bin/python3 << 'PYTHON_SCRIPT'
+   import yaml
+   from pathlib import Path
+   from utils.performance_history import load_history_files
+   
+   config_file = Path('performance_config.yaml')
+   with open(config_file, 'r') as f:
+       config = yaml.safe_load(f) or {}
+   
+   history = load_history_files(limit=100)
+   
+   # Calculate individual test limits (10% buffer)
+   test_max_times = {}
+   for run in history:
+       for test_id, test_data in run.get('tests', {}).items():
+           if test_id not in test_max_times:
+               test_max_times[test_id] = []
+           test_max_times[test_id].append(test_data.get('max', test_data.get('avg', 0)))
+   
+   individual_test_limits = {}
+   for test_id, times in test_max_times.items():
+       if times:
+           max_time = max(times)
+           individual_test_limits[test_id] = int(max_time * 1.1) + 1
+   
+   # Calculate suite limits (20% buffer)
+   suite_max_times = {}
+   for run in history:
+       for suite, time in run.get('suites', {}).items():
+           if suite not in suite_max_times:
+               suite_max_times[suite] = []
+           suite_max_times[suite].append(time)
+   
+   new_suite_limits = {}
+   for suite, times in suite_max_times.items():
+       if times:
+           max_time = max(times)
+           new_suite_limits[suite] = int(max_time * 1.2) + 1
+   
+   # Update config
+   config['limits']['tests'] = individual_test_limits
+   config['limits']['suites'] = new_suite_limits
+   
+   with open(config_file, 'w') as f:
+       yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+   
+   print(f"✅ Updated {len(individual_test_limits)} test limits and {len(new_suite_limits)} suite limits")
+   PYTHON_SCRIPT
+   ```
+
+**Manual limit editing:**
+You can also manually edit `tests/performance_config.yaml` to set custom limits for specific tests or suites.
+
 ## Best Practices
 
 1. **Establish Baseline Early**: Run `make test-update-baseline` after initial test suite is stable
@@ -260,8 +400,52 @@ history = load_history_files(limit=10)
 trends = get_test_trends("test_suites/test_hello_world.py::TestHelloWorldButton::test_button_is_visible", limit=10)
 ```
 
+## Generating Performance Reports
+
+### HTML Performance Report
+
+The easiest way to view all performance metrics is to generate the comprehensive HTML report:
+
+```bash
+make test-performance-report
+```
+
+This command:
+1. Loads all performance history from `tests/.performance_history/`
+2. Generates an HTML report with:
+   - Recent test runs summary
+   - Suite performance trends with limits and status indicators
+   - Slowest tests with individual limits highlighted
+   - Performance trends over time
+   - Baseline comparison with regressions
+3. Saves the report to `tests/reports/performance_history_report.html`
+4. Automatically opens the report in your browser
+
+**Report Features:**
+- **Individual test limits** shown in blue/bold (calculated from historical data)
+- **Category-based limits** shown in normal text (fallback for tests without individual limits)
+- **Status indicators**: ✅ OK, ⚠️ Near Limit, ❌ Over Limit
+- **Color coding**: Red background for tests over limit, yellow for near limit
+- **Trend arrows**: Shows if performance is improving (↓) or degrading (↑)
+
+### Command Line Reports
+
+For quick command-line analysis:
+
+```bash
+# Summary of recent runs
+make test-performance-summary
+
+# Compare against baseline
+make test-performance-compare
+
+# View trends
+make test-performance-trends
+```
+
 ## See Also
 
 - `tests/PERFORMANCE_METRICS_DESIGN.md` - Design document for performance tracking
-- `tests/performance_config.yaml` - Configuration file
+- `tests/performance_config.yaml` - Configuration file (where limits are set)
 - `tests/conftest.py` - Performance tracking implementation
+- `tests/generate_performance_report.sh` - Report generation script

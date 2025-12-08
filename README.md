@@ -247,9 +247,17 @@ make test-open-report
 - `make test-browser BROWSER=chrome` - Run with specific browser
 - `make test-clean` - Clean test artifacts
 
+**Performance Tracking:**
+- `make test-performance-report` - Generate and open comprehensive HTML performance report
+- `make test-performance-compare` - Compare latest run against baseline
+- `make test-performance-trends` - View performance trends
+- `make test-performance-slowest` - List slowest tests
+- `make test-update-baseline` - Update performance baseline
+
 **For detailed documentation:**
 - **[Quick Start Guide](tests/QUICKSTART.md)** - Get started in 5 minutes
 - **[Complete Testing Guide](tests/README.md)** - Comprehensive documentation
+- **[Performance Tracking Guide](tests/PERFORMANCE_TRACKING.md)** - Performance metrics and limits
 - **[Testing Plan](TESTING_PLAN.md)** - Testing strategy and implementation plan
 
 ## Project Structure

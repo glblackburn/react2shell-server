@@ -104,18 +104,58 @@ tests/
 
 Tests are organized with markers:
 
-- `@pytest.mark.smoke` - Critical smoke tests
+- `@pytest.mark.smoke` - Critical smoke tests (timeout: 10s)
 - `@pytest.mark.regression` - Regression tests
-- `@pytest.mark.version_switch` - Tests that switch React versions
+- `@pytest.mark.version_switch` - Tests that switch React versions (timeout: 120s)
+- `@pytest.mark.slow` - Slow tests (timeout: 60s)
 - `@pytest.mark.browser_chrome` - Chrome-specific tests
 - `@pytest.mark.browser_firefox` - Firefox-specific tests
 
+## Test Time Limits
+
+Test time limits are automatically enforced to prevent tests from running too long. Limits are configured in `tests/performance_config.yaml`:
+
+**Priority Order:**
+1. **Individual test limit** (if configured) - Each test can have its own limit
+2. **Marker-based limit** - Based on test markers (smoke: 10s, slow: 60s, version_switch: 120s)
+3. **Default limit** - 7s for tests without specific markers
+
+**Viewing Limits:**
+- Individual limits are shown in the performance report (highlighted in blue/bold)
+- Run `make test-performance-report` to see all limits
+- Limits are calculated with 10% buffer above max observed time
+
+**Setting Limits:**
+- Edit `tests/performance_config.yaml` to manually set limits
+- Or collect performance data and let the system calculate limits automatically
+- See [PERFORMANCE_TRACKING.md](PERFORMANCE_TRACKING.md) for details
+
 ## Reports
+
+### Test Execution Reports
 
 Test reports are generated in the `reports/` directory:
 
-- `reports/report.html` - HTML test report
+- `reports/report.html` - HTML test report (pytest-generated)
+- `reports/YYYY-MM-DD_HH-MM-SS/` - Timestamped reports for parallel test runs
 - `reports/screenshots/` - Screenshots on test failures
+
+### Performance Reports
+
+Generate comprehensive performance history reports:
+
+```bash
+make test-performance-report  # Generate and open HTML performance report
+```
+
+The performance report includes:
+- Recent test runs summary
+- Suite performance trends with limits
+- Slowest tests with individual limits
+- Performance trends over time
+- Baseline comparison
+
+Reports are saved to `tests/reports/performance_history_report.html` and automatically open in your browser.
 
 ## Writing New Tests
 
