@@ -43,6 +43,8 @@ help:
 	@echo "  make test-browser    - Run tests with specific browser (use BROWSER=chrome|firefox|safari)"
 	@echo "  make test-clean      - Clean test artifacts (reports, screenshots, cache)"
 	@echo "  make test-open-report - Open test report in browser"
+	@echo "  make test-update-baseline - Update performance baseline with current test times"
+	@echo "  make test-performance-check - Check for performance regressions"
 	@echo ""
 	@echo "Note: Versions 19.0, 19.1.0, 19.1.1, and 19.2.0 contain a critical"
 	@echo "      security vulnerability in React Server Components."
