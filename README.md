@@ -391,6 +391,7 @@ This section tracks known bugs and issues in the project.
 | ID | Status | Priority | Severity | Title | Description |
 |----|--------|----------|----------|-------|-------------|
 | BUG-1 | Fixed | High | High | Version API Endpoint Not Accessible in Dev Mode | `/api/version` endpoint fails in development mode due to Vite proxy configuration | See details below |
+| BUG-2 | Open | High | High | Missing pytest Option Registration After Refactoring | `--update-baseline` option not registered, causing `ValueError: no option named '--update-baseline'` when running tests | See details below |
 
 ### BUG-1: Version API Endpoint Not Accessible in Dev Mode
 
@@ -487,6 +488,86 @@ See screenshots above for before/after comparison.
 - The `/api/hello` endpoint works correctly
 - This issue only affected development mode; production builds work correctly
 - The fix ensures proper CORS handling and retry logic for server startup scenarios
+
+### BUG-2: Missing pytest Option Registration After Refactoring
+
+**Status:** Open  
+**Priority:** High  
+**Severity:** High  
+**Reported:** 2025-12-08  
+**Fixed:** Not yet fixed
+
+**Description:**
+After the DRY refactoring (Phase 3), all test execution fails with `ValueError: no option named '--update-baseline'`. The error occurs in `tests/conftest.py` line 65 when `pytest_configure` tries to access the `--update-baseline` option that was moved to `plugins/performance.py` during refactoring.
+
+**Error Message:**
+```
+ValueError: no option named '--update-baseline'
+```
+
+**Stack Trace:**
+```
+File "/Users/lblackb/data/lblackb/git/react2shell-server/tests/conftest.py", line 65, in pytest_configure
+    if config.getoption("--update-baseline"):
+File "/Users/lblackb/data/lblackb/git/react2shell-server/venv/lib/python3.13/site-packages/_pytest/config/__init__.py", line 1897, in getoption
+    raise ValueError(f"no option named {name!r}") from e
+```
+
+**Steps to Reproduce:**
+1. Run any test command:
+   ```bash
+   make test-parallel
+   # or
+   make test
+   # or
+   pytest tests/
+   ```
+2. Error occurs immediately during pytest configuration phase
+3. All tests fail to run
+
+**Expected Behavior:**
+- Tests should run successfully
+- `--update-baseline` option should be available when accessed in `pytest_configure`
+- Performance tracking should work correctly
+
+**Actual Behavior:**
+- All test execution fails with `ValueError`
+- No tests can run
+- Both non-version-switch tests and version-switch tests fail
+- Error occurs in both parallel and sequential test execution
+
+**Root Cause:**
+During Phase 3 refactoring, the `pytest_addoption` function that registers `--update-baseline` was moved from `conftest.py` to `plugins/performance.py`. However, `pytest_configure` in `conftest.py` still tries to access this option. The issue is that:
+
+1. `pytest_configure` in `conftest.py` runs and tries to access `--update-baseline` option
+2. The `pytest_addoption` in `plugins/performance.py` may not have been called yet, or the plugin registration order causes the option to not be available
+3. Pytest raises `ValueError` because the option doesn't exist in the namespace
+
+**Environment:**
+- Python Version: 3.13.7
+- pytest Version: Latest (from requirements.txt)
+- OS: macOS (darwin 24.6.0)
+- Test Command: `make test-parallel`, `make test`, or direct pytest invocation
+
+**Files Affected:**
+- `tests/conftest.py` - Line 65: `if config.getoption("--update-baseline"):`
+- `tests/plugins/performance.py` - Contains `pytest_addoption` for `--update-baseline` (if present)
+
+**Impact:**
+- **Critical:** All test execution is blocked
+- Cannot run any tests until this is fixed
+- Affects all test targets: `test`, `test-parallel`, `test-smoke`, etc.
+- Blocks CI/CD pipelines
+
+**Proposed Solution:**
+1. **Option 1:** Move `pytest_addoption` for `--update-baseline` back to `conftest.py` to ensure it's registered before `pytest_configure` runs
+2. **Option 2:** Use `hasattr()` or `try/except` in `pytest_configure` to safely check for the option
+3. **Option 3:** Ensure `plugins/performance.py` is loaded and its `pytest_addoption` is called before `conftest.py`'s `pytest_configure`
+
+**Additional Notes:**
+- This is a regression introduced during the refactoring (Phase 3: File Reorganization)
+- The refactoring moved performance tracking code to `plugins/performance.py` but didn't account for the option registration order
+- This defect blocks all testing functionality
 
 ---
 
