@@ -27,17 +27,29 @@ SCANNER_PATH="/Users/lblackb/data/lblackb/git/third-party/react2shell-scanner"
 SCANNER_SCRIPT="${SCANNER_PATH}/scanner.py"
 
 # Get project root - handle both direct execution and Makefile execution
-# Use a more robust method that works when called from Makefile
-if [ -n "${BASH_SOURCE[0]}" ]; then
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# When called from Makefile, we're already in the project root
+# When called directly, we need to find it relative to the script
+if [ -f "Makefile" ] && [ -f "package.json" ]; then
+    # We're already in the project root
+    PROJECT_ROOT="$(pwd)"
 else
-    # Fallback if BASH_SOURCE is not available
-    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    # Find project root relative to script location
+    SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
+    # Resolve to absolute path
+    if [ -L "$SCRIPT_PATH" ]; then
+        # If it's a symlink, resolve it
+        SCRIPT_PATH="$(readlink -f "$SCRIPT_PATH" 2>/dev/null || readlink "$SCRIPT_PATH")"
+    fi
+    SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" 2>/dev/null && pwd || pwd)"
+    # Go up one level from scripts/ directory
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." 2>/dev/null && pwd || pwd)"
 fi
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# Clean any newlines or extra whitespace from path
-PROJECT_ROOT="$(echo "${PROJECT_ROOT}" | tr -d '\n\r' | xargs)"
+# Ensure we have a valid project root
+if [ ! -f "${PROJECT_ROOT}/Makefile" ] || [ ! -f "${PROJECT_ROOT}/package.json" ]; then
+    echo "Error: Could not determine project root. Make sure you're running from the project directory." >&2
+    exit 1
+fi
 
 FRONTEND_URL="http://localhost:5173"
 SAFE_CHECK=false
@@ -177,7 +189,7 @@ echo ""
 # Ensure server is running
 if ! check_server; then
     echo -e "${YELLOW}Server not running. Starting servers...${NC}"
-    local original_dir="$(pwd)"
+    original_dir="$(pwd)"
     cd "$PROJECT_ROOT" || {
         echo -e "${RED}Error: Cannot change to project root: ${PROJECT_ROOT}${NC}"
         exit 1
