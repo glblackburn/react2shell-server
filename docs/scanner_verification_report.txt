@@ -1,0 +1,419 @@
+============================================================
+Scanner Verification Report
+============================================================
+Generated: Mon Dec  8 15:02:42 EST 2025
+Project: react2shell-server
+Scanner: /Users/lblackb/data/lblackb/git/third-party/react2shell-scanner/scanner.py
+
+============================================================
+Testing VITE Framework
+============================================================
+
+--- VULNERABLE VERSIONS ---
+
+------------------------------------------------------------
+Framework: vite
+Version: 19.0
+Expected Status: VULNERABLE
+Detected Status: NOT VULNERABLE
+Result: FAIL
+URL: http://localhost:5173
+
+Scanner Output:
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[NOT VULNERABLE] http://localhost:5173 - Status: 404
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 0
+  Not vulnerable: 1
+  Errors: 0
+============================================================
+
+------------------------------------------------------------
+Framework: vite
+Version: 19.1.0
+Expected Status: VULNERABLE
+Detected Status: NOT VULNERABLE
+Result: FAIL
+URL: http://localhost:5173
+
+Scanner Output:
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[NOT VULNERABLE] http://localhost:5173 - Status: 404
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 0
+  Not vulnerable: 1
+  Errors: 0
+============================================================
+
+------------------------------------------------------------
+Framework: vite
+Version: 19.1.1
+Expected Status: VULNERABLE
+Detected Status: NOT VULNERABLE
+Result: FAIL
+URL: http://localhost:5173
+
+Scanner Output:
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[NOT VULNERABLE] http://localhost:5173 - Status: 404
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 0
+  Not vulnerable: 1
+  Errors: 0
+============================================================
+
+------------------------------------------------------------
+Framework: vite
+Version: 19.2.0
+Expected Status: VULNERABLE
+Detected Status: NOT VULNERABLE
+Result: FAIL
+URL: http://localhost:5173
+
+Scanner Output:
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[NOT VULNERABLE] http://localhost:5173 - Status: 404
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 0
+  Not vulnerable: 1
+  Errors: 0
+============================================================
+
+--- FIXED VERSIONS ---
+
+------------------------------------------------------------
+Framework: vite
+Version: 19.0.1
+Expected Status: FIXED
+Detected Status: NOT VULNERABLE
+Result: PASS
+URL: http://localhost:5173
+
+Scanner Output:
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[NOT VULNERABLE] http://localhost:5173 - Status: 404
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 0
+  Not vulnerable: 1
+  Errors: 0
+============================================================
+
+------------------------------------------------------------
+Framework: vite
+Version: 19.1.2
+Expected Status: FIXED
+Detected Status: NOT VULNERABLE
+Result: PASS
+URL: http://localhost:5173
+
+Scanner Output:
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[NOT VULNERABLE] http://localhost:5173 - Status: 404
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 0
+  Not vulnerable: 1
+  Errors: 0
+============================================================
+
+------------------------------------------------------------
+Framework: vite
+Version: 19.2.1
+Expected Status: FIXED
+Detected Status: NOT VULNERABLE
+Result: PASS
+URL: http://localhost:5173
+
+Scanner Output:
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[NOT VULNERABLE] http://localhost:5173 - Status: 404
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 0
+  Not vulnerable: 1
+  Errors: 0
+============================================================
+
+------------------------------------------------------------
+VITE Framework Summary:
+  Passed: 3
+  Failed: 4
+
+============================================================
+Testing NEXTJS Framework
+============================================================
+
+--- VULNERABLE VERSIONS ---
+
+------------------------------------------------------------
+Framework: nextjs
+Version: 14.0.0
+Expected Status: VULNERABLE
+Detected Status: NOT VULNERABLE
+Result: FAIL
+URL: http://localhost:3000
+
+Scanner Output:
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[ERROR] http://localhost:3000 - Connection Error: HTTPConnectionPool(host='localhost', port=3000): Read timed out.
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 0
+  Not vulnerable: 1
+  Errors: 0
+============================================================
+
+------------------------------------------------------------
+Framework: nextjs
+Version: 14.1.0
+Expected Status: VULNERABLE
+Detected Status: NOT VULNERABLE
+Result: FAIL
+URL: http://localhost:3000
+
+Scanner Output:
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[ERROR] http://localhost:3000 - Connection Error: HTTPConnectionPool(host='localhost', port=3000): Read timed out.
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 0
+  Not vulnerable: 1
+  Errors: 0
+============================================================
+
+------------------------------------------------------------
+Framework: nextjs
+Version: 15.0.0
+Expected Status: VULNERABLE
+Detected Status: VULNERABLE
+Result: PASS
+URL: http://localhost:3000
+
+Scanner Output:
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[VULNERABLE] http://localhost:3000 - Status: 303
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 1
+  Not vulnerable: 0
+  Errors: 0
+============================================================
+
+--- FIXED VERSIONS ---
+
+------------------------------------------------------------
+Framework: nextjs
+Version: 14.0.1
+Expected Status: FIXED
+Detected Status: NOT VULNERABLE
+Result: PASS
+URL: http://localhost:3000
+
+Scanner Output:
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[ERROR] http://localhost:3000 - Connection Error: HTTPConnectionPool(host='localhost', port=3000): Read timed out.
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 0
+  Not vulnerable: 1
+  Errors: 0
+============================================================
+
+------------------------------------------------------------
+Framework: nextjs
+Version: 14.1.1
+Expected Status: FIXED
+Detected Status: NOT VULNERABLE
+Result: PASS
+URL: http://localhost:3000
+
+Scanner Output:
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[ERROR] http://localhost:3000 - Connection Error: HTTPConnectionPool(host='localhost', port=3000): Read timed out.
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 0
+  Not vulnerable: 1
+  Errors: 0
+============================================================
+
+------------------------------------------------------------
+Framework: nextjs
+Version: 15.1.0
+Expected Status: FIXED
+Detected Status: VULNERABLE
+Result: FAIL
+URL: http://localhost:3000
+
+Scanner Output:
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[VULNERABLE] http://localhost:3000 - Status: 303
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 1
+  Not vulnerable: 0
+  Errors: 0
+============================================================
+
+------------------------------------------------------------
+NEXTJS Framework Summary:
+  Passed: 3
+  Failed: 3
+
+============================================================
+FINAL SUMMARY
+============================================================
+Total Tests Passed: 6
+Total Tests Failed: 7
+Total Tests: 13
+
+Report generated: Mon Dec  8 15:07:03 EST 2025
+============================================================
