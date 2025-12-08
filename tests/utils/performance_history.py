@@ -16,8 +16,10 @@ from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
 
 
-PERFORMANCE_HISTORY_DIR = Path("tests/.performance_history")
-PERFORMANCE_BASELINE_FILE = Path("tests/.performance_baseline.json")
+# Use absolute path resolution - works from both project root and tests directory
+_script_dir = Path(__file__).parent.parent  # Go up from utils/ to tests/
+PERFORMANCE_HISTORY_DIR = _script_dir / ".performance_history"
+PERFORMANCE_BASELINE_FILE = _script_dir / ".performance_baseline.json"
 
 
 def ensure_history_dir():
