@@ -1,0 +1,59 @@
+"""
+React version switching fixture.
+"""
+import pytest
+from utils.server_manager import (
+    switch_react_version, stop_servers, start_servers as start_servers_func, 
+    wait_for_server, check_server_running, get_current_react_version, check_version_installed
+)
+from utils.server_constants import FRONTEND_URL, API_ENDPOINT
+
+
+@pytest.fixture(scope="function")
+def react_version(request):
+    """Parameterized fixture that switches React versions for testing.
+    
+    Usage:
+        @pytest.mark.parametrize("react_version", ["19.0", "19.1.0"], indirect=True)
+        def test_something(app_page, react_version):
+            # react_version will be the version string, and servers will be restarted
+    """
+    # Get version from parameter if provided
+    version = request.param if hasattr(request, 'param') else None
+    
+    if version:
+        # Check if already on this version
+        current = get_current_react_version()
+        already_installed = check_version_installed(version)
+        
+        if current == version and already_installed:
+            print(f"✓ React {version} already active, skipping switch")
+            # Just ensure servers are running
+            if not check_server_running(FRONTEND_URL) or not check_server_running(API_ENDPOINT):
+                print(f"🔄 Servers not running, starting for React {version}...")
+                start_servers_func()
+                wait_for_server(FRONTEND_URL, max_attempts=20, delay=1)
+                wait_for_server(API_ENDPOINT, max_attempts=20, delay=1)
+        else:
+            print(f"\n🔄 Switching to React {version}...")
+            # Stop servers before switching version
+            stop_servers()
+            
+            # Switch React version
+            if switch_react_version(version):
+                # Restart servers after version switch
+                print(f"🔄 Restarting servers for React {version}...")
+                start_servers_func()
+                # Wait for servers to be ready (optimized wait times)
+                if not wait_for_server(FRONTEND_URL, max_attempts=20, delay=1):
+                    pytest.fail(f"Frontend server not ready after switching to React {version}")
+                if not wait_for_server(API_ENDPOINT, max_attempts=20, delay=1):
+                    pytest.fail(f"Backend server not ready after switching to React {version}")
+                print(f"✓ React {version} ready for testing")
+            else:
+                pytest.skip(f"Failed to switch to React {version}")
+    
+    yield version
+    
+    # Note: We don't restore the original version here to avoid slowing down tests
+    # The original version should be restored manually or in CI/CD

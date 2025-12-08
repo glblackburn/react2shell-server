@@ -1,3 +1,38 @@
+# ============================================================================
+# React Version Configuration
+# ============================================================================
+
+# Vulnerable React versions (for security testing)
+VULNERABLE_VERSIONS := 19.0 19.1.0 19.1.1 19.2.0
+
+# Fixed React versions
+FIXED_VERSIONS := 19.0.1 19.1.2 19.2.1
+
+# All React versions
+ALL_VERSIONS := $(VULNERABLE_VERSIONS) $(FIXED_VERSIONS)
+
+# Version status mapping (for display messages)
+VERSION_19.0_STATUS := VULNERABLE
+VERSION_19.1.0_STATUS := VULNERABLE
+VERSION_19.1.1_STATUS := VULNERABLE
+VERSION_19.2.0_STATUS := VULNERABLE
+VERSION_19.0.1_STATUS := FIXED
+VERSION_19.1.2_STATUS := FIXED
+VERSION_19.2.1_STATUS := FIXED
+
+# Generic function to switch React version
+# Usage: $(call switch_react_version,version)
+define switch_react_version
+	@echo "Switching to React $(1) ($(VERSION_$(1)_STATUS) - for security testing)..."
+	@node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.react='$(1)';pkg.dependencies['react-dom']='$(1)';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));"
+	@npm install
+	@echo "✓ Switched to React $(1) ($(VERSION_$(1)_STATUS))"
+endef
+
+# Generate version switching targets dynamically
+$(foreach version,$(VULNERABLE_VERSIONS),$(eval react-$(version):;$(call switch_react_version,$(version))))
+$(foreach version,$(FIXED_VERSIONS),$(eval react-$(version):;$(call switch_react_version,$(version))))
+
 .PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report
 
 # Default target
@@ -57,58 +92,9 @@ help:
 	@echo "      Fixed versions: 19.0.1, 19.1.2, 19.2.1"
 	@echo ""
 
-# Switch to React 19.0 (VULNERABLE)
-react-19.0:
-	@echo "Switching to React 19.0 (VULNERABLE - for security testing)..."
-	@node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.react='19.0';pkg.dependencies['react-dom']='19.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));"
-	@npm install
-	@echo "✓ Switched to React 19.0 (VULNERABLE)"
-
 # Convenience target for switching to vulnerable version
 vulnerable: react-19.0
 	@echo "⚠️  WARNING: This is a VULNERABLE version for security testing only!"
-
-# Switch to React 19.1.0 (VULNERABLE)
-react-19.1.0:
-	@echo "Switching to React 19.1.0 (VULNERABLE - for security testing)..."
-	@node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.react='19.1.0';pkg.dependencies['react-dom']='19.1.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));"
-	@npm install
-	@echo "✓ Switched to React 19.1.0 (VULNERABLE)"
-
-# Switch to React 19.1.1 (VULNERABLE)
-react-19.1.1:
-	@echo "Switching to React 19.1.1 (VULNERABLE - for security testing)..."
-	@node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.react='19.1.1';pkg.dependencies['react-dom']='19.1.1';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));"
-	@npm install
-	@echo "✓ Switched to React 19.1.1 (VULNERABLE)"
-
-# Switch to React 19.2.0 (VULNERABLE)
-react-19.2.0:
-	@echo "Switching to React 19.2.0 (VULNERABLE - for security testing)..."
-	@node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.react='19.2.0';pkg.dependencies['react-dom']='19.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));"
-	@npm install
-	@echo "✓ Switched to React 19.2.0 (VULNERABLE)"
-
-# Switch to React 19.0.1 (FIXED)
-react-19.0.1:
-	@echo "Switching to React 19.0.1 (FIXED)..."
-	@node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.react='19.0.1';pkg.dependencies['react-dom']='19.0.1';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));"
-	@npm install
-	@echo "✓ Switched to React 19.0.1 (FIXED)"
-
-# Switch to React 19.1.2 (FIXED)
-react-19.1.2:
-	@echo "Switching to React 19.1.2 (FIXED)..."
-	@node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.react='19.1.2';pkg.dependencies['react-dom']='19.1.2';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));"
-	@npm install
-	@echo "✓ Switched to React 19.1.2 (FIXED)"
-
-# Switch to React 19.2.1 (FIXED)
-react-19.2.1:
-	@echo "Switching to React 19.2.1 (FIXED)..."
-	@node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.react='19.2.1';pkg.dependencies['react-dom']='19.2.1';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));"
-	@npm install
-	@echo "✓ Switched to React 19.2.1 (FIXED)"
 
 # Show current React version
 current-version:

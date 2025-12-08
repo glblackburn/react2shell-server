@@ -27,6 +27,9 @@ app.use(express.json());
 // Read package.json for version info
 const packageJson = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf-8'));
 
+// Import version constants
+import { isVulnerableVersion, getVersionStatus } from './config/versions.js';
+
 // Version info endpoint
 app.get('/api/version', (req, res) => {
   try {
@@ -34,16 +37,16 @@ app.get('/api/version', (req, res) => {
     const reactDomVersion = packageJson.dependencies['react-dom'] || 'unknown';
     const nodeVersion = process.version;
 
-    // Determine if vulnerable
-    const vulnerableVersions = ['19.0', '19.1.0', '19.1.1', '19.2.0'];
-    const isVulnerable = vulnerableVersions.includes(reactVersion);
+    // Determine if vulnerable using shared constants
+    const isVulnerable = isVulnerableVersion(reactVersion);
+    const status = getVersionStatus(reactVersion);
 
     res.json({
       react: reactVersion,
       reactDom: reactDomVersion,
       node: nodeVersion,
       vulnerable: isVulnerable,
-      status: isVulnerable ? 'VULNERABLE' : 'FIXED'
+      status: status
     });
   } catch (error) {
     console.error('Error in /api/version:', error);

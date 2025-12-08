@@ -7,14 +7,14 @@ import requests
 import logging
 import json
 import os
+from .server_constants import (
+    FRONTEND_URL,
+    BACKEND_URL,
+    API_ENDPOINT
+)
 
 
 logger = logging.getLogger(__name__)
-
-
-FRONTEND_URL = "http://localhost:5173"
-BACKEND_URL = "http://localhost:3000"
-API_ENDPOINT = f"{BACKEND_URL}/api/hello"
 
 
 def check_server_running(url, timeout=1):

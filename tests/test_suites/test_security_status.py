@@ -5,16 +5,8 @@ import pytest
 import subprocess
 import json
 import time
-
-
-def get_current_react_version():
-    """Get current React version from package.json."""
-    try:
-        with open("package.json", "r") as f:
-            package = json.load(f)
-            return package.get("dependencies", {}).get("react", "unknown")
-    except Exception:
-        return "unknown"
+from utils.server_manager import get_current_react_version
+from utils.version_constants import VULNERABLE_VERSIONS, FIXED_VERSIONS
 
 
 @pytest.mark.version_switch
@@ -143,12 +135,9 @@ class TestSecurityStatus:
         react_version = version_info.get("react")
         status = version_info.get("status")
         
-        vulnerable_versions = ["19.0", "19.1.0", "19.1.1", "19.2.0"]
-        fixed_versions = ["19.0.1", "19.1.2", "19.2.1"]
-        
-        if react_version in vulnerable_versions:
+        if react_version in VULNERABLE_VERSIONS:
             assert status == "VULNERABLE", \
                 f"Version {react_version} should be VULNERABLE, got {status}"
-        elif react_version in fixed_versions:
+        elif react_version in FIXED_VERSIONS:
             assert status == "FIXED", \
                 f"Version {react_version} should be FIXED, got {status}"

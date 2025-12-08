@@ -3,6 +3,11 @@ Test suite for version information display.
 """
 import pytest
 from selenium.webdriver.common.by import By
+from utils.test_helpers import (
+    assert_version_info_valid,
+    assert_version_status_valid,
+    assert_version_contains_key
+)
 
 
 @pytest.mark.smoke
@@ -27,60 +32,29 @@ class TestVersionInformation:
         """Test that version information loads successfully."""
         version_info = app_page.get_version_info()
         
-        assert version_info is not None, \
-            "Version info should be loaded"
-        
+        assert_version_info_valid(version_info)
         assert "error" not in version_info, \
             f"Version info should not have error: {version_info.get('error', '')}"
     
     def test_version_info_contains_react_version(self, app_page):
         """Test that version info contains React version."""
         version_info = app_page.get_version_info()
-        
-        assert version_info is not None, \
-            "Version info should be loaded"
-        
-        assert "react" in version_info, \
-            "Version info should contain React version"
-        
-        assert version_info["react"] is not None, \
-            "React version should not be None"
-        
-        assert version_info["react"] != "", \
-            "React version should not be empty"
+        assert_version_contains_key(version_info, "react", "React version")
     
     def test_version_info_contains_react_dom_version(self, app_page):
         """Test that version info contains React-DOM version."""
         version_info = app_page.get_version_info()
-        
-        assert version_info is not None, \
-            "Version info should be loaded"
-        
-        assert "react_dom" in version_info, \
-            "Version info should contain React-DOM version"
+        assert_version_contains_key(version_info, "react_dom", "React-DOM version")
     
     def test_version_info_contains_node_version(self, app_page):
         """Test that version info contains Node.js version."""
         version_info = app_page.get_version_info()
-        
-        assert version_info is not None, \
-            "Version info should be loaded"
-        
-        assert "node" in version_info, \
-            "Version info should contain Node.js version"
+        assert_version_contains_key(version_info, "node", "Node.js version")
     
     def test_version_info_contains_status(self, app_page):
         """Test that version info contains status (VULNERABLE/FIXED)."""
         version_info = app_page.get_version_info()
-        
-        assert version_info is not None, \
-            "Version info should be loaded"
-        
-        assert "status" in version_info, \
-            "Version info should contain status"
-        
-        assert version_info["status"] in ["VULNERABLE", "FIXED"], \
-            f"Status should be VULNERABLE or FIXED, got '{version_info['status']}'"
+        assert_version_status_valid(version_info)
     
     def test_version_info_loading_indicator(self, app_page):
         """Test that loading indicator appears initially."""

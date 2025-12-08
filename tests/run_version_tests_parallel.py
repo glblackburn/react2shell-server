@@ -21,22 +21,16 @@ import argparse
 import time
 
 
-# All React versions to test
-ALL_VERSIONS = [
-    "19.0", "19.1.0", "19.1.1", "19.2.0",  # Vulnerable
-    "19.0.1", "19.1.2", "19.2.1",  # Fixed
-]
+# Import version constants
+import sys
+from pathlib import Path
 
+# Add tests directory to path for imports
+_tests_dir = Path(__file__).parent
+sys.path.insert(0, str(_tests_dir))
 
-def get_current_react_version(project_root: str = ".") -> str:
-    """Get current React version from package.json."""
-    try:
-        package_json = os.path.join(project_root, "package.json")
-        with open(package_json, "r") as f:
-            package = json.load(f)
-            return package.get("dependencies", {}).get("react", "unknown")
-    except Exception:
-        return "unknown"
+from utils.version_constants import ALL_VERSIONS
+from utils.server_manager import get_current_react_version
 
 
 def resolve_python_exec(python_exec: str, project_root: str, script_dir: str) -> str:
@@ -89,23 +83,27 @@ def run_tests_for_version(version: str, workers: int = 10, test_dir: str = "test
         switch_react_version, stop_servers, start_servers, 
         wait_for_server, check_server_running, check_version_installed
     )
-    
-    frontend_url = "http://localhost:5173"
-    api_url = "http://localhost:3000/api/hello"
+    from utils.server_constants import FRONTEND_URL, API_ENDPOINT
     
     # Check if already on this version and installed
-    current = get_current_react_version(project_root)
+    # Change to project root to get correct version
+    original_cwd = os.getcwd()
+    os.chdir(project_root)
+    try:
+        current = get_current_react_version()
+    finally:
+        os.chdir(original_cwd)
     already_installed = check_version_installed(version)
     
     if current == version and already_installed:
         # Just ensure servers are running
-        if not check_server_running(frontend_url) or not check_server_running(api_url):
+        if not check_server_running(FRONTEND_URL) or not check_server_running(API_ENDPOINT):
             original_cwd = os.getcwd()
             os.chdir(project_root)
             try:
                 start_servers()
-                wait_for_server(frontend_url, max_attempts=8, delay=0.3)
-                wait_for_server(api_url, max_attempts=8, delay=0.3)
+                wait_for_server(FRONTEND_URL, max_attempts=8, delay=0.3)
+                wait_for_server(API_ENDPOINT, max_attempts=8, delay=0.3)
             finally:
                 os.chdir(original_cwd)
     else:
@@ -113,7 +111,7 @@ def run_tests_for_version(version: str, workers: int = 10, test_dir: str = "test
         os.chdir(project_root)
         try:
             # Stop servers before switching (only if needed)
-            if check_server_running(frontend_url) or check_server_running(api_url):
+            if check_server_running(FRONTEND_URL) or check_server_running(API_ENDPOINT):
                 stop_servers()
             # Switch version (this skips npm install if already installed)
             if not switch_react_version(version):
@@ -122,8 +120,8 @@ def run_tests_for_version(version: str, workers: int = 10, test_dir: str = "test
             # Restart servers
             start_servers()
             # Use shorter waits - servers should be ready quickly
-            wait_for_server(frontend_url, max_attempts=8, delay=0.3)
-            wait_for_server(api_url, max_attempts=8, delay=0.3)
+            wait_for_server(FRONTEND_URL, max_attempts=8, delay=0.3)
+            wait_for_server(API_ENDPOINT, max_attempts=8, delay=0.3)
         finally:
             os.chdir(original_cwd)
     
