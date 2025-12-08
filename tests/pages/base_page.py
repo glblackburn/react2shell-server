@@ -17,7 +17,7 @@ class BasePage:
     def __init__(self, driver):
         """Initialize base page with WebDriver instance."""
         self.driver = driver
-        self.wait = WebDriverWait(driver, 10)
+        self.wait = WebDriverWait(driver, 5)  # Reduced from 10 to 5 seconds
         self.logger = logger
     
     def navigate(self, url=None):
@@ -30,7 +30,7 @@ class BasePage:
             self.driver.get(BASE_URL)
         self.logger.info(f"Navigated to: {self.driver.current_url}")
     
-    def find_element(self, by, value, timeout=10):
+    def find_element(self, by, value, timeout=5):
         """Find element with explicit wait."""
         try:
             wait = WebDriverWait(self.driver, timeout)
@@ -40,7 +40,7 @@ class BasePage:
             self.logger.error(f"Element not found: {by}={value}")
             raise
     
-    def find_elements(self, by, value, timeout=10):
+    def find_elements(self, by, value, timeout=5):
         """Find multiple elements with explicit wait."""
         try:
             wait = WebDriverWait(self.driver, timeout)
@@ -50,7 +50,7 @@ class BasePage:
             self.logger.error(f"Elements not found: {by}={value}")
             return []
     
-    def click_element(self, by, value, timeout=10):
+    def click_element(self, by, value, timeout=5):
         """Click element with explicit wait for clickability."""
         try:
             wait = WebDriverWait(self.driver, timeout)
@@ -61,12 +61,12 @@ class BasePage:
             self.logger.error(f"Element not clickable: {by}={value}")
             raise
     
-    def get_text(self, by, value, timeout=10):
+    def get_text(self, by, value, timeout=5):
         """Get text from element."""
         element = self.find_element(by, value, timeout)
         return element.text
     
-    def is_element_visible(self, by, value, timeout=10):
+    def is_element_visible(self, by, value, timeout=5):
         """Check if element is visible."""
         try:
             wait = WebDriverWait(self.driver, timeout)
@@ -75,7 +75,7 @@ class BasePage:
         except TimeoutException:
             return False
     
-    def is_element_present(self, by, value, timeout=10):
+    def is_element_present(self, by, value, timeout=5):
         """Check if element is present in DOM."""
         try:
             wait = WebDriverWait(self.driver, timeout)
@@ -84,7 +84,7 @@ class BasePage:
         except TimeoutException:
             return False
     
-    def wait_for_element_to_disappear(self, by, value, timeout=10):
+    def wait_for_element_to_disappear(self, by, value, timeout=5):
         """Wait for element to disappear."""
         try:
             wait = WebDriverWait(self.driver, timeout)

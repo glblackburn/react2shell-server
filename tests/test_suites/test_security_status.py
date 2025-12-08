@@ -108,12 +108,12 @@ class TestSecurityStatus:
         if version_info and version_info.get("status") == "VULNERABLE":
             # Check if status element has vulnerable class or red color
             try:
-                status_elem = app_page.find_element(*app_page.STATUS_VULNERABLE, timeout=5)
+                status_elem = app_page.find_element(*app_page.STATUS_VULNERABLE, timeout=3)
                 assert status_elem is not None, \
                     "Status element with vulnerable class should be present"
             except Exception:
                 # If class-based check fails, verify status text
-                status_text = app_page.get_text(*app_page.VERSION_STATUS, timeout=5)
+                status_text = app_page.get_text(*app_page.VERSION_STATUS, timeout=3)
                 assert "VULNERABLE" in status_text, \
                     "Status should contain 'VULNERABLE'"
     
@@ -124,12 +124,12 @@ class TestSecurityStatus:
         if version_info and version_info.get("status") == "FIXED":
             # Check if status element has fixed class or green color
             try:
-                status_elem = app_page.find_element(*app_page.STATUS_FIXED, timeout=5)
+                status_elem = app_page.find_element(*app_page.STATUS_FIXED, timeout=3)
                 assert status_elem is not None, \
                     "Status element with fixed class should be present"
             except Exception:
                 # If class-based check fails, verify status text
-                status_text = app_page.get_text(*app_page.VERSION_STATUS, timeout=5)
+                status_text = app_page.get_text(*app_page.VERSION_STATUS, timeout=3)
                 assert "FIXED" in status_text, \
                     "Status should contain 'FIXED'"
     

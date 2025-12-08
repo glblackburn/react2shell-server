@@ -45,14 +45,17 @@ class TestHelloWorldButton:
         
         # Check if button is in loading state (should be very brief)
         # Note: This might be too fast to catch, so we check if button is disabled
-        time.sleep(0.1)  # Small delay to catch loading state
+        # Reduced sleep time for faster execution
+        time.sleep(0.05)  # Minimal delay to catch loading state
         
         # Button might be disabled during loading or show "Loading..." text
         button_text = app_page.get_button_text()
         is_loading = "Loading" in button_text or not app_page.is_button_enabled()
         
         # After a moment, button should be enabled again
-        time.sleep(1)
+        # Reduced wait time - message should appear quickly
+        message = app_page.get_message(timeout=3)
+        assert message == "Hello World!", "Message should appear quickly"
         assert app_page.is_button_enabled(), \
             "Button should be enabled after API call completes"
     
@@ -60,15 +63,15 @@ class TestHelloWorldButton:
         """Test that button can be clicked multiple times."""
         # First click
         app_page.click_hello_button()
-        message1 = app_page.get_message(timeout=10)
+        message1 = app_page.get_message(timeout=5)
         assert message1 == "Hello World!"
         
-        # Wait a moment
-        time.sleep(1)
+        # Reduced wait time
+        time.sleep(0.5)
         
         # Second click
         app_page.click_hello_button()
-        message2 = app_page.get_message(timeout=10)
+        message2 = app_page.get_message(timeout=5)
         assert message2 == "Hello World!"
     
     def test_message_appears_after_click(self, app_page):
@@ -80,11 +83,11 @@ class TestHelloWorldButton:
         # Click button
         app_page.click_hello_button()
         
-        # Message should appear
-        assert app_page.is_element_visible(*app_page.MESSAGE_DIV, timeout=10), \
+        # Message should appear (reduced timeout)
+        assert app_page.is_element_visible(*app_page.MESSAGE_DIV, timeout=5), \
             "Message should be visible after button click"
         
         # Verify message content
-        message = app_page.get_message()
+        message = app_page.get_message(timeout=5)
         assert message == "Hello World!", \
             f"Message should be 'Hello World!', got '{message}'"

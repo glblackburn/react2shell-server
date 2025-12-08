@@ -5,6 +5,8 @@ import subprocess
 import time
 import requests
 import logging
+import json
+import os
 
 
 logger = logging.getLogger(__name__)
@@ -30,8 +32,9 @@ def wait_for_server(url, max_attempts=30, delay=1):
         if check_server_running(url):
             logger.info(f"Server ready at {url}")
             return True
-        logger.debug(f"Waiting for server at {url} (attempt {attempt + 1}/{max_attempts})")
-        time.sleep(delay)
+        if attempt < max_attempts - 1:  # Don't sleep on last attempt
+            logger.debug(f"Waiting for server at {url} (attempt {attempt + 1}/{max_attempts})")
+            time.sleep(delay)
     return False
 
 
@@ -102,21 +105,80 @@ def get_server_status():
     }
 
 
+def get_current_react_version():
+    """Get current React version from package.json."""
+    try:
+        with open("package.json", "r") as f:
+            package = json.load(f)
+            return package.get("dependencies", {}).get("react", "unknown")
+    except Exception:
+        return "unknown"
+
+
+def check_version_installed(version):
+    """Check if React version is already installed by checking node_modules."""
+    try:
+        react_path = os.path.join("node_modules", "react", "package.json")
+        if os.path.exists(react_path):
+            with open(react_path, "r") as f:
+                react_pkg = json.load(f)
+                installed_version = react_pkg.get("version", "")
+                # Handle version matching (e.g., "19.1.1" matches "19.1.1")
+                return installed_version == version or installed_version.startswith(f"{version}.")
+    except Exception:
+        pass
+    return False
+
+
 def switch_react_version(version):
-    """Switch React version using Makefile."""
+    """Switch React version using Makefile, skipping npm install if already installed."""
+    import json
+    
+    # Check current version
+    current_version = get_current_react_version()
+    
+    # If already on this version and installed, skip switch
+    if current_version == version and check_version_installed(version):
+        logger.info(f"React {version} already installed, skipping switch")
+        return True
+    
     logger.info(f"Switching to React {version}...")
     
     try:
-        result = subprocess.run(
-            ["make", f"react-{version}"],
-            check=True,
-            capture_output=True,
-            text=True
-        )
+        # Update package.json only if version differs
+        if current_version != version:
+            with open("package.json", "r") as f:
+                package = json.load(f)
+            package["dependencies"]["react"] = version
+            package["dependencies"]["react-dom"] = version
+            with open("package.json", "w") as f:
+                json.dump(package, f, indent=2)
+            logger.info(f"Updated package.json to React {version}")
+        
+        # Only run npm install if version not already installed
+        if not check_version_installed(version):
+            logger.info(f"Installing React {version}...")
+            result = subprocess.run(
+                ["npm", "install"],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=120  # 2 minute timeout
+            )
+            logger.info(f"Installed React {version}")
+        else:
+            logger.info(f"React {version} already installed, skipping npm install")
+        
         logger.info(f"Switched to React {version}")
         return True
+    except subprocess.TimeoutExpired:
+        logger.error(f"npm install timed out for React {version}")
+        return False
     except subprocess.CalledProcessError as e:
         logger.error(f"Error switching React version: {e}")
         logger.error(f"stdout: {e.stdout}")
         logger.error(f"stderr: {e.stderr}")
+        return False
+    except Exception as e:
+        logger.error(f"Unexpected error switching React version: {e}")
         return False

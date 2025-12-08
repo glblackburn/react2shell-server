@@ -39,17 +39,17 @@ class AppPage(BasePage):
         super().__init__(driver)
         self.logger = logger
     
-    def wait_for_version_info_to_load(self, timeout=15):
+    def wait_for_version_info_to_load(self, timeout=10):
         """Wait for version information to finish loading."""
         try:
             # Wait for either version details or error to appear
             wait = WebDriverWait(self.driver, timeout)
             wait.until(
-                lambda d: self.is_element_present(*self.VERSION_DETAILS) or 
-                         self.is_element_present(*self.VERSION_ERROR)
+                lambda d: self.is_element_present(*self.VERSION_DETAILS, timeout=1) or 
+                         self.is_element_present(*self.VERSION_ERROR, timeout=1)
             )
             # If loading indicator is present, wait for it to disappear
-            if self.is_element_present(*self.VERSION_LOADING, timeout=2):
+            if self.is_element_present(*self.VERSION_LOADING, timeout=1):
                 wait.until(EC.invisibility_of_element_located(self.VERSION_LOADING))
             return True
         except TimeoutException:
@@ -90,7 +90,7 @@ class AppPage(BasePage):
         
         # Get status
         try:
-            status_elem = self.find_element(*self.VERSION_STATUS, timeout=5)
+            status_elem = self.find_element(*self.VERSION_STATUS, timeout=3)
             status_text = status_elem.text
             if "VULNERABLE" in status_text:
                 info["status"] = "VULNERABLE"
@@ -106,7 +106,7 @@ class AppPage(BasePage):
         self.click_element(*self.HELLO_BUTTON)
         self.logger.info("Clicked hello button")
     
-    def get_message(self, timeout=10):
+    def get_message(self, timeout=5):
         """Get the message displayed after clicking button."""
         try:
             wait = WebDriverWait(self.driver, timeout)

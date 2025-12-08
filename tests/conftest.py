@@ -22,16 +22,22 @@ FRONTEND_PORT = 5173
 BACKEND_PORT = 3000
 
 
+def check_server_running(url, timeout=1):
+    """Check if a server is running at the given URL."""
+    try:
+        response = requests.get(url, timeout=timeout)
+        return response.status_code == 200
+    except requests.exceptions.RequestException:
+        return False
+
+
 def wait_for_server(url, max_attempts=30, delay=1):
     """Wait for server to be ready."""
     for attempt in range(max_attempts):
-        try:
-            response = requests.get(url, timeout=2)
-            if response.status_code == 200:
-                return True
-        except requests.exceptions.RequestException:
-            pass
-        time.sleep(delay)
+        if check_server_running(url, timeout=1):
+            return True
+        if attempt < max_attempts - 1:  # Don't sleep on last attempt
+            time.sleep(delay)
     return False
 
 
@@ -84,13 +90,20 @@ def driver(request, start_servers):
     headless_str = request.config.getoption("--headless", default="true")
     headless = headless_str.lower() == "true"
     
+    # Always use headless for faster execution unless explicitly disabled
+    if headless_str == "default":
+        headless = True
+    
     if browser == "chrome":
         options = Options()
         if headless:
-            options.add_argument("--headless")
+            options.add_argument("--headless=new")  # Use new headless mode (faster)
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
+        options.add_argument("--disable-extensions")
+        options.add_argument("--disable-logging")
+        options.add_argument("--log-level=3")  # Suppress logs
         options.add_argument("--window-size=1920,1080")
         
         service = Service(ChromeDriverManager().install())
@@ -102,6 +115,9 @@ def driver(request, start_servers):
             options.add_argument("--headless")
         options.add_argument("--width=1920")
         options.add_argument("--height=1080")
+        # Firefox performance optimizations
+        options.set_preference("dom.webdriver.enabled", False)
+        options.set_preference("useAutomationExtension", False)
         
         service = FirefoxService(GeckoDriverManager().install())
         driver = webdriver.Firefox(service=service, options=options)
@@ -113,7 +129,7 @@ def driver(request, start_servers):
     else:
         pytest.fail(f"Unsupported browser: {browser}")
     
-    driver.implicitly_wait(10)
+    driver.implicitly_wait(5)  # Reduced from 10 to 5 seconds
     driver.maximize_window()
     
     yield driver
@@ -139,31 +155,47 @@ def react_version(request):
         def test_something(app_page, react_version):
             # react_version will be the version string, and servers will be restarted
     """
-    from utils.server_manager import switch_react_version, stop_servers, start_servers as start_servers_func, wait_for_server
+    from utils.server_manager import (
+        switch_react_version, stop_servers, start_servers as start_servers_func, 
+        wait_for_server, check_server_running, get_current_react_version, check_version_installed
+    )
     
     # Get version from parameter if provided
     version = request.param if hasattr(request, 'param') else None
     
     if version:
-        print(f"\n🔄 Switching to React {version}...")
-        # Stop servers before switching version
-        stop_servers()
+        # Check if already on this version
+        current = get_current_react_version()
+        already_installed = check_version_installed(version)
         
-        # Switch React version
-        if switch_react_version(version):
-            # Restart servers after version switch
-            print(f"🔄 Restarting servers for React {version}...")
-            start_servers_func()
-            # Wait for servers to be ready (BASE_URL and API_URL are defined at module level)
-            frontend_url = "http://localhost:5173"
-            api_url = "http://localhost:3000"
-            if not wait_for_server(frontend_url, max_attempts=60, delay=2):
-                pytest.fail(f"Frontend server not ready after switching to React {version}")
-            if not wait_for_server(f"{api_url}/api/hello", max_attempts=60, delay=2):
-                pytest.fail(f"Backend server not ready after switching to React {version}")
-            print(f"✓ React {version} ready for testing")
+        if current == version and already_installed:
+            print(f"✓ React {version} already active, skipping switch")
+            # Just ensure servers are running
+            if not check_server_running("http://localhost:5173") or not check_server_running("http://localhost:3000/api/hello"):
+                print(f"🔄 Servers not running, starting for React {version}...")
+                start_servers_func()
+                wait_for_server("http://localhost:5173", max_attempts=20, delay=1)
+                wait_for_server("http://localhost:3000/api/hello", max_attempts=20, delay=1)
         else:
-            pytest.skip(f"Failed to switch to React {version}")
+            print(f"\n🔄 Switching to React {version}...")
+            # Stop servers before switching version
+            stop_servers()
+            
+            # Switch React version
+            if switch_react_version(version):
+                # Restart servers after version switch
+                print(f"🔄 Restarting servers for React {version}...")
+                start_servers_func()
+                # Wait for servers to be ready (optimized wait times)
+                frontend_url = "http://localhost:5173"
+                api_url = "http://localhost:3000"
+                if not wait_for_server(frontend_url, max_attempts=20, delay=1):
+                    pytest.fail(f"Frontend server not ready after switching to React {version}")
+                if not wait_for_server(f"{api_url}/api/hello", max_attempts=20, delay=1):
+                    pytest.fail(f"Backend server not ready after switching to React {version}")
+                print(f"✓ React {version} ready for testing")
+            else:
+                pytest.skip(f"Failed to switch to React {version}")
     
     yield version
     
