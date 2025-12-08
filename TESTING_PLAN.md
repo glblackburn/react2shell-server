@@ -1,62 +1,18 @@
 # Testing Plan - Python Selenium Tests
 
-## Python Test Automation Framework Recommendations
+## Framework Choice
 
-### 🏆 Recommended: **pytest** (Primary Choice)
+**pytest** is used as the testing framework. See [tests/README.md](tests/README.md#framework-choice-pytest) for detailed framework comparison and rationale.
 
-**Why pytest?**
-- Most popular Python testing framework
-- Excellent Selenium integration with `pytest-selenium`
-- Rich plugin ecosystem (pytest-html, pytest-xdist, pytest-timeout)
-- Clean, readable test syntax
-- Powerful fixtures system
-- Great reporting capabilities
-- Easy parallelization
-- Active community and extensive documentation
-
-**Key pytest plugins for Selenium:**
+**Key plugins:**
 - `pytest-selenium` - Selenium integration
 - `pytest-html` - HTML test reports
 - `pytest-xdist` - Parallel test execution
 - `pytest-timeout` - Test timeout management
 - `pytest-rerunfailures` - Retry failed tests
-- `pytest-json-report` - JSON test reports
+- `webdriver-manager` - Automatic driver management
 
-### Alternative Frameworks
-
-#### 2. **unittest** (Built-in)
-- Pros: Built into Python, no installation needed
-- Cons: More verbose, less feature-rich, older API
-- Best for: Simple projects, teams new to Python testing
-
-#### 3. **Robot Framework** (Keyword-Driven)
-- Pros: Non-programmers can write tests, excellent reporting, keyword-driven
-- Cons: Less Pythonic, slower execution, learning curve
-- Best for: Teams with mixed technical skills, BDD-style tests
-
-#### 4. **Behave** (BDD)
-- Pros: Gherkin syntax, business-readable tests
-- Cons: Additional abstraction layer, more setup required
-- Best for: BDD-focused teams, business stakeholder involvement
-
-#### 5. **nose2** (Legacy)
-- Pros: Extends unittest
-- Cons: Less maintained, pytest is preferred
-- Best for: Legacy projects already using nose
-
-## Recommended Stack: pytest + Selenium
-
-### Core Dependencies
-```python
-pytest>=7.4.0
-selenium>=4.15.0
-pytest-selenium>=4.1.0
-pytest-html>=4.1.0
-pytest-xdist>=3.5.0
-pytest-timeout>=2.2.0
-pytest-rerunfailures>=12.0
-webdriver-manager>=4.0.0  # Automatic driver management
-```
+See [tests/requirements.txt](tests/requirements.txt) for complete dependency list.
 
 ## Test Structure
 
@@ -197,68 +153,19 @@ tests/
 
 ### Running Tests
 
+**Using Makefile (Recommended):**
 ```bash
-# Activate virtual environment
-source venv/bin/activate  # Linux/Mac
-# or
-venv\Scripts\activate  # Windows
-
-# Run all tests
-pytest
-
-# Run specific test file
-pytest tests/test_suites/test_hello_world.py
-
-# Run specific test
-pytest tests/test_suites/test_hello_world.py::test_button_click
-
-# Run with HTML report
-pytest --html=report.html --self-contained-html
-
-# Run in parallel (4 workers)
-pytest -n 4
-
-# Run with verbose output
-pytest -v
-
-# Run with browser visible (not headless)
-pytest --headed
-
-# Run with specific browser
-pytest --browser=chrome
-pytest --browser=firefox
-
-# Run with retries on failure
-pytest --reruns=2 --reruns-delay=1
+make test-setup    # First time setup
+make test          # Run all tests
+make test-report   # Generate HTML report
 ```
+
+**Direct pytest commands:**
+See [tests/README.md](tests/README.md#running-tests) for complete pytest command reference.
 
 ### Continuous Integration
 
-```yaml
-# Example GitHub Actions workflow
-name: Selenium Tests
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      - name: Install dependencies
-        run: |
-          pip install -r tests/requirements.txt
-      - name: Start servers
-        run: make start
-      - name: Run tests
-        run: pytest tests/ --html=report.html
-      - name: Upload report
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-report
-          path: report.html
-```
+See [tests/README.md](tests/README.md#continuous-integration) for CI/CD examples and setup.
 
 ## Test Data and Fixtures
 
@@ -333,6 +240,5 @@ jobs:
 
 ---
 
-**Framework Choice**: pytest (Recommended)  
 **Last Updated**: 2025-01-XX  
 **Status**: Ready for Implementation

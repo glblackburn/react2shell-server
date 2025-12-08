@@ -4,7 +4,9 @@ This directory contains Selenium-based end-to-end tests for the React2Shell Serv
 
 ## Framework Choice: pytest
 
-We use **pytest** as our testing framework because:
+We use **pytest** as our testing framework. See [TESTING_PLAN.md](../TESTING_PLAN.md) for framework comparison and rationale.
+
+**Key benefits:**
 - Most popular Python testing framework
 - Excellent Selenium integration
 - Rich plugin ecosystem
@@ -14,111 +16,70 @@ We use **pytest** as our testing framework because:
 
 ## Setup
 
-### 1. Install Python Dependencies
+### Quick Setup (Recommended)
 
 ```bash
-# Create virtual environment (recommended)
+# Set up test environment (creates venv and installs dependencies)
+make test-setup
+```
+
+### Manual Setup
+
+**1. Install Python Dependencies:**
+```bash
 python3 -m venv venv
-
-# Activate virtual environment
-source venv/bin/activate  # Linux/Mac
-# or
-venv\Scripts\activate  # Windows
-
-# Install test dependencies
+source venv/bin/activate  # Mac/Linux
+# or venv\Scripts\activate  # Windows
 pip install -r tests/requirements.txt
 ```
 
-### 2. Install Browser Drivers
+**2. Browser Drivers:**
+Tests use `webdriver-manager` which automatically downloads and manages browser drivers. No manual installation needed!
 
-The tests use `webdriver-manager` which automatically downloads and manages browser drivers. No manual installation needed!
-
-However, if you prefer manual installation:
-- **Chrome**: Install ChromeDriver from https://chromedriver.chromium.org/
-- **Firefox**: Install GeckoDriver from https://github.com/mozilla/geckodriver/releases
-- **Safari**: Built-in on macOS (enable in Safari > Develop menu)
-
-### 3. Start the Application Servers
-
-Before running tests, start the application:
-
+**3. Start Application Servers:**
 ```bash
-# From project root
-make start
+make start  # Or manually: npm run dev & npm run server
 ```
 
-Or manually:
-```bash
-npm run dev      # Terminal 1 - Frontend (port 5173)
-npm run server   # Terminal 2 - Backend (port 3000)
-```
-
-The test fixtures will automatically start/stop servers if needed, but it's recommended to start them manually for development.
+> **Note:** Test fixtures automatically start/stop servers if needed, but manual startup is recommended for development.
 
 ## Running Tests
 
-### Run All Tests
+### Using Makefile (Recommended)
 
 ```bash
-# From project root
+make test          # Run all tests
+make test-quick    # Quick run (headless)
+make test-report   # Generate HTML report
+make test-smoke    # Run smoke tests only
+make test-hello    # Run hello world tests
+make test-version  # Run version info tests
+make test-security # Run security status tests
+```
+
+See main [README.md](../README.md#testing) for all Makefile test commands.
+
+### Direct pytest Commands
+
+```bash
+# Run all tests
 pytest tests/
 
-# Or from tests directory
-cd tests
-pytest
-```
-
-### Run Specific Test Suites
-
-```bash
-# Hello World button tests
+# Run specific test suite
 pytest tests/test_suites/test_hello_world.py
 
-# Version information tests
-pytest tests/test_suites/test_version_info.py
-
-# Security status tests
-pytest tests/test_suites/test_security_status.py
-```
-
-### Run Specific Tests
-
-```bash
-# Run a specific test
+# Run specific test
 pytest tests/test_suites/test_hello_world.py::TestHelloWorldButton::test_button_click_displays_message
-```
 
-### Run with Options
-
-```bash
-# Verbose output
-pytest -v
-
-# Show print statements
-pytest -s
-
-# Run in parallel (4 workers)
-pytest -n 4
-
-# Run with specific browser
-pytest --browser=chrome
-pytest --browser=firefox
-pytest --browser=safari
-
-# Run in headed mode (see browser)
-pytest --headless=false
-
-# Run with HTML report
-pytest --html=reports/report.html --self-contained-html
-
-# Run with retries on failure
-pytest --reruns=2 --reruns-delay=1
-
-# Run only smoke tests
-pytest -m smoke
-
-# Run only regression tests
-pytest -m regression
+# Common options
+pytest -v                          # Verbose output
+pytest -s                          # Show print statements
+pytest -n 4                        # Parallel execution (4 workers)
+pytest --browser=chrome            # Specific browser
+pytest --headless=false            # Visible browser
+pytest --html=reports/report.html --self-contained-html  # HTML report
+pytest --reruns=2 --reruns-delay=1 # Retry on failure
+pytest -m smoke                    # Run only smoke tests
 ```
 
 ## Test Structure
@@ -267,6 +228,12 @@ jobs:
           name: test-report
           path: reports/report.html
 ```
+
+## Quick Reference
+
+- **[Quick Start Guide](QUICKSTART.md)** - Get started in 5 minutes
+- **[Testing Plan](../TESTING_PLAN.md)** - Complete testing strategy
+- **[Main README](../README.md#testing)** - Project overview and testing section
 
 ## Resources
 

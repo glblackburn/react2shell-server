@@ -214,181 +214,38 @@ The Vite dev server is configured to proxy API requests to the Express server.
 
 This project includes Python Selenium end-to-end tests using **pytest** framework.
 
-### Test Framework
-
-- **Framework**: pytest (most popular Python testing framework)
-- **Test Type**: Selenium WebDriver end-to-end tests
-- **Pattern**: Page Object Model (POM) for maintainability
-
 ### Quick Start
 
-#### Option 1: Using Makefile (Recommended)
-
-1. **Set up test environment:**
-   ```bash
-   make test-setup
-   ```
-   This creates a Python virtual environment and installs all test dependencies.
-
-2. **Run tests:**
-   ```bash
-   # Run all tests (automatically starts servers if needed)
-   make test
-   
-   # Run tests quickly (headless, no report)
-   make test-quick
-   
-   # Run tests and generate HTML report
-   make test-report
-   
-   # Run specific test suites
-   make test-hello      # Hello World button tests
-   make test-version    # Version information tests
-   make test-security   # Security status tests
-   
-   # Run only smoke tests
-   make test-smoke
-   
-   # Run with specific browser
-   make test-browser BROWSER=chrome
-   make test-browser BROWSER=firefox
-   ```
-
-3. **View test report:**
-   ```bash
-   make test-open-report
-   ```
-
-#### Option 2: Manual Setup
-
-1. **Install Python dependencies:**
-   ```bash
-   # Create virtual environment (recommended)
-   python3 -m venv venv
-   
-   # Activate virtual environment
-   source venv/bin/activate  # Mac/Linux
-   # or
-   venv\Scripts\activate  # Windows
-   
-   # Install test dependencies
-   pip install -r tests/requirements.txt
-   ```
-
-2. **Start the application** (if not already running):
-   ```bash
-   make start
-   ```
-
-3. **Run tests:**
-   ```bash
-   # Run all tests
-   pytest tests/
-   
-   # Run specific test suite
-   pytest tests/test_suites/test_hello_world.py
-   
-   # Run with visible browser (not headless)
-   pytest --headless=false tests/
-   
-   # Run with HTML report
-   pytest --html=reports/report.html --self-contained-html tests/
-   ```
-
-### Test Suites
-
-- **`test_hello_world.py`** - Tests for Hello World button functionality
-- **`test_version_info.py`** - Tests for version information display
-- **`test_security_status.py`** - Tests for security status and vulnerability indicators
-
-### Makefile Test Commands
-
-The Makefile provides convenient shortcuts for running tests:
-
 ```bash
-# Setup and installation
-make test-setup        # Set up Python virtual environment and install dependencies
+# Set up test environment (first time only)
+make test-setup
 
-# Running tests
-make test             # Run all tests (auto-starts servers)
-make test-quick       # Run tests quickly (headless, no report)
-make test-report      # Run tests and generate HTML report
+# Run all tests (automatically starts servers if needed)
+make test
 
-# Specific test suites
-make test-smoke       # Run only smoke tests
-make test-hello       # Run hello world button tests
-make test-version     # Run version information tests
-make test-security    # Run security status tests
-
-# Browser-specific tests
-make test-browser BROWSER=chrome   # Run with Chrome
-make test-browser BROWSER=firefox   # Run with Firefox
-make test-browser BROWSER=safari    # Run with Safari
-
-# Utilities
-make test-clean       # Clean test artifacts (reports, cache)
-make test-open-report # Open test report in browser
+# Run tests with HTML report
+make test-report
+make test-open-report
 ```
 
-### Direct pytest Commands
+### Test Commands
 
-You can also run pytest directly (after activating virtual environment):
+**Makefile shortcuts:**
+- `make test-setup` - Set up Python virtual environment
+- `make test` - Run all tests
+- `make test-quick` - Quick test run (headless)
+- `make test-report` - Generate HTML report
+- `make test-smoke` - Run smoke tests only
+- `make test-hello` - Run hello world tests
+- `make test-version` - Run version info tests
+- `make test-security` - Run security status tests
+- `make test-browser BROWSER=chrome` - Run with specific browser
+- `make test-clean` - Clean test artifacts
 
-```bash
-# Run all tests
-pytest tests/
-
-# Run specific test
-pytest tests/test_suites/test_hello_world.py::TestHelloWorldButton::test_button_click_displays_message
-
-# Run with specific browser
-pytest --browser=chrome tests/
-pytest --browser=firefox tests/
-pytest --browser=safari tests/
-
-# Run in parallel (faster execution)
-pytest -n 4 tests/
-
-# Run only smoke tests
-pytest -m smoke tests/
-
-# Run with verbose output
-pytest -v tests/
-
-# Run with retries on failure
-pytest --reruns=2 --reruns-delay=1 tests/
-```
-
-### Test Reports
-
-Test reports are generated in the `tests/reports/` directory:
-- **HTML Report**: `tests/reports/report.html` - Comprehensive test report with screenshots
-- **Screenshots**: `tests/reports/screenshots/` - Screenshots captured on test failures
-
-### Test Documentation
-
-For detailed testing documentation, see:
-- **`tests/README.md`** - Complete testing guide
-- **`tests/QUICKSTART.md`** - Quick start guide
-- **`TESTING_PLAN.md`** - Comprehensive testing plan
-
-### Test Requirements
-
-- Python 3.8 or higher
-- pytest and Selenium (installed via `tests/requirements.txt`)
-- Browser drivers (automatically managed by `webdriver-manager`)
-- Application servers running (frontend on port 5173, backend on port 3000)
-
-### Test Features
-
-- ✅ Automatic browser driver management
-- ✅ Server lifecycle management (auto start/stop)
-- ✅ Screenshots on test failures
-- ✅ HTML test reports
-- ✅ Parallel test execution support
-- ✅ Cross-browser testing (Chrome, Firefox, Safari)
-- ✅ Page Object Model pattern for maintainability
-- ✅ Explicit waits (no hard-coded sleeps)
+**For detailed documentation:**
+- **[Quick Start Guide](tests/QUICKSTART.md)** - Get started in 5 minutes
+- **[Complete Testing Guide](tests/README.md)** - Comprehensive documentation
+- **[Testing Plan](TESTING_PLAN.md)** - Testing strategy and implementation plan
 
 ## Project Structure
 
@@ -506,23 +363,13 @@ If port 3000 or 5173 is already in use, you can:
 
 ### Test-related Issues
 
-**Tests fail with "Server not ready":**
-- Ensure servers are running: `make status` or `make start`
-- Check that ports 5173 and 3000 are accessible
+See [tests/README.md](tests/README.md#troubleshooting) for detailed troubleshooting guide.
 
-**Browser driver issues:**
-- Tests use `webdriver-manager` which automatically downloads drivers
-- If issues persist, try: `pip install --upgrade webdriver-manager`
-- Ensure your browser (Chrome/Firefox/Safari) is installed and up to date
-
-**Import errors in tests:**
-- Ensure you're running from project root: `pytest tests/`
-- Activate virtual environment: `source venv/bin/activate`
-- Reinstall dependencies: `pip install -r tests/requirements.txt`
-
-**Port conflicts during test execution:**
-- Stop any manually running servers: `make stop`
-- Kill processes on ports: `lsof -ti:5173 | xargs kill` and `lsof -ti:3000 | xargs kill`
+Common issues:
+- **Tests fail with "Server not ready"**: Run `make start` to ensure servers are running
+- **Browser driver issues**: Tests auto-manage drivers via `webdriver-manager`
+- **Import errors**: Ensure virtual environment is activated and dependencies installed
+- **Port conflicts**: Use `make stop` to free ports
 
 ## Defect Tracking
 
