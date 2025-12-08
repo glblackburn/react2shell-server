@@ -662,7 +662,7 @@ When running in Next.js mode, the version information display does not show the 
 - API returns `nextjs` field in JSON response, but frontend doesn't render it
 
 **Screenshots:**
-![Next.js version missing from UI](nextjs-render-defect.png)
+![Bug-3: Next.js version missing from UI](bug-3.png)
 *Shows version information display without Next.js version*
 
 **Steps to Reproduce:**
