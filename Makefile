@@ -1,4 +1,4 @@
-.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary
+.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report
 
 # Default target
 help:
@@ -50,6 +50,7 @@ help:
 	@echo "  make test-performance-slowest [LIMIT=N] - List slowest tests"
 	@echo "  make test-performance-history [LIMIT=N] - List recent performance history"
 	@echo "  make test-performance-summary [LIMIT=N] - Show summary of recent runs"
+	@echo "  make test-performance-report - Generate and open comprehensive HTML performance report"
 	@echo ""
 	@echo "Note: Versions 19.0, 19.1.0, 19.1.1, and 19.2.0 contain a critical"
 	@echo "      security vulnerability in React Server Components."
@@ -478,6 +479,10 @@ test-performance-history: check-venv
 test-performance-summary: check-venv
 	@echo "Performance summary:"
 	@cd $(TEST_DIR) && $(VENV_BIN)/python3 performance_report.py summary --limit $(or $(LIMIT),5)
+
+test-performance-report: check-venv
+	@echo "Generating comprehensive performance history report..."
+	@cd $(TEST_DIR) && ./generate_performance_report.sh
 
 # Run tests with specific browser
 test-browser: check-venv

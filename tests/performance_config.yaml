@@ -1,38 +1,74 @@
 # Performance Limits and Baselines Configuration
 # This file configures time limits and performance tracking behavior
+# Limits are automatically calculated based on historical performance data:
+# - Test limits: 10% buffer above max observed time
+# - Suite limits: 20% buffer above max observed time
 
 # Per-test time limits (in seconds)
 # Tests exceeding these limits will fail (via pytest-timeout)
 limits:
-  default: 30      # Default timeout for tests without specific markers
+  default: 7      # Default timeout for tests without specific markers
   smoke: 10        # Smoke tests must complete quickly
   slow: 60         # Slow tests allowed up to 60 seconds
   version_switch: 120  # Version switch tests allowed up to 2 minutes
   
   # Per-suite limits (in seconds)
   # Total time allowed for all tests in a suite
+  # Calculated with 20% buffer above max observed time
   suites:
-    TestHelloWorldButton: 60
-    TestVersionInformation: 90
-    TestSecurityStatus: 300  # Includes version switching, so longer
+    TestHelloWorldButton: 9
+    TestVersionInformation: 49
+    TestSecurityStatus: 90
+  
+  # Individual test limits (in seconds)
+  # Each test has its own limit calculated with 10% buffer above max observed time
+  tests:
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_button_click_displays_message": 1
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_button_is_enabled": 1
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_button_is_visible": 1
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_button_loading_state": 1
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_button_multiple_clicks": 3
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_button_text_is_correct": 1
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_message_appears_after_click": 5
+    "test_suites/test_security_status.py::TestSecurityStatus::test_fixed_indicator_displayed": 8
+    "test_suites/test_security_status.py::TestSecurityStatus::test_fixed_status_color": 8
+    "test_suites/test_security_status.py::TestSecurityStatus::test_fixed_versions_show_fixed_status[19.0.1-FIXED]": 7
+    "test_suites/test_security_status.py::TestSecurityStatus::test_fixed_versions_show_fixed_status[19.1.2-FIXED]": 7
+    "test_suites/test_security_status.py::TestSecurityStatus::test_fixed_versions_show_fixed_status[19.2.1-FIXED]": 8
+    "test_suites/test_security_status.py::TestSecurityStatus::test_react_version_matches_status": 8
+    "test_suites/test_security_status.py::TestSecurityStatus::test_vulnerable_indicator_displayed": 8
+    "test_suites/test_security_status.py::TestSecurityStatus::test_vulnerable_status_color": 8
+    "test_suites/test_security_status.py::TestSecurityStatus::test_vulnerable_versions_show_vulnerable_status[19.0-VULNERABLE]": 7
+    "test_suites/test_security_status.py::TestSecurityStatus::test_vulnerable_versions_show_vulnerable_status[19.1.0-VULNERABLE]": 7
+    "test_suites/test_security_status.py::TestSecurityStatus::test_vulnerable_versions_show_vulnerable_status[19.1.1-VULNERABLE]": 7
+    "test_suites/test_security_status.py::TestSecurityStatus::test_vulnerable_versions_show_vulnerable_status[19.2.0-VULNERABLE]": 7
+    "test_suites/test_version_info.py::TestVersionInformation::test_version_info_card_is_visible": 1
+    "test_suites/test_version_info.py::TestVersionInformation::test_version_info_contains_node_version": 7
+    "test_suites/test_version_info.py::TestVersionInformation::test_version_info_contains_react_dom_version": 7
+    "test_suites/test_version_info.py::TestVersionInformation::test_version_info_contains_react_version": 7
+    "test_suites/test_version_info.py::TestVersionInformation::test_version_info_contains_status": 7
+    "test_suites/test_version_info.py::TestVersionInformation::test_version_info_loading_indicator": 4
+    "test_suites/test_version_info.py::TestVersionInformation::test_version_info_loads": 7
+    "test_suites/test_version_info.py::TestVersionInformation::test_version_info_retry_logic": 7
+    "test_suites/test_version_info.py::TestVersionInformation::test_version_title_displayed": 1
 
 # Regression detection settings
 regression:
-  enabled: true
+  enabled: True
   threshold: 1.5      # 50% slower triggers regression warning
   warning_threshold: 1.2  # 20% slower triggers warning
-  fail_on_regression: false  # Set to true to fail tests on regression (for CI)
+  fail_on_regression: False  # Set to true to fail tests on regression (for CI)
   
 # Baseline management
 baseline:
   file: tests/.performance_baseline.json
-  auto_update: false  # Set to true to auto-update after successful runs
+  auto_update: False  # Set to true to auto-update after successful runs
   min_runs: 3         # Minimum runs before establishing baseline (for averaging)
   
 # Performance reporting
 reporting:
-  show_suite_times: true
-  show_slow_tests: true
+  show_suite_times: True
+  show_slow_tests: True
   slow_test_threshold: 5.0  # Tests taking longer than this are highlighted
-  generate_json: false  # Generate JSON performance report
+  generate_json: False  # Generate JSON performance report
   json_report_path: tests/reports/performance.json

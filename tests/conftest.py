@@ -353,12 +353,36 @@ def pytest_addoption(parser):
 
 @pytest.fixture(autouse=True)
 def set_test_timeout(request):
-    """Automatically set timeout based on test markers.
+    """Automatically set timeout based on test markers or individual test limits.
     
-    This fixture applies per-marker timeouts to tests based on their markers.
-    Priority: smoke > slow > version_switch > default
+    Priority:
+    1. Individual test limit from performance_config.yaml
+    2. Marker-based limits (smoke > slow > version_switch)
+    3. Default limit
     """
-    # Timeout values in seconds for each marker
+    test_id = request.node.nodeid
+    
+    # Try to load individual test limit from config
+    individual_limit = None
+    if PERFORMANCE_CONFIG_FILE.exists():
+        try:
+            import yaml
+            with open(PERFORMANCE_CONFIG_FILE) as f:
+                perf_config = yaml.safe_load(f) or {}
+            test_limits = perf_config.get('limits', {}).get('tests', {})
+            individual_limit = test_limits.get(test_id)
+        except Exception:
+            pass
+    
+    # If individual limit found, use it
+    if individual_limit:
+        if not request.node.get_closest_marker('timeout'):
+            request.node.add_marker(
+                pytest.mark.timeout(individual_limit, method='thread')
+            )
+        return
+    
+    # Fall back to marker-based timeouts
     timeout_markers = {
         'smoke': 10,           # Smoke tests should be fast
         'slow': 60,            # Slow tests get 60s
