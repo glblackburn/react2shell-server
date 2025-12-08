@@ -27,11 +27,13 @@ export default function HomePage() {
         setVersionLoading(false);
       } catch (error) {
         console.error('Error fetching version info:', error);
+        // Retry once after a short delay in case server is starting up
         if (!isRetry) {
           setTimeout(() => {
             fetchVersion(true);
           }, 1000);
         } else {
+          // Retry failed, show error
           setVersionInfo(null);
           setVersionLoading(false);
         }
