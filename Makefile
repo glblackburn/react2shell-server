@@ -1,4 +1,4 @@
-.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 install current-version clean vulnerable start stop status tail-vite tail-server
+.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-report test-smoke test-hello test-version test-security test-browser test-clean test-open-report
 
 # Default target
 help:
@@ -28,6 +28,19 @@ help:
 	@echo "  make current-version - Show currently installed React version"
 	@echo "  make install         - Install dependencies for current version"
 	@echo "  make clean           - Remove node_modules and package-lock.json"
+	@echo ""
+	@echo "Testing (Python Selenium):"
+	@echo "  make test-setup      - Set up Python virtual environment and install test dependencies"
+	@echo "  make test            - Run all tests (starts servers if needed)"
+	@echo "  make test-quick      - Run all tests quickly (headless, no report)"
+	@echo "  make test-report     - Run all tests and generate HTML report"
+	@echo "  make test-smoke      - Run only smoke tests"
+	@echo "  make test-hello      - Run hello world button tests"
+	@echo "  make test-version    - Run version information tests"
+	@echo "  make test-security   - Run security status tests"
+	@echo "  make test-browser    - Run tests with specific browser (use BROWSER=chrome|firefox|safari)"
+	@echo "  make test-clean      - Clean test artifacts (reports, screenshots, cache)"
+	@echo "  make test-open-report - Open test report in browser"
 	@echo ""
 	@echo "Note: Versions 19.0, 19.1.0, 19.1.1, and 19.2.0 contain a critical"
 	@echo "      security vulnerability in React Server Components."
@@ -250,3 +263,176 @@ tail-server:
 	@echo "Press Ctrl+C to exit"
 	@echo ""
 	@tail -f $(SERVER_LOG)
+
+# ============================================================================
+# Testing Targets
+# ============================================================================
+
+# Python and virtual environment detection
+PYTHON := $(shell which python3 || which python)
+VENV := venv
+VENV_BIN := $(VENV)/bin
+VENV_ACTIVATE := $(VENV_BIN)/activate
+PYTEST := $(VENV_BIN)/pytest
+PIP := $(VENV_BIN)/pip
+TEST_DIR := tests
+REPORT_DIR := $(TEST_DIR)/reports
+REPORT_HTML := $(REPORT_DIR)/report.html
+
+# Check if virtual environment exists
+check-venv:
+	@if [ ! -d "$(VENV)" ]; then \
+		echo "⚠️  Virtual environment not found. Run 'make test-setup' first."; \
+		exit 1; \
+	fi
+
+# Set up Python test environment
+test-setup:
+	@echo "Setting up Python test environment..."
+	@if [ -z "$(PYTHON)" ]; then \
+		echo "❌ Python not found. Please install Python 3.8 or higher."; \
+		exit 1; \
+	fi
+	@echo "Using Python: $(PYTHON)"
+	@$(PYTHON) --version
+	@if [ ! -d "$(VENV)" ]; then \
+		echo "Creating virtual environment..."; \
+		$(PYTHON) -m venv $(VENV); \
+	fi
+	@echo "Installing test dependencies..."
+	@$(PIP) install --upgrade pip > /dev/null 2>&1
+	@$(PIP) install -q -r $(TEST_DIR)/requirements.txt
+	@echo "✓ Test environment ready!"
+	@echo ""
+	@echo "To activate the virtual environment manually:"
+	@echo "  source $(VENV_ACTIVATE)  # Mac/Linux"
+	@echo "  $(VENV_BIN)\\activate     # Windows"
+
+# Run all tests (with server management)
+test: check-venv
+	@echo "Running all Selenium tests..."
+	@echo ""
+	@# Ensure servers are running
+	@if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
+		echo "⚠️  Servers not running. Starting servers..."; \
+		$(MAKE) start > /dev/null 2>&1; \
+		sleep 3; \
+	fi
+	@$(PYTEST) $(TEST_DIR)/ -v
+	@echo ""
+	@echo "✓ Tests completed!"
+
+# Run tests quickly (headless, no report)
+test-quick: check-venv
+	@echo "Running tests quickly (headless mode)..."
+	@# Ensure servers are running
+	@if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
+		echo "⚠️  Servers not running. Starting servers..."; \
+		$(MAKE) start > /dev/null 2>&1; \
+		sleep 3; \
+	fi
+	@$(PYTEST) $(TEST_DIR)/ --headless=true -v --tb=short
+
+# Run tests and generate HTML report
+test-report: check-venv
+	@echo "Running tests with HTML report..."
+	@mkdir -p $(REPORT_DIR)
+	@# Ensure servers are running
+	@if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
+		echo "⚠️  Servers not running. Starting servers..."; \
+		$(MAKE) start > /dev/null 2>&1; \
+		sleep 3; \
+	fi
+	@$(PYTEST) $(TEST_DIR)/ --html=$(REPORT_HTML) --self-contained-html -v
+	@echo ""
+	@echo "✓ Test report generated: $(REPORT_HTML)"
+	@echo "  Open with: make test-open-report"
+
+# Run only smoke tests
+test-smoke: check-venv
+	@echo "Running smoke tests..."
+	@# Ensure servers are running
+	@if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
+		echo "⚠️  Servers not running. Starting servers..."; \
+		$(MAKE) start > /dev/null 2>&1; \
+		sleep 3; \
+	fi
+	@$(PYTEST) $(TEST_DIR)/ -m smoke -v
+
+# Run hello world button tests
+test-hello: check-venv
+	@echo "Running hello world button tests..."
+	@# Ensure servers are running
+	@if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
+		echo "⚠️  Servers not running. Starting servers..."; \
+		$(MAKE) start > /dev/null 2>&1; \
+		sleep 3; \
+	fi
+	@$(PYTEST) $(TEST_DIR)/test_suites/test_hello_world.py -v
+
+# Run version information tests
+test-version: check-venv
+	@echo "Running version information tests..."
+	@# Ensure servers are running
+	@if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
+		echo "⚠️  Servers not running. Starting servers..."; \
+		$(MAKE) start > /dev/null 2>&1; \
+		sleep 3; \
+	fi
+	@$(PYTEST) $(TEST_DIR)/test_suites/test_version_info.py -v
+
+# Run security status tests
+test-security: check-venv
+	@echo "Running security status tests..."
+	@# Ensure servers are running
+	@if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
+		echo "⚠️  Servers not running. Starting servers..."; \
+		$(MAKE) start > /dev/null 2>&1; \
+		sleep 3; \
+	fi
+	@$(PYTEST) $(TEST_DIR)/test_suites/test_security_status.py -v
+
+# Run tests with specific browser
+test-browser: check-venv
+	@if [ -z "$(BROWSER)" ]; then \
+		echo "❌ Please specify BROWSER (chrome, firefox, or safari)"; \
+		echo "   Example: make test-browser BROWSER=chrome"; \
+		exit 1; \
+	fi
+	@echo "Running tests with $(BROWSER) browser..."
+	@# Ensure servers are running
+	@if ! lsof -ti:5173 >/dev/null 2>&1 || ! lsof -ti:3000 >/dev/null 2>&1; then \
+		echo "⚠️  Servers not running. Starting servers..."; \
+		$(MAKE) start > /dev/null 2>&1; \
+		sleep 3; \
+	fi
+	@$(PYTEST) $(TEST_DIR)/ --browser=$(BROWSER) -v
+
+# Clean test artifacts
+test-clean:
+	@echo "Cleaning test artifacts..."
+	@rm -rf $(REPORT_DIR)
+	@rm -rf $(TEST_DIR)/.pytest_cache
+	@rm -rf $(TEST_DIR)/__pycache__
+	@rm -rf $(TEST_DIR)/**/__pycache__
+	@find $(TEST_DIR) -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@find $(TEST_DIR) -type f -name "*.pyc" -delete 2>/dev/null || true
+	@echo "✓ Test artifacts cleaned"
+
+# Open test report in browser
+test-open-report:
+	@if [ ! -f "$(REPORT_HTML)" ]; then \
+		echo "❌ Test report not found: $(REPORT_HTML)"; \
+		echo "   Run 'make test-report' first to generate the report."; \
+		exit 1; \
+	fi
+	@echo "Opening test report in browser..."
+	@if command -v open > /dev/null; then \
+		open $(REPORT_HTML); \
+	elif command -v xdg-open > /dev/null; then \
+		xdg-open $(REPORT_HTML); \
+	elif command -v start > /dev/null; then \
+		start $(REPORT_HTML); \
+	else \
+		echo "Please open $(REPORT_HTML) manually in your browser."; \
+	fi
