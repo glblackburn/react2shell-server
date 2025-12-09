@@ -107,7 +107,7 @@ $(foreach version,$(FIXED_VERSIONS),$(eval react-$(version):;$(call switch_react
 $(foreach version,$(NEXTJS_VULNERABLE_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 $(foreach version,$(NEXTJS_FIXED_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 
-.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.4 nextjs-15.1.8 nextjs-15.2.5 nextjs-15.3.5 nextjs-15.4.7 nextjs-15.5.6 nextjs-16.0.6 nextjs-14.0.1 nextjs-14.1.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
+.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.4 nextjs-15.1.8 nextjs-15.2.5 nextjs-15.3.5 nextjs-15.4.7 nextjs-15.5.6 nextjs-16.0.6 nextjs-14.0.1 nextjs-14.1.1 install current-version clean vulnerable start stop status tail-vite tail-server setup setup-scanner setup-deps setup-all test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
 
 # Set help as the default target when make is run without arguments
 .DEFAULT_GOAL := help
@@ -155,6 +155,12 @@ help:
 	@echo "  make current-version - Show currently installed React version"
 	@echo "  make install         - Install dependencies for current version"
 	@echo "  make clean           - Remove node_modules and package-lock.json"
+	@echo ""
+	@echo "Setup:"
+	@echo "  make setup           - Set up all project dependencies (scanner, npm, python)"
+	@echo "  make setup-scanner   - Set up the react2shell-scanner (clone and install deps)"
+	@echo "  make setup-deps      - Install npm dependencies for all frameworks"
+	@echo "  make setup-all      - Complete setup (scanner + deps + test environment)"
 	@echo ""
 	@echo "Framework Switching:"
 	@echo "  make use-vite        - Switch to Vite + React mode (default)"
@@ -234,6 +240,96 @@ clean:
 	@echo "Cleaning node_modules and package-lock.json..."
 	@rm -rf node_modules package-lock.json
 	@echo "✓ Cleaned"
+
+# ============================================================================
+# Setup Targets
+# ============================================================================
+
+# Scanner configuration
+SCANNER_PATH := /Users/lblackb/data/lblackb/git/third-party/react2shell-scanner
+SCANNER_REPO := https://github.com/assetnote/react2shell-scanner.git
+SCANNER_SCRIPT := $(SCANNER_PATH)/scanner.py
+
+# Set up the scanner (clone if needed, install dependencies)
+setup-scanner:
+	@echo "Setting up react2shell-scanner..."
+	@if [ ! -d "$(SCANNER_PATH)" ]; then \
+		echo "Scanner not found. Creating directory structure..."; \
+		mkdir -p "$(dir $(SCANNER_PATH))"; \
+		echo "Cloning scanner repository..."; \
+		git clone "$(SCANNER_REPO)" "$(SCANNER_PATH)" || { \
+			echo "❌ Failed to clone scanner repository"; \
+			echo "   Make sure you have git access to $(SCANNER_REPO)"; \
+			exit 1; \
+		}; \
+		echo "✓ Scanner cloned"; \
+	else \
+		echo "Scanner directory exists. Checking if it's a git repository..."; \
+		if [ -d "$(SCANNER_PATH)/.git" ]; then \
+			echo "Updating scanner repository..."; \
+			cd "$(SCANNER_PATH)" && git pull || echo "⚠️  Could not update scanner (continuing anyway)"; \
+		else \
+			echo "⚠️  Directory exists but is not a git repository"; \
+		fi; \
+	fi
+	@if [ ! -f "$(SCANNER_SCRIPT)" ]; then \
+		echo "❌ Scanner script not found at $(SCANNER_SCRIPT)"; \
+		exit 1; \
+	fi
+	@echo "Installing scanner Python dependencies..."
+	@if [ -f "$(SCANNER_PATH)/requirements.txt" ]; then \
+		python3 -m pip install --user -q -r "$(SCANNER_PATH)/requirements.txt" || { \
+			echo "⚠️  Failed to install scanner dependencies with --user flag, trying without..."; \
+			python3 -m pip install -q -r "$(SCANNER_PATH)/requirements.txt" || { \
+				echo "❌ Failed to install scanner dependencies"; \
+				echo "   Try installing manually: pip install -r $(SCANNER_PATH)/requirements.txt"; \
+				exit 1; \
+			}; \
+		}; \
+		echo "✓ Scanner dependencies installed"; \
+	else \
+		echo "⚠️  No requirements.txt found in scanner directory"; \
+	fi
+	@echo "✓ Scanner setup complete!"
+	@echo "  Scanner location: $(SCANNER_PATH)"
+	@echo "  Scanner script: $(SCANNER_SCRIPT)"
+
+# Install npm dependencies for all frameworks
+setup-deps:
+	@echo "Installing npm dependencies..."
+	@echo "Installing root dependencies..."
+	@npm install --legacy-peer-deps || { \
+		echo "❌ Failed to install root dependencies"; \
+		exit 1; \
+	}
+	@echo "Installing Vite framework dependencies..."
+	@cd frameworks/vite-react && npm install || { \
+		echo "❌ Failed to install Vite dependencies"; \
+		exit 1; \
+	}
+	@echo "Installing Next.js framework dependencies..."
+	@cd frameworks/nextjs && npm install --legacy-peer-deps || { \
+		echo "❌ Failed to install Next.js dependencies"; \
+		exit 1; \
+	}
+	@echo "✓ All npm dependencies installed"
+
+# Complete setup (scanner + deps + test environment)
+setup-all: setup-scanner setup-deps test-setup
+	@echo ""
+	@echo "=========================================="
+	@echo "✓ Complete setup finished!"
+	@echo "=========================================="
+	@echo ""
+	@echo "Next steps:"
+	@echo "  1. Switch to Next.js mode: make use-nextjs"
+	@echo "  2. Start the server: make start"
+	@echo "  3. Run scanner verification: ./scripts/verify_scanner.sh"
+
+# Main setup target (sets up everything needed)
+setup: setup-all
+	@echo ""
+	@echo "✓ Setup complete! Project is ready to use."
 
 # PID and log file locations
 PID_DIR := .pids
