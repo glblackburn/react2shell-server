@@ -392,9 +392,10 @@ start: $(PID_DIR) $(LOG_DIR)
 		if [ -f $(SERVER_PID) ] && kill -0 `cat $(SERVER_PID)` 2>/dev/null; then \
 			echo "⚠️  Next.js server is already running (PID: $$(cat $(SERVER_PID)))"; \
 		else \
+			NEXTJS_DIR=$$(pwd)/frameworks/nextjs; \
 			cd frameworks/nextjs; \
 			if [ -f ~/.nvm/nvm.sh ]; then \
-				nohup bash -c '. ~/.nvm/nvm.sh && nvm use 18 2>/dev/null || nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true && npm run dev' > ../../$(SERVER_LOG) 2>&1 & \
+				nohup bash -c "export TERM=dumb && . ~/.nvm/nvm.sh && nvm use 18 2>/dev/null || nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true && cd \"$$NEXTJS_DIR\" && npm run dev" > ../../$(SERVER_LOG) 2>&1 & \
 			else \
 				nohup npm run dev > ../../$(SERVER_LOG) 2>&1 & \
 			fi; \
