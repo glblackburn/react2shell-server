@@ -8,6 +8,9 @@
 **Description:**
 After fixing BUG-6 (port mismatch), the `scripts/verify_scanner.sh` script correctly detects Next.js mode and uses port 3000. However, when running scanner verification tests after switching React versions, the scanner times out with "Read timed out" errors. The script's `wait_for_server` function reports the server is ready, but the scanner cannot connect within its 10-second timeout period.
 
+**Important Context:**
+The `react2shell-scanner` is designed **exclusively for Next.js applications using React Server Components**, as stated in its README. This project's primary purpose is **React version switching** for testing different React versions, not Next.js vulnerability testing. The scanner verification script attempts to use a Next.js-specific tool on a project focused on React version testing, which represents a fundamental design mismatch.
+
 **Expected Behavior:**
 - After switching React versions, server should restart and be fully ready
 - Scanner should be able to connect and scan the server successfully
@@ -51,7 +54,21 @@ Running scanner against React 19.0...
 5. Check that script reports server is ready, but scanner times out
 
 **Root Cause:**
-**Mismatch between server readiness check and scanner request type:** The `verify_scanner.sh` script's `check_server` function only verifies that the server responds to simple GET requests, but the scanner sends complex POST requests with multipart/form-data payloads. After a React version switch in Next.js mode, the server may respond to GET requests before it's fully ready to handle POST requests with Next.js-specific headers and complex payloads.
+**Fundamental scanner design limitation:** The `react2shell-scanner` is designed **exclusively for Next.js applications using React Server Components (RSC)**, as explicitly stated in its README: "A command-line tool for detecting CVE-2025-55182 and CVE-2025-66478 in **Next.js applications using React Server Components**."
+
+**Key Points:**
+1. **Scanner is Next.js-only:** The scanner is not designed to work with standalone React applications. It specifically targets Next.js applications with RSC infrastructure.
+
+2. **Vulnerability is Next.js-specific:** CVE-2025-55182 and CVE-2025-66478 are vulnerabilities in **Next.js**, not in React itself. While React versions 19.0, 19.1.0, 19.1.1, and 19.2.0 are involved, the actual vulnerability exists in how Next.js uses these React versions with Server Components.
+
+3. **Project purpose mismatch:** This project is designed for **React version switching** to test different React versions. The scanner verification script (`verify_scanner.sh`) attempts to use a Next.js-specific scanner on a project that focuses on React version testing, not Next.js vulnerability testing.
+
+4. **Timeout as symptom:** The "Read timed out" errors are a symptom of the fundamental mismatch. The scanner sends POST requests with Next.js-specific headers (`Next-Action`, `X-Nextjs-*`) expecting Next.js RSC protocol responses. Even when the project is in "Next.js mode" (`frameworks/nextjs/`), the scanner may not receive the expected RSC protocol responses, or the RSC infrastructure may not be fully initialized/configured to handle scanner requests properly.
+
+5. **Inappropriate tool usage:** Running `verify_scanner.sh` to test React version switching is using the wrong tool for the purpose. The scanner is for testing Next.js applications, not for validating React version switching in a standalone React project (even if it has a Next.js framework option).
+
+**Secondary Issue - Readiness Check Mismatch:**
+Additionally, the `verify_scanner.sh` script's `check_server` function only verifies that the server responds to simple GET requests, but the scanner sends complex POST requests with multipart/form-data payloads and Next.js-specific headers. After a React version switch, the server may respond to GET requests before it's fully ready to handle POST requests with Next.js RSC protocol, but this is secondary to the fundamental design mismatch.
 
 **Detailed Analysis:**
 
@@ -175,11 +192,20 @@ The root cause is that `check_server()` validates server readiness using GET req
 - This bug appears after BUG-6 fix - server detection works but scanner connection fails
 
 **Proposed Solution:**
-1. **Improve Server Readiness Check (Primary Fix):**
+
+**Option 1: Remove or Deprecate Scanner Verification (Recommended)**
+- **Recognize the fundamental mismatch:** The scanner is designed for Next.js applications, not for React version switching testing
+- **Update documentation:** Clarify that `verify_scanner.sh` is only applicable if the project is being used as a Next.js application for vulnerability testing, not for React version switching
+- **Mark as experimental/informational:** Document that scanner verification may not work as expected because the scanner is Next.js-specific
+- **Alternative:** If Next.js vulnerability testing is needed, create a separate dedicated Next.js project specifically for that purpose
+
+**Option 2: Fix Scanner Verification for Next.js Mode (If Next.js Testing is Required)**
+If the project needs to support Next.js vulnerability testing:
+
+1. **Improve Server Readiness Check:**
    - Replace GET-based `check_server()` with POST-based check that matches scanner behavior
    - Send a test POST request with Next.js headers to verify server can handle scanner requests
-   - Or check for Next.js-specific endpoints/headers that indicate RSC is ready
-   - This ensures server is ready for actual scanner requests, not just GET requests
+   - Check for Next.js-specific endpoints/headers that indicate RSC is ready
 
 2. **Increase Wait Time After Version Switch:**
    - Increase sleep time from 3 seconds to 15-20 seconds for Next.js mode
@@ -190,22 +216,21 @@ The root cause is that `check_server()` validates server readiness using GET req
    - After `wait_for_server` succeeds, send a lightweight POST request with Next.js headers
    - Verify the server responds (even if with error) within reasonable time
    - Only proceed with scanner if POST request succeeds
-   - This validates server can handle the request type scanner will use
 
-4. **Restart Server After Version Switch:**
-   - Explicitly stop and restart server after version switch in Next.js mode
-   - Ensure server fully restarts with new React version and reinitializes RSC
-   - This may be necessary if Next.js dev server doesn't auto-restart on package.json changes
+4. **Ensure Full Next.js RSC Implementation:**
+   - Verify that Next.js mode fully implements RSC infrastructure
+   - Ensure Server Actions are properly configured and functional
+   - Test that Next.js RSC protocol responses work correctly
 
 5. **Increase Scanner Timeout (If Configurable):**
    - Scanner timeout is hardcoded to 10 seconds (scanner.py line 499)
    - If scanner supports timeout configuration via CLI, increase it for Next.js mode
    - Or add additional delay after POST-based health check before running scanner
 
-6. **Framework-Specific Wait Times:**
-   - Use longer wait times for Next.js mode (similar to scanner_verification_report.sh which uses 90 attempts)
-   - Next.js requires more initialization time than Vite after version changes
-   - Consider: 15-20 seconds sleep + POST-based health check for Next.js vs 3-5 seconds for Vite
+**Option 3: Accept Limitation and Document**
+- Document that scanner verification is only for Next.js applications
+- Clarify that this project's primary purpose is React version switching, not Next.js vulnerability testing
+- Note that scanner verification may not work as expected due to fundamental design mismatch
 
 **Workaround:**
 1. Manually restart server after each version switch:
