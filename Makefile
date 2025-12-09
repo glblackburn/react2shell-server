@@ -397,7 +397,12 @@ start: $(PID_DIR) $(LOG_DIR)
 		if [ -f $(SERVER_PID) ] && kill -0 `cat $(SERVER_PID)` 2>/dev/null; then \
 			echo "⚠️  Next.js server is already running (PID: $$(cat $(SERVER_PID)))"; \
 		else \
-			cd frameworks/nextjs && nohup npm run dev > ../../$(SERVER_LOG) 2>&1 & \
+			cd frameworks/nextjs; \
+			if [ -f ~/.nvm/nvm.sh ]; then \
+				nohup bash -c ". ~/.nvm/nvm.sh && nvm use 18 2>/dev/null || nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true && npm run dev" > ../../$(SERVER_LOG) 2>&1 & \
+			else \
+				nohup npm run dev > ../../$(SERVER_LOG) 2>&1 & \
+			fi; \
 			PID=$$!; \
 			echo $$PID > ../../$(SERVER_PID); \
 			echo "✓ Started Next.js server (PID: $$PID)"; \
@@ -429,7 +434,12 @@ start: $(PID_DIR) $(LOG_DIR)
 		if [ -f $(VITE_PID) ] && kill -0 `cat $(VITE_PID)` 2>/dev/null; then \
 			echo "⚠️  Vite dev server is already running (PID: $$(cat $(VITE_PID)))"; \
 		else \
-			cd frameworks/vite-react && nohup npm run dev > ../../$(VITE_LOG) 2>&1 & \
+			cd frameworks/vite-react; \
+			if [ -f ~/.nvm/nvm.sh ]; then \
+				nohup bash -c ". ~/.nvm/nvm.sh && nvm use 18 2>/dev/null || nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true && npm run dev" > ../../$(VITE_LOG) 2>&1 & \
+			else \
+				nohup npm run dev > ../../$(VITE_LOG) 2>&1 & \
+			fi; \
 			PID=$$!; \
 			echo $$PID > ../../$(VITE_PID); \
 			echo "✓ Started Vite dev server (PID: $$PID)"; \
@@ -437,7 +447,11 @@ start: $(PID_DIR) $(LOG_DIR)
 		if [ -f $(SERVER_PID) ] && kill -0 `cat $(SERVER_PID)` 2>/dev/null; then \
 			echo "⚠️  Express server is already running (PID: $$(cat $(SERVER_PID)))"; \
 		else \
-			nohup node server.js > $(SERVER_LOG) 2>&1 & \
+			if [ -f ~/.nvm/nvm.sh ]; then \
+				nohup bash -c ". ~/.nvm/nvm.sh && nvm use 18 2>/dev/null || nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true && node server.js" > $(SERVER_LOG) 2>&1 & \
+			else \
+				nohup node server.js > $(SERVER_LOG) 2>&1 & \
+			fi; \
 			echo $$! > $(SERVER_PID); \
 			echo "✓ Started Express server (PID: $$(cat $(SERVER_PID)))"; \
 		fi; \
