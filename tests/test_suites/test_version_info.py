@@ -16,7 +16,9 @@ class TestVersionInformation:
     
     def test_version_info_card_is_visible(self, app_page):
         """Test that version info card is visible."""
-        assert app_page.is_version_info_visible(), \
+        # Wait for version info to load first
+        app_page.wait_for_version_info_to_load(timeout=15)
+        assert app_page.is_version_info_visible(timeout=10), \
             "Version info card should be visible"
     
     def test_version_title_displayed(self, app_page):

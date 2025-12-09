@@ -50,36 +50,44 @@ Parsing test results from: ${log_file}
 ================================================================================
 EOF
 
-# Check for "error" or "failed" strings in the log file (case-insensitive)
+# Parse test results from log file
 errors_found=false
 
-# Check for "error" (case-insensitive)
-if grep -qi "error" "${log_file}"; then
-    echo "❌ Found 'error' in test output"
+# Check for actual pytest test failures in summary lines
+# Look for patterns like "X failed" or "Y errors" in pytest summary
+if grep -qE "[0-9]+\s+failed|[0-9]+\s+errors" "${log_file}"; then
+    # Extract failure counts from summary lines
+    failed_count=$(grep -oE "[0-9]+\s+failed" "${log_file}" | head -1 | grep -oE "[0-9]+" || echo "0")
+    error_count=$(grep -oE "[0-9]+\s+errors" "${log_file}" | head -1 | grep -oE "[0-9]+" || echo "0")
+    
+    # Check if there are actual failures (not just the word appearing in logs)
+    if [ "${failed_count}" -gt 0 ] || [ "${error_count}" -gt 0 ]; then
+        echo "❌ Found test failures: ${failed_count} failed, ${error_count} errors"
+        errors_found=true
+    fi
+fi
+
+# Check for specific test failure markers (FAILED tests/ or ERROR tests/)
+if grep -qE "FAILED tests/|ERROR tests/" "${log_file}"; then
+    echo "❌ Found test failure markers (FAILED tests/ or ERROR tests/)"
     errors_found=true
 fi
 
-# Check for "failed" (case-insensitive)
-if grep -qi "failed" "${log_file}"; then
-    echo "❌ Found 'failed' in test output"
-    errors_found=true
-fi
-
-# Also check for specific failure patterns
-if grep -qi "FAILED\|ERROR" "${log_file}"; then
-    echo "❌ Found test failure indicators (FAILED/ERROR)"
-    errors_found=true
-fi
-
-# Check for pytest failure summary
-if grep -qiE "[0-9]+\s+failed" "${log_file}"; then
-    echo "❌ Found pytest failure count in output"
-    errors_found=true
-fi
-
-# Check for version test failures
-if grep -qi "❌ Failed:" "${log_file}"; then
+# Check for version test failures (❌ Failed: pattern)
+if grep -q "❌ Failed:" "${log_file}"; then
     echo "❌ Found version test failures"
+    errors_found=true
+fi
+
+# Check for pytest failure section header
+if grep -q "===.*FAILURES.*===" "${log_file}"; then
+    echo "❌ Found pytest FAILURES section"
+    errors_found=true
+fi
+
+# Check for pytest errors section header  
+if grep -q "===.*ERRORS.*===" "${log_file}"; then
+    echo "❌ Found pytest ERRORS section"
     errors_found=true
 fi
 

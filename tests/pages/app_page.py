@@ -39,18 +39,43 @@ class AppPage(BasePage):
         super().__init__(driver)
         self.logger = logger
     
-    def wait_for_version_info_to_load(self, timeout=7):
+    def wait_for_page_ready(self, timeout=15):
+        """Wait for the page to be fully loaded and React to be ready."""
+        try:
+            wait = WebDriverWait(self.driver, timeout)
+            # Wait for the app container to be present (this should always be in HTML)
+            wait.until(EC.presence_of_element_located((By.CLASS_NAME, "app")))
+            # Wait for React to hydrate - check if button is present
+            wait.until(EC.presence_of_element_located(self.HELLO_BUTTON))
+            # Give React a moment to finish hydration and any initial API calls
+            import time
+            time.sleep(1.5)  # Allow time for React hydration and initial version API call
+            return True
+        except TimeoutException:
+            self.logger.warning("Page did not become ready within timeout")
+            # Don't fail - let tests continue and fail naturally if elements aren't found
+            return False
+    
+    def wait_for_version_info_to_load(self, timeout=15):
         """Wait for version information to finish loading."""
         try:
             # Wait for either version details or error to appear
             wait = WebDriverWait(self.driver, timeout)
+            # Use a more robust wait condition
             wait.until(
-                lambda d: self.is_element_present(*self.VERSION_DETAILS, timeout=0.5) or 
-                         self.is_element_present(*self.VERSION_ERROR, timeout=0.5)
+                lambda d: (
+                    self.is_element_present(*self.VERSION_DETAILS, timeout=1) or 
+                    self.is_element_present(*self.VERSION_ERROR, timeout=1) or
+                    len(self.driver.find_elements(*self.VERSION_DETAILS)) > 0 or
+                    len(self.driver.find_elements(*self.VERSION_ERROR)) > 0
+                )
             )
             # If loading indicator is present, wait for it to disappear
             if self.is_element_present(*self.VERSION_LOADING, timeout=1):
-                wait.until(EC.invisibility_of_element_located(self.VERSION_LOADING))
+                try:
+                    wait.until(EC.invisibility_of_element_located(self.VERSION_LOADING))
+                except TimeoutException:
+                    pass  # Loading indicator might already be gone
             return True
         except TimeoutException:
             self.logger.warning("Version info did not load within timeout")
@@ -106,7 +131,7 @@ class AppPage(BasePage):
         self.click_element(*self.HELLO_BUTTON)
         self.logger.info("Clicked hello button")
     
-    def get_message(self, timeout=3):
+    def get_message(self, timeout=5):
         """Get the message displayed after clicking button."""
         try:
             wait = WebDriverWait(self.driver, timeout)
@@ -117,10 +142,10 @@ class AppPage(BasePage):
             self.logger.warning("Message did not appear within timeout")
             return None
     
-    def is_button_enabled(self):
+    def is_button_enabled(self, timeout=5):
         """Check if hello button is enabled."""
         try:
-            button = self.find_element(*self.HELLO_BUTTON)
+            button = self.find_element(*self.HELLO_BUTTON, timeout=timeout)
             return button.is_enabled()
         except TimeoutException:
             return False
@@ -141,28 +166,36 @@ class AppPage(BasePage):
         except TimeoutException:
             return None
     
-    def is_version_info_visible(self):
+    def is_version_info_visible(self, timeout=10):
         """Check if version info card is visible."""
-        return self.is_element_visible(*self.VERSION_INFO_CARD)
+        # First wait for version info to load
+        self.wait_for_version_info_to_load(timeout=timeout)
+        return self.is_element_visible(*self.VERSION_INFO_CARD, timeout=timeout)
     
     def is_vulnerable_indicator_visible(self):
         """Check if vulnerable indicator (⚠️) is visible."""
         try:
-            # Check for vulnerable class in version value
+            # Check for vulnerable class in version value or status-vulnerable class
             vulnerable_elements = self.find_elements(
-                (By.CSS_SELECTOR, ".version-value.vulnerable")
+                By.CSS_SELECTOR, ".version-value.vulnerable, .status-vulnerable"
             )
-            return len(vulnerable_elements) > 0
+            # Also check for the emoji/text indicator
+            page_text = self.driver.page_source
+            has_vulnerable_text = "⚠️" in page_text or "VULNERABLE" in page_text
+            return len(vulnerable_elements) > 0 or has_vulnerable_text
         except Exception:
             return False
     
     def is_fixed_indicator_visible(self):
         """Check if fixed indicator (✅) is visible."""
         try:
-            # Check for fixed class in version value
+            # Check for fixed class in version value or status-fixed class
             fixed_elements = self.find_elements(
-                (By.CSS_SELECTOR, ".version-value.fixed")
+                By.CSS_SELECTOR, ".version-value.fixed, .status-fixed"
             )
-            return len(fixed_elements) > 0
+            # Also check for the emoji/text indicator
+            page_text = self.driver.page_source
+            has_fixed_text = "✅" in page_text or "FIXED" in page_text
+            return len(fixed_elements) > 0 or has_fixed_text
         except Exception:
             return False

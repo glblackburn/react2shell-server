@@ -128,30 +128,34 @@ class TestUILayoutSync:
         framework_mode = get_framework_mode()
         version_info = app_page.get_version_info()
         
-        if version_info and "error" not in version_info:
-            # Both frameworks should show React version
-            assert "react" in version_info, \
-                "Both frameworks should display React version"
-            
-            # Next.js should also show Next.js version
-            if framework_mode == "nextjs":
-                # Check for Next.js version in the UI
-                version_items = app_page.find_elements(*app_page.VERSION_ITEMS)
-                version_labels = [
-                    item.find_element(*app_page.VERSION_LABEL).text
-                    for item in version_items
-                ]
-                assert any("Next.js" in label for label in version_labels), \
-                    "Next.js mode should display Next.js version"
-            else:
-                # Vite mode should not show Next.js version
-                version_items = app_page.find_elements(*app_page.VERSION_ITEMS)
-                version_labels = [
-                    item.find_element(*app_page.VERSION_LABEL).text
-                    for item in version_items
-                ]
-                assert not any("Next.js" in label for label in version_labels), \
-                    "Vite mode should not display Next.js version"
+        # Ensure version info loaded
+        assert version_info is not None, "Version info should be loaded"
+        assert "error" not in version_info, f"Version info should not have error: {version_info}"
+        
+        # Both frameworks should show React version
+        assert "react" in version_info, \
+            "Both frameworks should display React version"
+        
+        # Get version items from UI
+        version_items = app_page.find_elements(*app_page.VERSION_ITEMS)
+        assert len(version_items) > 0, "Should have at least one version item"
+        
+        version_labels = []
+        for item in version_items:
+            try:
+                label = item.find_element(*app_page.VERSION_LABEL).text
+                version_labels.append(label)
+            except Exception:
+                pass  # Skip if label not found
+        
+        # Next.js should also show Next.js version
+        if framework_mode == "nextjs":
+            assert any("Next.js" in label for label in version_labels), \
+                f"Next.js mode should display Next.js version. Found labels: {version_labels}"
+        else:
+            # Vite mode should not show Next.js version
+            assert not any("Next.js" in label for label in version_labels), \
+                f"Vite mode should not display Next.js version. Found labels: {version_labels}"
     
     def test_message_display_consistency(self, app_page):
         """Test that message display is consistent between frameworks."""

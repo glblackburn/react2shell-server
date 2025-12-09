@@ -23,15 +23,24 @@ class BasePage:
     def navigate(self, url=None):
         """Navigate to a URL."""
         if url:
-            self.driver.get(url)
+            target_url = url
         else:
             # Default to base URL from server_constants (get dynamically)
-            from utils.server_constants import get_frontend_url
-            frontend_url = get_frontend_url()
-            if not frontend_url:
-                # Fallback to default
-                frontend_url = "http://localhost:3000"
-            self.driver.get(frontend_url)
+            try:
+                from utils.server_constants import get_frontend_url
+                frontend_url = get_frontend_url()
+                # Ensure we have a valid URL string
+                if not frontend_url or not isinstance(frontend_url, str) or frontend_url.strip() == "":
+                    self.logger.warning(f"Invalid frontend_url from get_frontend_url(): '{frontend_url}', using fallback")
+                    frontend_url = "http://localhost:3000"
+                target_url = frontend_url
+            except Exception as e:
+                self.logger.warning(f"Error getting frontend URL: {e}, using fallback")
+                target_url = "http://localhost:3000"
+            
+            self.logger.info(f"Navigating to: {target_url}")
+            self.driver.get(target_url)
+        
         self.logger.info(f"Navigated to: {self.driver.current_url}")
     
     def find_element(self, by, value, timeout=3):
@@ -70,7 +79,7 @@ class BasePage:
         element = self.find_element(by, value, timeout)
         return element.text
     
-    def is_element_visible(self, by, value, timeout=3):
+    def is_element_visible(self, by, value, timeout=5):
         """Check if element is visible."""
         try:
             wait = WebDriverWait(self.driver, timeout)
