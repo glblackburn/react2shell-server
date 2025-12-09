@@ -406,6 +406,8 @@ EOF
     # Track results
     PASSED=0
     FAILED=0
+    PASSED_VERSIONS=()
+    FAILED_VERSIONS=()
 
     # Verify we're in Next.js mode (scanner only works with Next.js)
     if [ "${FRAMEWORK_MODE}" != "nextjs" ]; then
@@ -425,6 +427,7 @@ EOF
             cd "$PROJECT_ROOT" || {
                 echo "${red}Error: Cannot change to project root: ${PROJECT_ROOT}${reset}" >&2
                 FAILED=$((FAILED + 1))
+                FAILED_VERSIONS+=("${version} (vulnerable - cannot access project root)")
                 continue
             }
             
@@ -436,6 +439,7 @@ EOF
                     echo "${red}Error: next binary not found after installation. Cannot start server.${reset}" >&2
                     cd "$original_dir"
                     FAILED=$((FAILED + 1))
+                    FAILED_VERSIONS+=("${version} (vulnerable - next binary not found)")
                     continue
                 fi
             fi
@@ -462,15 +466,19 @@ EOF
             if wait_for_server; then
                 if run_scanner "$version" true; then
                     PASSED=$((PASSED + 1))
+                    PASSED_VERSIONS+=("${version} (vulnerable)")
                 else
                     FAILED=$((FAILED + 1))
+                    FAILED_VERSIONS+=("${version} (vulnerable)")
                 fi
             else
                 echo "${red}✗ Server not ready after switching to ${version}${reset}" >&2
                 FAILED=$((FAILED + 1))
+                FAILED_VERSIONS+=("${version} (vulnerable - server not ready)")
             fi
         else
             FAILED=$((FAILED + 1))
+            FAILED_VERSIONS+=("${version} (vulnerable - switch failed)")
         fi
         ${QUIET} || echo ""
     done
@@ -486,6 +494,7 @@ EOF
                 cd "$PROJECT_ROOT" || {
                     echo "${red}Error: Cannot change to project root: ${PROJECT_ROOT}${reset}" >&2
                     FAILED=$((FAILED + 1))
+                    FAILED_VERSIONS+=("${version} (fixed - cannot access project root)")
                     continue
                 }
                 
@@ -497,6 +506,7 @@ EOF
                         echo "${red}Error: next binary not found after installation. Cannot start server.${reset}" >&2
                         cd "$original_dir"
                         FAILED=$((FAILED + 1))
+                        FAILED_VERSIONS+=("${version} (fixed - next binary not found)")
                         continue
                     fi
                 fi
@@ -523,15 +533,19 @@ EOF
                 if wait_for_server; then
                     if run_scanner "$version" false; then
                         PASSED=$((PASSED + 1))
+                        PASSED_VERSIONS+=("${version} (fixed)")
                     else
                         FAILED=$((FAILED + 1))
+                        FAILED_VERSIONS+=("${version} (fixed)")
                     fi
                 else
                     echo "${red}✗ Server not ready after switching to ${version}${reset}" >&2
                     FAILED=$((FAILED + 1))
+                    FAILED_VERSIONS+=("${version} (fixed - server not ready)")
                 fi
             else
                 FAILED=$((FAILED + 1))
+                FAILED_VERSIONS+=("${version} (fixed - switch failed)")
             fi
             ${QUIET} || echo ""
         done
@@ -546,6 +560,24 @@ Passed: ${green}${PASSED}${reset}
 Failed: ${red}${FAILED}${reset}
 
 EOF
+
+    # Display passed versions
+    if [ ${#PASSED_VERSIONS[@]} -gt 0 ]; then
+        echo "${green}Passed Versions:${reset}"
+        for version in "${PASSED_VERSIONS[@]}"; do
+            echo "  ${green}✓${reset} Next.js ${version}"
+        done
+        echo ""
+    fi
+
+    # Display failed versions
+    if [ ${#FAILED_VERSIONS[@]} -gt 0 ]; then
+        echo "${red}Failed Versions:${reset}"
+        for version in "${FAILED_VERSIONS[@]}"; do
+            echo "  ${red}✗${reset} Next.js ${version}"
+        done
+        echo ""
+    fi
 
     if [ ${FAILED} -eq 0 ]; then
         echo "${green}All tests passed!${reset}"
