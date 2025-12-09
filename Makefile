@@ -300,15 +300,27 @@ setup-deps:
 	set -e; \
 	echo "Installing npm dependencies..."; \
 	echo "Checking for Node.js/npm..."; \
-	if ! command -v npm >/dev/null 2>&1; then \
+	if ! command -v npm >/dev/null 2>&1 || [ -f ~/.nvm/nvm.sh ]; then \
 		if [ -f ~/.nvm/nvm.sh ]; then \
 			echo "Found nvm. Sourcing nvm..."; \
 			. ~/.nvm/nvm.sh; \
-			nvm use default 2>/dev/null || nvm use node 2>/dev/null || true; \
+			# Prefer Node 18+ for Next.js compatibility, fall back to default \
+			if nvm list 18 2>/dev/null | grep -q "v18"; then \
+				echo "Using Node.js 18 for Next.js compatibility..."; \
+				nvm use 18 2>/dev/null || true; \
+			elif nvm list 20 2>/dev/null | grep -q "v20"; then \
+				echo "Using Node.js 20 for Next.js compatibility..."; \
+				nvm use 20 2>/dev/null || true; \
+			else \
+				echo "Using default Node.js version..."; \
+				nvm use default 2>/dev/null || nvm use node 2>/dev/null || true; \
+			fi; \
 		else \
-			echo "❌ npm not found and nvm not available"; \
-			echo "   Please install Node.js/npm or nvm"; \
-			exit 1; \
+			if ! command -v npm >/dev/null 2>&1; then \
+				echo "❌ npm not found and nvm not available"; \
+				echo "   Please install Node.js/npm or nvm"; \
+				exit 1; \
+			fi; \
 		fi; \
 	fi; \
 	echo "Using Node.js: $$(node --version)"; \
@@ -366,9 +378,18 @@ $(LOG_DIR):
 start: $(PID_DIR) $(LOG_DIR)
 	@bash -c '\
 	set -e; \
-	if ! command -v npm >/dev/null 2>&1 && [ -f ~/.nvm/nvm.sh ]; then \
-		. ~/.nvm/nvm.sh; \
-		nvm use default 2>/dev/null || nvm use node 2>/dev/null || true; \
+	if ! command -v npm >/dev/null 2>&1 || [ -f ~/.nvm/nvm.sh ]; then \
+		if [ -f ~/.nvm/nvm.sh ]; then \
+			. ~/.nvm/nvm.sh; \
+			# Prefer Node 18+ for Next.js compatibility, fall back to default \
+			if nvm list 18 2>/dev/null | grep -q "v18"; then \
+				nvm use 18 2>/dev/null || true; \
+			elif nvm list 20 2>/dev/null | grep -q "v20"; then \
+				nvm use 20 2>/dev/null || true; \
+			else \
+				nvm use default 2>/dev/null || nvm use node 2>/dev/null || true; \
+			fi; \
+		fi; \
 	fi; \
 	FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
 	echo "Starting servers (Framework: $$FRAMEWORK)..."; \
