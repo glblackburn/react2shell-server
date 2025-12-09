@@ -397,12 +397,13 @@ start: $(PID_DIR) $(LOG_DIR)
 		if [ -f $(SERVER_PID) ] && kill -0 `cat $(SERVER_PID)` 2>/dev/null; then \
 			echo "⚠️  Next.js server is already running (PID: $$(cat $(SERVER_PID)))"; \
 		else \
+			NEXTJS_DIR=$$(pwd)/frameworks/nextjs; \
 			cd frameworks/nextjs; \
 			if [ -f ~/.nvm/nvm.sh ]; then \
 				echo "#!/bin/bash" > /tmp/start-nextjs.sh; \
 				echo ". ~/.nvm/nvm.sh" >> /tmp/start-nextjs.sh; \
 				echo "nvm use 18 2>/dev/null || nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true" >> /tmp/start-nextjs.sh; \
-				echo "cd \"$$(pwd)\"" >> /tmp/start-nextjs.sh; \
+				echo "cd \"$$NEXTJS_DIR\"" >> /tmp/start-nextjs.sh; \
 				echo "npm run dev" >> /tmp/start-nextjs.sh; \
 				chmod +x /tmp/start-nextjs.sh; \
 				nohup /tmp/start-nextjs.sh > ../../$(SERVER_LOG) 2>&1 & \
@@ -440,9 +441,16 @@ start: $(PID_DIR) $(LOG_DIR)
 		if [ -f $(VITE_PID) ] && kill -0 `cat $(VITE_PID)` 2>/dev/null; then \
 			echo "⚠️  Vite dev server is already running (PID: $$(cat $(VITE_PID)))"; \
 		else \
+			VITE_DIR=$$(pwd)/frameworks/vite-react; \
 			cd frameworks/vite-react; \
 			if [ -f ~/.nvm/nvm.sh ]; then \
-				nohup bash -c ". ~/.nvm/nvm.sh && nvm use 18 2>/dev/null || nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true && npm run dev" > ../../$(VITE_LOG) 2>&1 & \
+				echo "#!/bin/bash" > /tmp/start-vite.sh; \
+				echo ". ~/.nvm/nvm.sh" >> /tmp/start-vite.sh; \
+				echo "nvm use 18 2>/dev/null || nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true" >> /tmp/start-vite.sh; \
+				echo "cd \"$$VITE_DIR\"" >> /tmp/start-vite.sh; \
+				echo "npm run dev" >> /tmp/start-vite.sh; \
+				chmod +x /tmp/start-vite.sh; \
+				nohup /tmp/start-vite.sh > ../../$(VITE_LOG) 2>&1 & \
 			else \
 				nohup npm run dev > ../../$(VITE_LOG) 2>&1 & \
 			fi; \
@@ -453,8 +461,15 @@ start: $(PID_DIR) $(LOG_DIR)
 		if [ -f $(SERVER_PID) ] && kill -0 `cat $(SERVER_PID)` 2>/dev/null; then \
 			echo "⚠️  Express server is already running (PID: $$(cat $(SERVER_PID)))"; \
 		else \
+			PROJECT_ROOT=$$(pwd); \
 			if [ -f ~/.nvm/nvm.sh ]; then \
-				nohup bash -c ". ~/.nvm/nvm.sh && nvm use 18 2>/dev/null || nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true && node server.js" > $(SERVER_LOG) 2>&1 & \
+				echo "#!/bin/bash" > /tmp/start-express.sh; \
+				echo ". ~/.nvm/nvm.sh" >> /tmp/start-express.sh; \
+				echo "nvm use 18 2>/dev/null || nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true" >> /tmp/start-express.sh; \
+				echo "cd \"$$PROJECT_ROOT\"" >> /tmp/start-express.sh; \
+				echo "node server.js" >> /tmp/start-express.sh; \
+				chmod +x /tmp/start-express.sh; \
+				nohup /tmp/start-express.sh > $(SERVER_LOG) 2>&1 & \
 			else \
 				nohup node server.js > $(SERVER_LOG) 2>&1 & \
 			fi; \
