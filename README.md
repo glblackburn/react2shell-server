@@ -6,6 +6,27 @@ This project provides a React application with easily switchable React versions,
 
 A React application with a backend server that displays a big red button. When clicked, the button sends a request to the server, which responds with "Hello World!". This simple application serves as a testbed for security scanners to identify vulnerable React versions.
 
+## Table of Contents
+
+- [Purpose](#purpose)
+- [Security Vulnerability](#security-vulnerability)
+  - [React Server Components Vulnerability](#react-server-components-vulnerability)
+  - [Next.js RSC Vulnerability](#nextjs-rsc-vulnerability)
+- [Features](#features)
+- [React Version Switching](#react-version-switching)
+- [Security Scanner Testing](#security-scanner-testing)
+- [Setup](#setup)
+- [Development](#development)
+- [Testing](#testing)
+- [Project Structure](#project-structure)
+- [API Endpoints](#api-endpoints)
+- [Development Tools](#development-tools)
+- [Switching React Versions](#switching-react-versions)
+- [Requirements](#requirements)
+- [Troubleshooting](#troubleshooting)
+- [Defect Tracking](#defect-tracking)
+- [License](#license)
+
 ## Purpose
 
 This project is designed to provide **scannable vulnerable React versions** for security testing purposes. It allows security scanners and testing tools to:
