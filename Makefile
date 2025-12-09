@@ -376,22 +376,7 @@ $(LOG_DIR):
 
 # Start servers (framework-aware)
 start: $(PID_DIR) $(LOG_DIR)
-	@bash -c '\
-	set -e; \
-	if ! command -v npm >/dev/null 2>&1 || [ -f ~/.nvm/nvm.sh ]; then \
-		if [ -f ~/.nvm/nvm.sh ]; then \
-			. ~/.nvm/nvm.sh; \
-			# Prefer Node 18+ for Next.js compatibility, fall back to default \
-			if nvm list 18 2>/dev/null | grep -q "v18"; then \
-				nvm use 18 2>/dev/null || true; \
-			elif nvm list 20 2>/dev/null | grep -q "v20"; then \
-				nvm use 20 2>/dev/null || true; \
-			else \
-				nvm use default 2>/dev/null || nvm use node 2>/dev/null || true; \
-			fi; \
-		fi; \
-	fi; \
-	FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
+	@FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
 	echo "Starting servers (Framework: $$FRAMEWORK)..."; \
 	if [ "$$FRAMEWORK" = "nextjs" ]; then \
 		if [ -f $(SERVER_PID) ] && kill -0 `cat $(SERVER_PID)` 2>/dev/null; then \
@@ -481,7 +466,7 @@ start: $(PID_DIR) $(LOG_DIR)
 			fi; \
 			sleep 1; \
 		done; \
-	fi'
+	fi
 
 # Stop servers (framework-aware)
 stop:
