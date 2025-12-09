@@ -399,7 +399,13 @@ start: $(PID_DIR) $(LOG_DIR)
 		else \
 			cd frameworks/nextjs; \
 			if [ -f ~/.nvm/nvm.sh ]; then \
-				nohup bash -lc ". ~/.nvm/nvm.sh && nvm use 18 2>/dev/null || nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true && npm run dev" > ../../$(SERVER_LOG) 2>&1 & \
+				echo "#!/bin/bash" > /tmp/start-nextjs.sh; \
+				echo ". ~/.nvm/nvm.sh" >> /tmp/start-nextjs.sh; \
+				echo "nvm use 18 2>/dev/null || nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true" >> /tmp/start-nextjs.sh; \
+				echo "cd \"$$(pwd)\"" >> /tmp/start-nextjs.sh; \
+				echo "npm run dev" >> /tmp/start-nextjs.sh; \
+				chmod +x /tmp/start-nextjs.sh; \
+				nohup /tmp/start-nextjs.sh > ../../$(SERVER_LOG) 2>&1 & \
 			else \
 				nohup npm run dev > ../../$(SERVER_LOG) 2>&1 & \
 			fi; \
