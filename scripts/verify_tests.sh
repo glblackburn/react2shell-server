@@ -33,7 +33,7 @@ Test Run Started: $(date)
 Log File: ${log_file}
 ================================================================================
 "
-    time make test-parallel
+    time make test
     echo "
 ================================================================================
 Test Run Completed: $(date)
@@ -41,7 +41,7 @@ Test Run Completed: $(date)
 "
 } 2>&1 | tee "${log_file}"
 
-# Check exit code from make test-parallel
+# Check exit code from make test
 test_exit_code=${PIPESTATUS[0]}
 
 cat<<EOF
