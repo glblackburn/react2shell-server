@@ -231,12 +231,13 @@ def switch_react_version(version):
             check=True,
             capture_output=True,
             text=True,
-            timeout=120  # 2 minute timeout
+            timeout=300  # 5 minute timeout (npm install can take time)
         )
         logger.info(f"Switched to React {version}")
         return True
     except subprocess.TimeoutExpired:
-        logger.error(f"Version switch timed out for React {version}")
+        logger.error(f"Version switch timed out for React {version} after 5 minutes")
+        logger.error("This may indicate npm install is taking too long or hanging")
         return False
     except subprocess.CalledProcessError as e:
         logger.error(f"Error switching React version: {e}")
