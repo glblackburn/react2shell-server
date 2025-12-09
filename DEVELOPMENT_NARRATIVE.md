@@ -19,6 +19,7 @@
 - [Test-Fix-Repeat Loop: Next.js Conversion Stabilization](#test-fix-repeat-loop-nextjs-conversion-stabilization)
 - [Phase 11: Framework-Aware Server Improvements](#phase-11-framework-aware-server-improvements)
 - [Phase 12: Documentation and Defect Tracking Improvements](#phase-12-documentation-and-defect-tracking-improvements)
+- [Phase 13: Scanner Verification Improvements and Next.js Version Updates](#phase-13-scanner-verification-improvements-and-nextjs-version-updates)
 - [Key Technical Decisions](#key-technical-decisions)
 - [Challenges and Solutions](#challenges-and-solutions)
 - [Project Evolution Timeline](#project-evolution-timeline)
@@ -49,9 +50,10 @@
 | Test Loop | Test-Fix-Repeat Loop (Next.js conversion) | 12-08 18:38 | 12-08 21:12 | ~2h 34m | 0* |
 | 11 | Framework-Aware Server Improvements | 12-08 21:12 | 12-08 21:28 | ~16 min | 1 |
 | 12 | Documentation and Defect Tracking Improvements | 12-09 03:36 | 12-09 04:10 | ~34 min | 4 |
+| 13 | Scanner Verification Improvements and Next.js Version Updates | 12-09 03:36 | 12-09 07:22 | ~3h 46m | 17 |
 
-**Total Development Time:** ~14 hours 44 minutes  
-**Total Commits:** 43 commits across all phases
+**Total Development Time:** ~18 hours 30 minutes  
+**Total Commits:** 60 commits across all phases
 
 *Note: Test Loop represents iterative test execution and debugging (26 test runs, ~2h 7m total execution time) but no code commits during this period.*
 
@@ -856,6 +858,16 @@ Users needed to track performance trends over time, not just compare against a s
 
 22. **Navigation Aids Usability:** Table of Contents and clear cross-references significantly improve document usability.
 
+23. **Framework-Specific Tools:** Security scanners may be designed for specific frameworks (Next.js) and won't work with others (standalone React) - always verify tool compatibility.
+
+24. **Root Cause Analysis Requires Iteration:** Complex bugs may require multiple investigation iterations and user feedback to identify fundamental misunderstandings.
+
+25. **Polling Beats Fixed Waits:** Polling-based readiness checks are more efficient and reliable than fixed wait times - proceed as soon as ready, wait longer if needed.
+
+26. **Some Bugs Are Not Fixable:** Framework internal bugs cannot be fixed in application code - document as limitations and work around when possible.
+
+27. **Documentation With Examples:** Comprehensive documentation with example output helps users understand tool behavior and troubleshoot issues.
+
 ## Phase 10: DRY Refactoring and Code Quality Improvements
 
 **Timeline:** 2025-12-08 08:16 - 2025-12-08 08:54  
@@ -1211,11 +1223,14 @@ As the project grew, the defect tracking section in README.md became too large (
 ### Technical Details
 
 - Defect tracking folder: `docs/defect-tracking/`
-- Individual defect files: `BUG-1.md` through `BUG-6.md`
+- Individual defect files: `BUG-1.md` through `BUG-8.md`
 - Main tracking table: `docs/defect-tracking/README.md`
 - Images folder: `docs/defect-tracking/images/`
+- BUG-8 investigation artifacts: `docs/defect-tracking/BUG-8/`
 - Log file pattern: `/tmp/verify_scanner_YYYY-MM-DD_HHMMSS_XXXXXX.txt`
 - Script follows `shell-template.sh` patterns for consistency
+- Scanner documentation: `docs/VERIFY_SCANNER_USAGE.md`
+- Scanner example output: `docs/verify_scanner_example_output.txt`
 
 ## Current State
 
@@ -1248,7 +1263,8 @@ The project now includes:
 - Performance tracking guide
 - Performance limits guide
 - Development narrative (this document)
-- Defect tracking in dedicated folder structure
+- Defect tracking in dedicated folder structure (BUG-1 through BUG-8)
+- Scanner verification usage guide with examples
 - All documentation reviewed and up-to-date
 
 ✅ **Developer Experience:**
@@ -1272,6 +1288,168 @@ The project now includes:
 - Scripts following consistent patterns (shell-template.sh)
 - Automatic log file capture for debugging
 - Table of Contents for easy navigation
+
+✅ **Scanner Verification:**
+- Automated scanner verification script (`scripts/verify_scanner.sh`)
+- Tests 9 vulnerable Next.js versions (14.0.0, 14.1.0, 15.0.4, 15.1.8, 15.2.5, 15.3.5, 15.4.7, 15.5.6, 16.0.6)
+- Tests 2 fixed Next.js versions (14.0.1, 14.1.1)
+- Framework-aware (automatically detects Next.js mode)
+- Version display from UI before each test
+- Comprehensive output with version-by-version summary
+- Complete usage documentation with scanner project links
+- Example output for reference
+- Optimized polling-based server readiness checks
+- Scanner verification script with comprehensive testing
+- Scanner documentation with usage guide and examples
+- Next.js version support (9 vulnerable, 2 fixed versions)
+
+## Phase 13: Scanner Verification Improvements and Next.js Version Updates
+
+**Timeline:** 2025-12-09 03:36 - 2025-12-09 07:22  
+**Duration:** ~3 hours 46 minutes  
+**Commits:** 17 commits
+
+### The Context
+
+After implementing Next.js framework support, the scanner verification script (`scripts/verify_scanner.sh`) needed significant improvements to correctly test Next.js versions and handle the unique requirements of Next.js applications with React Server Components.
+
+### Key Issues Identified and Resolved
+
+**BUG-6: Port Mismatch Issue**
+- **Problem:** Script hardcoded port 5173 (Vite) but didn't detect framework mode, causing failures when system was in Next.js mode (port 3000)
+- **Solution:** Implemented dynamic framework detection by reading `.framework-mode` file and setting `FRONTEND_URL` accordingly
+- **Impact:** Script now correctly works in both Vite and Next.js modes
+
+**BUG-7: Fundamental Framework Mismatch**
+- **Problem:** Script was testing React versions, but the scanner (`react2shell-scanner`) is designed exclusively for Next.js applications with React Server Components
+- **Root Cause Discovery:** After initial timeout fixes, user feedback revealed the scanner only works with Next.js, not standalone React applications
+- **Solution:** 
+  - Changed script to test Next.js versions instead of React versions
+  - Updated version lists: `NEXTJS_VULNERABLE_VERSIONS` and `NEXTJS_FIXED_VERSIONS`
+  - Updated all version switching to use `make nextjs-<version>`
+  - Added framework mode validation (must be Next.js for scanner tests)
+- **Impact:** Script now tests the correct framework that the scanner can actually detect
+
+**BUG-8: Next.js 14.x Compatibility Bug (Not Fixable)**
+- **Problem:** Next.js 14.0.0 and 14.1.0 fail scanner tests with "Read timed out" errors
+- **Root Cause:** Next.js 14.x has an internal bug when processing RCE PoC payloads - the error handling code crashes due to a null reference error (`TypeError: Cannot read properties of null (reading 'message')`), causing the request handler to hang indefinitely
+- **Investigation Process:**
+  1. Initial diagnosis: Server startup/timing issues
+  2. Added binary verification and extended wait times
+  3. Removed redundant fixed sleeps and POST checks
+  4. Tested with React 18.2.0, 18.3.0 (intended versions for Next.js 14.x)
+  5. Confirmed bug persists regardless of React version
+- **Final Determination:** This is a Next.js 14.x internal bug, not fixable in our codebase
+- **Status:** Marked as "Not Fixable" - documented as a Next.js 14.x limitation
+- **Workaround:** Next.js 15.x and 16.x versions work correctly
+
+### Script Optimizations
+
+**Removed Redundant Fixed Waits:**
+- Removed 30-second fixed sleep for Next.js 14.x (was redundant)
+- Removed 20-second fixed sleep for Next.js 15.x (was redundant)
+- Script now uses polling-based `wait_for_server()` which proceeds as soon as server is ready
+- **Impact:** Faster execution when server is ready quickly, still waits up to 50 seconds if needed
+
+**Removed POST Readiness Check:**
+- Removed `check_server_post()` function and its usage
+- Check was redundant and didn't prevent real issues (accepted any HTTP response code)
+- Scanner itself handles readiness detection
+- **Impact:** Simpler code, faster execution, no false positives
+
+**Enhanced Version Display:**
+- Added `show_version_info()` function that fetches from `/api/version` endpoint
+- Displays Next.js and React versions from UI before each scanner test
+- Shows vulnerability status with color coding
+- **Impact:** Better visibility into what versions are actually running before testing
+
+### Next.js Version Updates
+
+**Version Changes:**
+- Updated 15.0.0 → 15.0.4 (marked as VULNERABLE)
+- Updated 15.1.0 → 15.1.8 (marked as VULNERABLE)
+- Added 15.2.5, 15.3.5, 15.4.7, 15.5.6, 16.0.6 (all marked as VULNERABLE)
+
+**Files Updated:**
+- `Makefile` - Version lists, status mappings, case statements, help text
+- `frameworks/nextjs/app/page.tsx` - `isNextjsVulnerable()` function
+- `scripts/verify_scanner.sh` - Version arrays
+- `scripts/scanner_verification_report.sh` - Version arrays
+
+**React Version Configuration:**
+- Next.js 14.x versions use React 18.2.0 or 18.3.0 (compatible versions)
+- Next.js 15.x+ versions use React 19.2.0 (required for vulnerability testing)
+
+### Documentation Creation
+
+**Scanner Verification Script Usage Guide:**
+- Created `docs/VERIFY_SCANNER_USAGE.md` - Comprehensive usage documentation
+- Includes scanner GitHub project link: [assetnote/react2shell-scanner](https://github.com/assetnote/react2shell-scanner)
+- Documents all script options (`-h`, `-s`, `-a`, `-q`, `-v`)
+- Explains the complete process matching script behavior
+- Includes troubleshooting section
+- Links to related bug reports and analysis
+
+**Example Output:**
+- Saved example run output: `docs/verify_scanner_example_output.txt`
+- Shows complete test run with version display, scanner output, and summary
+
+**README Updates:**
+- Added "Scanners" section with scanner project information
+- Updated "Security Scanner Testing" section with Next.js example
+- Documented complete process matching `verify_scanner.sh` behavior
+- Added links to usage documentation and example output
+
+### Investigation Artifacts
+
+**BUG-8 Investigation:**
+- Created `docs/defect-tracking/BUG-8/` directory for investigation artifacts
+- Saved browser screenshot showing server accessible despite timeout
+- Created `SCANNER_TIMEOUT_ANALYSIS.md` - Detailed technical analysis
+- Saved multiple test run logs documenting the issue progression
+- Documented that React version changes did not resolve the issue
+
+### Results
+
+**Script Improvements:**
+- ✅ Correctly detects framework mode (Vite vs Next.js)
+- ✅ Tests correct framework (Next.js, not React)
+- ✅ Faster execution (removed redundant waits)
+- ✅ Better visibility (version display before each test)
+- ✅ Comprehensive output (version-by-version summary)
+
+**Version Support:**
+- ✅ 9 vulnerable Next.js versions tested (14.0.0, 14.1.0, 15.0.4, 15.1.8, 15.2.5, 15.3.5, 15.4.7, 15.5.6, 16.0.6)
+- ✅ 2 fixed Next.js versions tested (14.0.1, 14.1.1)
+- ✅ UI correctly shows vulnerability status for all versions
+
+**Documentation:**
+- ✅ Complete usage guide for scanner verification
+- ✅ Example output for reference
+- ✅ Links to scanner GitHub project
+- ✅ Process documentation matching script behavior
+
+**Known Limitations:**
+- ⚠️ Next.js 14.0.0 and 14.1.0 cannot be verified (Next.js 14.x internal bug - Not Fixable)
+- ⚠️ Next.js 16.0.6 may have server startup issues (requires investigation)
+
+### Key Learnings
+
+1. **Framework-Specific Tools:** Security scanners may be designed for specific frameworks (Next.js) and won't work with others (standalone React)
+2. **Root Cause Analysis:** Deep investigation and user feedback are essential for identifying fundamental misunderstandings
+3. **Script Optimization:** Polling-based readiness checks are more efficient than fixed waits
+4. **Version Compatibility:** Some framework versions have internal bugs that cannot be fixed in application code
+5. **Documentation Value:** Comprehensive documentation with examples helps users understand and use tools correctly
+6. **Investigation Artifacts:** Saving logs, screenshots, and analysis documents helps track complex issues over time
+
+### Technical Details
+
+- Scanner path: `/Users/lblackb/data/lblackb/git/third-party/react2shell-scanner`
+- Scanner GitHub: [assetnote/react2shell-scanner](https://github.com/assetnote/react2shell-scanner)
+- CVEs detected: CVE-2025-55182, CVE-2025-66478
+- Log files: `/tmp/verify_scanner_YYYY-MM-DD_HHMMSS_XXXXXX.txt`
+- Version display: Fetches from `/api/version` endpoint before each test
+- Server readiness: Polls GET requests (30s max), then POST requests for Next.js (20s max additional)
 
 ## Future Considerations
 
@@ -1311,11 +1489,14 @@ This project serves as both a functional tool and a learning resource for securi
 **Test Performance:** ~2m27s for full suite (58 tests, 7 React versions)  
 **Performance Tracking:** Enabled with baseline comparison, regression detection, and historical trend analysis  
 **Performance Limits:** Individual test limits, category-based limits, and suite limits  
-**Documentation:** Comprehensive guides for all features, including performance tracking and limits, with Table of Contents for navigation  
+**Documentation:** Comprehensive guides for all features, including performance tracking, limits, and scanner verification, with Table of Contents for navigation  
 **Code Quality:** DRY refactoring complete - ~72% reduction in maintenance points, ~40% complexity reduction  
 **Code Organization:** Well-structured with fixtures/, plugins/, and utils/ directories  
 **Framework Support:** Dual-framework support (Vite and Next.js) with framework-aware server and utilities  
 **Server Architecture:** Framework-aware Express server handles both development and production modes gracefully  
-**Defect Tracking:** Organized in dedicated folder structure (docs/defect-tracking/) with individual files per defect  
+**Defect Tracking:** Organized in dedicated folder structure (docs/defect-tracking/) with individual files per defect (BUG-1 through BUG-8)  
 **Script Quality:** Scripts follow shell-template.sh patterns with improved error handling and logging  
+**Scanner Verification:** Automated scanner verification script testing 9 vulnerable and 2 fixed Next.js versions  
+**Next.js Versions:** Support for 14.0.0, 14.1.0, 15.0.4, 15.1.8, 15.2.5, 15.3.5, 15.4.7, 15.5.6, 16.0.6 (vulnerable) and 14.0.1, 14.1.1 (fixed)  
+**Known Limitations:** Next.js 14.x versions (14.0.0, 14.1.0) cannot be verified due to Next.js 14.x internal bug (BUG-8, Not Fixable)  
 **Maintainer:** Development Team
