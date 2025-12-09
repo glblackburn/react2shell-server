@@ -211,7 +211,7 @@ function switch_version {
     
     # Switch version and capture output to check for errors
     local switch_output
-    switch_output=$(make "nextjs-${version}" 2>&1)
+    switch_output=$(make "nextjs-${version}" 2>&1) || true
     local switch_exit=$?
     
     if [ $switch_exit -eq 0 ]; then
@@ -383,7 +383,7 @@ EOF
             echo "${red}Error: Cannot change to project root: ${PROJECT_ROOT}${reset}" >&2
             return 1
         }
-        make start > /dev/null 2>&1
+        make start 2>&1
         cd "$original_dir"
         sleep 5
     fi
@@ -437,9 +437,9 @@ EOF
                 fi
             fi
             
-            make stop > /dev/null 2>&1
+            make stop 2>&1
             sleep 3  # Longer pause to ensure server fully stops
-            make start > /dev/null 2>&1
+            make start 2>&1
             cd "$original_dir"
             
             # wait_for_server will poll and detect when server is ready
@@ -492,9 +492,9 @@ EOF
                     fi
                 fi
                 
-                make stop > /dev/null 2>&1
+                make stop 2>&1
                 sleep 3  # Longer pause to ensure server fully stops
-                make start > /dev/null 2>&1
+                make start 2>&1
                 cd "$original_dir"
                 
                 # wait_for_server will poll and detect when server is ready
