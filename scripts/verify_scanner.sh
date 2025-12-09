@@ -239,6 +239,49 @@ function switch_version {
     fi
 }
 
+# Function to fetch and display version info from UI
+function show_version_info {
+    local version_api="${FRONTEND_URL}/api/version"
+    local version_json
+    
+    # Fetch version info from API
+    version_json=$(curl -s -f "${version_api}" 2>/dev/null)
+    
+    if [ $? -eq 0 ] && [ -n "${version_json}" ]; then
+        # Parse JSON using sed (more robust than grep for JSON)
+        local nextjs_version=$(echo "${version_json}" | sed -n 's/.*"nextjs"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+        local react_version=$(echo "${version_json}" | sed -n 's/.*"react"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+        local react_dom_version=$(echo "${version_json}" | sed -n 's/.*"reactDom"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+        local status=$(echo "${version_json}" | sed -n 's/.*"status"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+        
+        # Set to "unknown" if empty
+        nextjs_version=${nextjs_version:-unknown}
+        react_version=${react_version:-unknown}
+        react_dom_version=${react_dom_version:-unknown}
+        status=${status:-unknown}
+        
+        if [ "${nextjs_version}" != "unknown" ] || [ "${react_version}" != "unknown" ]; then
+            ${QUIET} || echo "${cyan}Current versions from UI:${reset}"
+            if [ "${nextjs_version}" != "unknown" ]; then
+                ${QUIET} || echo "  ${cyan}Next.js:${reset} ${nextjs_version}"
+            fi
+            if [ "${react_version}" != "unknown" ]; then
+                ${QUIET} || echo "  ${cyan}React:${reset} ${react_version}"
+            fi
+            if [ "${react_dom_version}" != "unknown" ] && [ "${react_dom_version}" != "${react_version}" ]; then
+                ${QUIET} || echo "  ${cyan}React-DOM:${reset} ${react_dom_version}"
+            fi
+            if [ "${status}" != "unknown" ]; then
+                if [ "${status}" == "VULNERABLE" ]; then
+                    ${QUIET} || echo "  ${cyan}Status:${reset} ${red}${status}${reset}"
+                else
+                    ${QUIET} || echo "  ${cyan}Status:${reset} ${green}${status}${reset}"
+                fi
+            fi
+        fi
+    fi
+}
+
 # Function to run scanner
 function run_scanner {
     local version=$1
@@ -248,6 +291,9 @@ function run_scanner {
     if [ "${SAFE_CHECK}" == true ]; then
         scanner_args+=("--safe-check")
     fi
+    
+    # Show version info from UI before running scanner
+    show_version_info
     
     ${QUIET} || echo "${cyan}Running scanner against Next.js ${version}...${reset}"
     

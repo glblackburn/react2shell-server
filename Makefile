@@ -70,10 +70,15 @@ define switch_nextjs_version
 		exit 1; \
 	fi
 	@case "$(1)" in \
-		14.0.0|14.1.0) \
+		14.0.0) \
 			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
-			echo "Note: Next.js 14.x requires React 18, using React 19.2.0 (vulnerable) for testing..."; \
-			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.0';pkg.dependencies['react-dom']='19.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
+			echo "Note: Next.js 14.x requires React 18, using React 18.3.0 (compatible) for testing..."; \
+			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.3.0';pkg.dependencies['react-dom']='18.3.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
+			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
+		14.1.0) \
+			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
+			echo "Note: Next.js 14.x requires React 18, using React 18.2.0 (compatible) for testing..."; \
+			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.2.0';pkg.dependencies['react-dom']='18.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
 			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
 		15.0.0|15.1.0) \
 			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
@@ -81,8 +86,8 @@ define switch_nextjs_version
 			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
 		14.0.1|14.1.1) \
 			echo "Switching to Next.js $(1) (FIXED - for security testing)..."; \
-			echo "Note: Next.js 14.x requires React 18, using React 19.2.1 (fixed) for testing..."; \
-			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.1';pkg.dependencies['react-dom']='19.2.1';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
+			echo "Note: Next.js 14.x requires React 18, using React 18.2.0 (compatible) for testing..."; \
+			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.2.0';pkg.dependencies['react-dom']='18.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
 			echo "✓ Switched to Next.js $(1) (FIXED)" ;; \
 		*) \
 			echo "Switching to Next.js $(1) (FIXED - for security testing)..."; \
