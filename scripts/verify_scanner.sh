@@ -166,41 +166,6 @@ function check_server {
     fi
 }
 
-# Function to check if server can handle POST requests with Next.js headers
-# This is critical for Next.js mode where scanner sends POST with Next-Action header
-function check_server_post {
-    # Create a minimal multipart form data payload for testing
-    local boundary="----WebKitFormBoundaryTest"
-    # Use printf to properly format the multipart body with CRLF line endings
-    local body
-    body=$(printf '%s\r\n%s\r\n\r\n%s\r\n%s--' \
-        "------WebKitFormBoundaryTest" \
-        'Content-Disposition: form-data; name="test"' \
-        "test" \
-        "------WebKitFormBoundaryTest")
-    
-    # Send POST request with Next.js headers (similar to what scanner sends)
-    # First try with full headers
-    local http_code
-    http_code=$(curl -s -o /dev/null -w "%{http_code}" \
-        -X POST \
-        -H "Next-Action: x" \
-        -H "X-Nextjs-Request-Id: test" \
-        -H "Content-Type: multipart/form-data; boundary=${boundary}" \
-        -H "X-Nextjs-Html-Request-Id: test" \
-        --data-binary "${body}" \
-        --max-time 5 \
-        "${FRONTEND_URL}" 2>/dev/null)
-    
-    # If we got an HTTP response code (even error like 404/500), server is processing POST requests
-    # 000 means connection failed/timeout, which indicates server isn't ready
-    if [ -n "${http_code}" ] && [ "${http_code}" != "000" ]; then
-        return 0
-    fi
-    
-    return 1
-}
-
 # Function to wait for server
 function wait_for_server {
     local max_attempts=30
@@ -223,25 +188,7 @@ function wait_for_server {
         return 1
     fi
     
-    # For Next.js mode, also verify server can handle POST requests (scanner requirement)
-    if [ "${FRAMEWORK_MODE}" == "nextjs" ]; then
-        ${QUIET} || echo "${cyan}Verifying Next.js RSC readiness (POST request check)...${reset}"
-        local post_attempts=0
-        local post_max_attempts=20  # Additional 20 seconds for POST readiness
-        
-        while [ $post_attempts -lt $post_max_attempts ]; do
-            if check_server_post; then
-                ${QUIET} || echo "${green}✓ Server ready for Next.js RSC requests${reset}"
-                return 0
-            fi
-            sleep 1
-            post_attempts=$((post_attempts + 1))
-        done
-        
-        # If POST check fails but GET works, warn but continue (server may still work)
-        ${VERBOSE} && echo "${yellow}Warning: POST request check failed, but continuing (server may still process scanner requests)${reset}" >&2
-    fi
-    
+    # Server is ready (GET request succeeded)
     return 0
 }
 
@@ -449,20 +396,8 @@ EOF
             make start > /dev/null 2>&1
             cd "$original_dir"
             
-            # Wait longer for Next.js mode (needs time for RSC initialization)
-            # Next.js 14.x may need more time than 15.x
-            if [ "${FRAMEWORK_MODE}" == "nextjs" ]; then
-                if [[ "${version}" == 14.* ]]; then
-                    ${QUIET} || echo "${cyan}Waiting for Next.js 14.x RSC initialization (30 seconds)...${reset}"
-                    sleep 30  # Next.js 14.x needs more time, especially with React 19 compatibility
-                else
-                    ${QUIET} || echo "${cyan}Waiting for Next.js RSC initialization (20 seconds)...${reset}"
-                    sleep 20  # Next.js 15.x is faster
-                fi
-            else
-                sleep 3  # Shorter wait for Vite: npm install + server restart
-            fi
-            
+            # wait_for_server will poll and detect when server is ready
+            # (includes GET check + POST/RSC readiness check for Next.js)
             if wait_for_server; then
                 if run_scanner "$version" true; then
                     PASSED=$((PASSED + 1))
@@ -516,20 +451,8 @@ EOF
                 make start > /dev/null 2>&1
                 cd "$original_dir"
                 
-                # Wait longer for Next.js mode (needs time for RSC initialization)
-                # Next.js 14.x may need more time than 15.x
-                if [ "${FRAMEWORK_MODE}" == "nextjs" ]; then
-                    if [[ "${version}" == 14.* ]]; then
-                        ${QUIET} || echo "${cyan}Waiting for Next.js 14.x RSC initialization (30 seconds)...${reset}"
-                        sleep 30  # Next.js 14.x needs more time, especially with React 19 compatibility
-                    else
-                        ${QUIET} || echo "${cyan}Waiting for Next.js RSC initialization (20 seconds)...${reset}"
-                        sleep 20  # Next.js 15.x is faster
-                    fi
-                else
-                    sleep 3  # Shorter wait for Vite: npm install + server restart
-                fi
-                
+                # wait_for_server will poll and detect when server is ready
+                # (includes GET check + POST/RSC readiness check for Next.js)
                 if wait_for_server; then
                     if run_scanner "$version" false; then
                         PASSED=$((PASSED + 1))

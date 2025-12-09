@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable React Server Components
-  experimental: {
-    serverActions: true,
-  },
+  // Server Actions are enabled by default in Next.js 14.x+
+  // No experimental.serverActions needed (deprecated)
 };
 
 module.exports = nextConfig;

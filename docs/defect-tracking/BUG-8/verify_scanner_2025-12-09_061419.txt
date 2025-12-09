@@ -1,0 +1,131 @@
+[36m========================================(B[m
+[36mScanner Verification Test(B[m
+[36m========================================(B[m
+[36mLog file: /tmp/verify_scanner_2025-12-09_061419_gfUeuQ.txt(B[m
+
+[36mDetected framework: nextjs (checking port 3000)(B[m
+[36mWaiting for server to be ready at http://localhost:3000...(B[m
+[36mTesting VULNERABLE Next.js versions...(B[m
+[36mSwitching to Next.js 14.0.0...(B[m
+[32m✓ Switched to Next.js 14.0.0(B[m
+[36mRestarting server with Next.js 14.0.0...(B[m
+[36mWaiting for server to be ready at http://localhost:3000...(B[m
+[36mRunning scanner against Next.js 14.0.0...(B[m
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[ERROR] http://localhost:3000 - Connection Error: HTTPConnectionPool(host='localhost', port=3000): Read timed out.
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 0
+  Not vulnerable: 1
+  Errors: 0
+============================================================
+
+[31m✗ FAILED: Should detect vulnerability for Next.js 14.0.0 but did not(B[m
+
+[36mSwitching to Next.js 14.1.0...(B[m
+[32m✓ Switched to Next.js 14.1.0(B[m
+[36mRestarting server with Next.js 14.1.0...(B[m
+[36mWaiting for server to be ready at http://localhost:3000...(B[m
+[36mRunning scanner against Next.js 14.1.0...(B[m
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[ERROR] http://localhost:3000 - Connection Error: HTTPConnectionPool(host='localhost', port=3000): Read timed out.
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 0
+  Not vulnerable: 1
+  Errors: 0
+============================================================
+
+[31m✗ FAILED: Should detect vulnerability for Next.js 14.1.0 but did not(B[m
+
+[36mSwitching to Next.js 15.0.0...(B[m
+[32m✓ Switched to Next.js 15.0.0(B[m
+[36mRestarting server with Next.js 15.0.0...(B[m
+[36mWaiting for server to be ready at http://localhost:3000...(B[m
+[36mRunning scanner against Next.js 15.0.0...(B[m
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[VULNERABLE] http://localhost:3000 - Status: 303
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 1
+  Not vulnerable: 0
+  Errors: 0
+============================================================
+
+[32m✓ Correctly detected vulnerability for Next.js 15.0.0(B[m
+
+[36mSwitching to Next.js 15.1.0...(B[m
+[32m✓ Switched to Next.js 15.1.0(B[m
+[36mRestarting server with Next.js 15.1.0...(B[m
+[36mWaiting for server to be ready at http://localhost:3000...(B[m
+[36mRunning scanner against Next.js 15.1.0...(B[m
+
+brought to you by assetnote
+
+[*] Loaded 1 host(s) to scan
+[*] Using 10 thread(s)
+[*] Timeout: 10s
+[*] Using RCE PoC check
+[!] SSL verification disabled
+
+[VULNERABLE] http://localhost:3000 - Status: 303
+
+============================================================
+SCAN SUMMARY
+============================================================
+  Total hosts scanned: 1
+  Vulnerable: 1
+  Not vulnerable: 0
+  Errors: 0
+============================================================
+
+[32m✓ Correctly detected vulnerability for Next.js 15.1.0(B[m
+
+[36m========================================(B[m
+[36mTest Summary(B[m
+[36m========================================(B[m
+Passed: [32m2(B[m
+Failed: [31m2(B[m
+
+[32mPassed Versions:(B[m
+  [32m✓(B[m Next.js 15.0.0 (vulnerable)
+  [32m✓(B[m Next.js 15.1.0 (vulnerable)
+
+[31mFailed Versions:(B[m
+  [31m✗(B[m Next.js 14.0.0 (vulnerable)
+  [31m✗(B[m Next.js 14.1.0 (vulnerable)
+
+[31mSome tests failed!(B[m
