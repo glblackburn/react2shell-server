@@ -393,8 +393,8 @@ start: $(PID_DIR) $(LOG_DIR)
 			echo "⚠️  Next.js server is already running (PID: $$(cat $(SERVER_PID)))"; \
 		else \
 			cd frameworks/nextjs; \
-			if [ -f ../../scripts/run-with-nvm.sh ]; then \
-				nohup ../../scripts/run-with-nvm.sh npm run dev > ../../$(SERVER_LOG) 2>&1 & \
+			if [ -f ~/.nvm/nvm.sh ]; then \
+				nohup bash -c '. ~/.nvm/nvm.sh && nvm use 18 2>/dev/null || nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true && npm run dev' > ../../$(SERVER_LOG) 2>&1 & \
 			else \
 				nohup npm run dev > ../../$(SERVER_LOG) 2>&1 & \
 			fi; \
@@ -430,8 +430,8 @@ start: $(PID_DIR) $(LOG_DIR)
 			echo "⚠️  Vite dev server is already running (PID: $$(cat $(VITE_PID)))"; \
 		else \
 			cd frameworks/vite-react; \
-			if [ -f ../../scripts/run-with-nvm.sh ]; then \
-				nohup ../../scripts/run-with-nvm.sh npm run dev > ../../$(VITE_LOG) 2>&1 & \
+			if [ -f ~/.nvm/nvm.sh ]; then \
+				nohup bash -c '. ~/.nvm/nvm.sh && nvm use 18 2>/dev/null || nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true && npm run dev' > ../../$(VITE_LOG) 2>&1 & \
 			else \
 				nohup npm run dev > ../../$(VITE_LOG) 2>&1 & \
 			fi; \
@@ -442,8 +442,8 @@ start: $(PID_DIR) $(LOG_DIR)
 		if [ -f $(SERVER_PID) ] && kill -0 `cat $(SERVER_PID)` 2>/dev/null; then \
 			echo "⚠️  Express server is already running (PID: $$(cat $(SERVER_PID)))"; \
 		else \
-			if [ -f scripts/run-with-nvm.sh ]; then \
-				nohup scripts/run-with-nvm.sh node server.js > $(SERVER_LOG) 2>&1 & \
+			if [ -f ~/.nvm/nvm.sh ]; then \
+				nohup bash -c '. ~/.nvm/nvm.sh && nvm use 18 2>/dev/null || nvm use 20 2>/dev/null || nvm use default 2>/dev/null || true && node server.js' > $(SERVER_LOG) 2>&1 & \
 			else \
 				nohup node server.js > $(SERVER_LOG) 2>&1 & \
 			fi; \

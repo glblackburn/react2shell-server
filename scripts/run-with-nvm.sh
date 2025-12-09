@@ -14,5 +14,5 @@ if [ -f ~/.nvm/nvm.sh ]; then
     fi
 fi
 
-# Execute the command
-exec "$@"
+# Execute the command - don't use exec so the script stays alive for nohup
+"$@"
