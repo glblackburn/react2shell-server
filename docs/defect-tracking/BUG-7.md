@@ -95,6 +95,55 @@ Running scanner against React 19.0...
 **Conclusion:**
 The root cause is that `check_server()` validates server readiness using GET requests, but the scanner requires the server to be ready for complex POST requests with Next.js-specific headers. After version switches, Next.js needs more time to initialize RSC infrastructure than the current 3-second wait provides, and the GET-based readiness check gives a false positive that the server is ready for scanner requests.
 
+**Additional Context from Scanner Analysis:**
+
+1. **Scanner Timeout Behavior:**
+   - Scanner uses Python `requests` library with single timeout value (default 10 seconds)
+   - Timeout applies to entire request lifecycle: connection establishment + response reading
+   - Error "Read timed out" (from `HTTPConnectionPool`) indicates:
+     - Connection was successfully established (not a connection timeout)
+     - Request was sent to server
+     - Server did not send response within 10-second window
+   - This is a **read timeout**, meaning server is accepting connections but not responding in time
+
+2. **Next.js RSC Request Processing:**
+   - When Next.js receives POST with `Next-Action` header, it must:
+     - Parse multipart/form-data payload (can be large, especially with WAF bypass up to 128KB+)
+     - Route through React Server Components (RSC) infrastructure
+     - Process server actions if configured (`frameworks/nextjs/app/actions.ts`)
+     - Execute RSC protocol handling
+     - Return response with appropriate headers
+   - This processing requires fully initialized RSC infrastructure
+
+3. **Post-Version-Switch Initialization:**
+   - After `make react-${version}`, Next.js dev server must:
+     - Detect `package.json` changes (React version update)
+     - Recompile application with new React version
+     - Reinitialize RSC infrastructure for new React version
+     - Rebuild server action handlers
+     - Be ready to process RSC requests with new version
+   - This initialization is more complex than simple HTTP server startup
+   - GET requests to `/` may work (basic routing) while RSC infrastructure is still initializing
+   - POST requests with `Next-Action` header require fully initialized RSC, which takes longer
+
+4. **Request Processing Difference:**
+   - **GET request** (`check_server`): Simple routing, static file serving, or basic API endpoint
+     - Lightweight, returns quickly even during initialization
+     - Doesn't require RSC infrastructure to be fully ready
+   - **POST with Next-Action** (scanner): Requires RSC protocol processing
+     - Must parse complex multipart payload
+     - Must route through RSC infrastructure
+     - Must process server actions
+     - Requires fully initialized Next.js RSC system
+     - Takes longer to process, especially during initialization
+
+5. **Timeout Window:**
+   - Script waits 3 seconds after version switch, then checks with GET (succeeds quickly)
+   - Scanner runs immediately after GET check succeeds
+   - Scanner has 10-second timeout for POST request
+   - If RSC infrastructure needs 15-20 seconds to initialize, scanner times out
+   - Server accepts connection (GET works) but can't process POST within 10 seconds
+
 **Evidence:**
 - Script's `wait_for_server` function succeeds (server responds to curl)
 - Scanner immediately times out when trying to connect
