@@ -214,6 +214,11 @@ function switch_version {
     switch_output=$(make "nextjs-${version}" 2>&1) || true
     local switch_exit=$?
     
+    # Always show switch output for debugging (unless quiet mode)
+    if [ "${QUIET}" != true ]; then
+        echo "$switch_output"
+    fi
+    
     if [ $switch_exit -eq 0 ]; then
         ${QUIET} || echo "${green}✓ Switched to Next.js ${version}${reset}"
         
@@ -223,7 +228,7 @@ function switch_version {
             sleep 5
             if [ ! -f "${PROJECT_ROOT}/frameworks/nextjs/node_modules/.bin/next" ]; then
                 echo "${red}Error: next binary still not found after installation${reset}" >&2
-                ${VERBOSE} && echo "$switch_output" >&2
+                echo "$switch_output" >&2
                 cd "$original_dir"
                 return 1
             fi
@@ -233,7 +238,7 @@ function switch_version {
         return 0
     else
         echo "${red}✗ Failed to switch to Next.js ${version}${reset}" >&2
-        ${VERBOSE} && echo "$switch_output" >&2
+        echo "$switch_output" >&2
         cd "$original_dir"
         return 1
     fi
