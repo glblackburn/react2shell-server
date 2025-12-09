@@ -28,7 +28,7 @@ REPORT_FILE="${PROJECT_ROOT}/scanner_verification_report_$(date +%Y%m%d_%H%M%S).
 # Version lists from Makefile (updated to match scanner results)
 VITE_VULNERABLE_VERSIONS=("19.0" "19.1.0" "19.1.1" "19.2.0")
 VITE_FIXED_VERSIONS=("19.0.1" "19.1.2" "19.2.1")
-NEXTJS_VULNERABLE_VERSIONS=("14.0.0" "14.1.0" "15.0.0" "15.1.0")
+NEXTJS_VULNERABLE_VERSIONS=("14.0.0" "14.1.0" "15.0.4" "15.1.8" "15.2.5" "15.3.5" "15.4.7" "15.5.6" "16.0.6")
 NEXTJS_FIXED_VERSIONS=("14.0.1" "14.1.1")
 
 # Parse arguments

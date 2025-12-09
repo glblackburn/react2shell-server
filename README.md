@@ -15,6 +15,8 @@ A React application with a backend server that displays a big red button. When c
 - [Features](#features)
 - [React Version Switching](#react-version-switching)
 - [Security Scanner Testing](#security-scanner-testing)
+  - [Scanner Verification](#scanner-verification)
+- [Scanners](#scanners)
 - [Setup](#setup)
 - [Development](#development)
 - [Testing](#testing)
@@ -155,14 +157,23 @@ make help
 
 ## Security Scanner Testing
 
+This project supports testing security scanners against both React (Vite) and Next.js applications. The scanner must match the framework you're testing.
+
+### Testing React Versions (Vite Framework)
+
 To test your security scanner against vulnerable React versions:
 
-1. **Switch to a vulnerable version:**
+1. **Switch to Vite framework mode:**
+   ```bash
+   make use-vite
+   ```
+
+2. **Switch to a vulnerable version:**
    ```bash
    make react-19.2.0  # or any other vulnerable version
    ```
 
-2. **Start the application:**
+3. **Start the application:**
    ```bash
    make start       # Starts both servers automatically
    ```
@@ -172,16 +183,155 @@ To test your security scanner against vulnerable React versions:
    npm run server   # Terminal 2
    ```
 
-3. **Run your security scanner** against the application
+4. **Run your security scanner** against the application
 
-4. **Switch to a fixed version** to verify scanner detects the difference:
+5. **Switch to a fixed version** to verify scanner detects the difference:
    ```bash
    make react-19.2.1  # FIXED version
+   make stop          # Stop servers to pick up version changes
+   make start         # Restart with new version
    ```
+
+### Testing Next.js Versions
+
+**Note:** Most security scanners (including react2shell-scanner) are designed specifically for Next.js applications with React Server Components, not standalone React applications.
+
+To test your security scanner against vulnerable Next.js versions, follow this process (which matches what `verify_scanner.sh` does):
+
+1. **Switch to Next.js framework mode:**
+   ```bash
+   make use-nextjs
+   ```
+
+2. **Ensure server is running** (script starts it if not running):
+   ```bash
+   make start       # Starts Next.js server on port 3000 if not already running
+   ```
+
+3. **Wait for initial server readiness:**
+   The script polls the server to ensure it's ready:
+   - Checks GET requests succeed (polls up to 30 seconds)
+   - For Next.js, also verifies POST request handling (polls up to 20 additional seconds)
+   
+   You can verify manually:
+   ```bash
+   # Check if server responds to GET requests
+   curl http://localhost:3000
+   
+   # Check server status
+   make status
+   ```
+
+4. **Switch to a vulnerable Next.js version:**
+   ```bash
+   make nextjs-15.0.4  # or any other vulnerable version
+   ```
+   This will:
+   - Update `package.json` with the new Next.js version
+   - Run `npm install --legacy-peer-deps` to install dependencies
+   - Install the appropriate React version (React 18 for Next.js 14.x, React 19 for Next.js 15.x+)
+
+5. **Verify installation completed:**
+   The script checks that the `next` binary exists:
+   ```bash
+   # Check that the next binary exists
+   ls frameworks/nextjs/node_modules/.bin/next
+   ```
+   If the binary is missing, the script waits 5 seconds and checks again. You should do the same.
+
+6. **Stop the server** to ensure clean restart with new version:
+   ```bash
+   make stop
+   ```
+   The script waits 3 seconds after stopping to ensure the server fully stops.
+
+7. **Start the application** with the new version:
+   ```bash
+   make start       # Starts Next.js server on port 3000
+   ```
+
+8. **Wait for server readiness** (critical step):
+   The script uses polling to detect when the server is ready:
+   - **GET request check:** Polls every 1 second, up to 30 attempts (30 seconds max)
+   - **POST request check (Next.js):** After GET succeeds, polls POST requests every 1 second, up to 20 additional attempts (20 seconds max)
+   
+   The server needs time to:
+   - Start the Next.js dev server
+   - Initialize React Server Components (RSC)
+   - Be ready to handle POST requests with Next.js-specific headers
+   
+   You can verify readiness manually:
+   ```bash
+   # Check if server responds to GET requests
+   curl http://localhost:3000
+   
+   # For Next.js, also verify POST requests work (scanner requirement)
+   curl -X POST -H "Next-Action: x" http://localhost:3000
+   ```
+
+9. **Verify current versions** (script does this automatically):
+   The script fetches version info from the UI before running the scanner:
+   ```bash
+   # Check what versions are actually running
+   curl http://localhost:3000/api/version
+   ```
+   This shows the Next.js and React versions currently installed and their vulnerability status.
+
+10. **Run your security scanner** against the application:
+    ```bash
+    # Example with react2shell-scanner
+    python3 /path/to/react2shell-scanner/scanner.py -u http://localhost:3000
+    ```
+
+**Complete Process for Testing Multiple Versions:**
+
+For each version you want to test, repeat steps 4-10:
+```bash
+# Switch version
+make nextjs-15.1.8  # Another vulnerable version
+
+# Verify binary exists (wait if needed)
+ls frameworks/nextjs/node_modules/.bin/next
+
+# Stop server
+make stop
+sleep 3  # Wait for server to fully stop
+
+# Start server
+make start
+
+# Wait for server readiness (poll GET, then POST for Next.js)
+# Check: curl http://localhost:3000
+# Check: curl -X POST -H "Next-Action: x" http://localhost:3000
+
+# Verify versions
+curl http://localhost:3000/api/version
+
+# Run scanner
+python3 /path/to/react2shell-scanner/scanner.py -u http://localhost:3000
+```
+
+**Important Process Notes:**
+- **Always stop and restart** the server after switching versions - the server must be restarted for version changes to take effect
+- **Wait for npm install** to complete - verify the `next` binary exists before starting the server (script waits 5 seconds if missing)
+- **Wait 3 seconds after stop** - ensures the server fully stops before restarting
+- **Poll for server readiness** - don't use fixed wait times; poll GET requests, then POST requests for Next.js
+- **Verify versions before scanning** - use `/api/version` endpoint to confirm correct versions are running
+- **Version info display** - the script shows Next.js and React versions from the UI before each scanner run
+
+**Automated Testing:** For automated testing across multiple versions, use the verification script which handles all these steps:
+```bash
+./scripts/verify_scanner.sh
+```
+This script automates the complete process above. See [Scanner Verification Script Usage](docs/VERIFY_SCANNER_USAGE.md) for details.
 
 ### Scanner Verification
 
-This project includes automated scanner verification to ensure that security scanners correctly detect vulnerabilities when scanning different React versions.
+This project includes automated scanner verification to ensure that security scanners correctly detect vulnerabilities when scanning different Next.js versions.
+
+**Scanner Project:**
+- **GitHub:** [assetnote/react2shell-scanner](https://github.com/assetnote/react2shell-scanner)
+- **Purpose:** Detects CVE-2025-55182 and CVE-2025-66478 in Next.js applications using React Server Components
 
 **Available Methods:**
 
@@ -191,21 +341,73 @@ This project includes automated scanner verification to ensure that security sca
    ```
    Runs pytest tests that switch between versions and verify scanner detection.
 
-2. **Standalone Script**:
+2. **Standalone Script** (Recommended):
    ```bash
    make test-scanner-script
    ```
-   Runs a shell script that tests all vulnerable and fixed versions.
+   Or directly:
+   ```bash
+   ./scripts/verify_scanner.sh
+   ```
+   Runs a shell script that tests all vulnerable and fixed Next.js versions.
 
 **Requirements:**
+- Project must be in Next.js mode: `make use-nextjs`
 - Scanner must be available at: `/Users/lblackb/data/lblackb/git/third-party/react2shell-scanner`
 - Scanner dependencies must be installed (see scanner's `requirements.txt`)
+- Python 3.9+ required
 
 **What It Tests:**
-- ✅ Vulnerable versions (19.0, 19.1.0, 19.1.1, 19.2.0) are correctly detected as vulnerable
-- ✅ Fixed versions (19.0.1, 19.1.2, 19.2.1) are correctly identified as not vulnerable
+- ✅ Vulnerable Next.js versions (14.0.0, 14.1.0, 15.0.4, 15.1.8, 15.2.5, 15.3.5, 15.4.7, 15.5.6, 16.0.6) are correctly detected as vulnerable
+- ✅ Fixed Next.js versions (14.0.1, 14.1.1) are correctly identified as not vulnerable
+
+**Documentation:**
+- **Usage Guide:** See [Scanner Verification Script Usage](docs/VERIFY_SCANNER_USAGE.md) for detailed usage instructions, options, and examples
+- **Example Output:** See [Example Run Output](docs/verify_scanner_example_output.txt) for a complete example
+- **Known Issues:** See [BUG-8](docs/defect-tracking/BUG-8.md) for Next.js 14.x timeout issues (Not Fixable)
 
 **Note:** Scanner verification is kept separate from the main test suite to avoid slowing down regular test execution. See `docs/SCANNER_INTEGRATION.md` for detailed analysis of pros/cons.
+
+## Scanners
+
+This project supports automated verification of security scanners against multiple Next.js versions. The primary scanner used is the **react2shell-scanner** from Assetnote.
+
+### Supported Scanner
+
+**react2shell-scanner**
+- **GitHub:** [assetnote/react2shell-scanner](https://github.com/assetnote/react2shell-scanner)
+- **Purpose:** Detects CVE-2025-55182 and CVE-2025-66478 in Next.js applications using React Server Components
+- **CVEs:** CVE-2025-55182, CVE-2025-66478
+
+### Scanner Verification Script
+
+The project includes a comprehensive scanner verification script that automatically tests multiple Next.js versions:
+
+**Quick Start:**
+```bash
+# Ensure you're in Next.js mode
+make use-nextjs
+
+# Run scanner verification
+./scripts/verify_scanner.sh
+```
+
+**Documentation:**
+- **[Scanner Verification Script Usage](docs/VERIFY_SCANNER_USAGE.md)** - Complete usage guide with options, examples, and troubleshooting
+- **[Example Run Output](docs/verify_scanner_example_output.txt)** - Sample output from a complete verification run
+
+**Features:**
+- Automatically tests all vulnerable Next.js versions
+- Displays current Next.js and React versions from UI before each test
+- Provides detailed pass/fail summary with version-specific results
+- Saves complete output to log files in `/tmp/`
+- Supports safe-check mode, quiet mode, and verbose output
+
+**Tested Versions:**
+- **Vulnerable:** 14.0.0, 14.1.0, 15.0.4, 15.1.8, 15.2.5, 15.3.5, 15.4.7, 15.5.6, 16.0.6
+- **Fixed:** 14.0.1, 14.1.1
+
+For detailed usage instructions, options, and troubleshooting, see the [Scanner Verification Script Usage](docs/VERIFY_SCANNER_USAGE.md) documentation.
 
 ## Setup
 

@@ -28,7 +28,7 @@ SCANNER_SCRIPT="${SCANNER_PATH}/scanner.py"
 # FRONTEND_URL will be set after framework detection
 
 # Vulnerable Next.js versions (scanner tests Next.js, not React)
-NEXTJS_VULNERABLE_VERSIONS=("14.0.0" "14.1.0" "15.0.0" "15.1.0")
+NEXTJS_VULNERABLE_VERSIONS=("14.0.0" "14.1.0" "15.0.4" "15.1.8" "15.2.5" "15.3.5" "15.4.7" "15.5.6" "16.0.6")
 # Fixed Next.js versions
 NEXTJS_FIXED_VERSIONS=("14.0.1" "14.1.1")
 
