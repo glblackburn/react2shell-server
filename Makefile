@@ -296,23 +296,39 @@ setup-scanner:
 
 # Install npm dependencies for all frameworks
 setup-deps:
-	@echo "Installing npm dependencies..."
-	@echo "Installing root dependencies..."
-	@npm install --legacy-peer-deps || { \
+	@bash -c '\
+	set -e; \
+	echo "Installing npm dependencies..."; \
+	echo "Checking for Node.js/npm..."; \
+	if ! command -v npm >/dev/null 2>&1; then \
+		if [ -f ~/.nvm/nvm.sh ]; then \
+			echo "Found nvm. Sourcing nvm..."; \
+			. ~/.nvm/nvm.sh; \
+			nvm use default 2>/dev/null || nvm use node 2>/dev/null || true; \
+		else \
+			echo "❌ npm not found and nvm not available"; \
+			echo "   Please install Node.js/npm or nvm"; \
+			exit 1; \
+		fi; \
+	fi; \
+	echo "Using Node.js: $$(node --version)"; \
+	echo "Using npm: $$(npm --version)"; \
+	echo "Installing root dependencies..."; \
+	npm install --legacy-peer-deps || { \
 		echo "❌ Failed to install root dependencies"; \
 		exit 1; \
-	}
-	@echo "Installing Vite framework dependencies..."
-	@cd frameworks/vite-react && npm install || { \
+	}; \
+	echo "Installing Vite framework dependencies..."; \
+	cd frameworks/vite-react && npm install || { \
 		echo "❌ Failed to install Vite dependencies"; \
 		exit 1; \
-	}
-	@echo "Installing Next.js framework dependencies..."
-	@cd frameworks/nextjs && npm install --legacy-peer-deps || { \
+	}; \
+	echo "Installing Next.js framework dependencies..."; \
+	cd frameworks/nextjs && npm install --legacy-peer-deps || { \
 		echo "❌ Failed to install Next.js dependencies"; \
 		exit 1; \
-	}
-	@echo "✓ All npm dependencies installed"
+	}; \
+	echo "✓ All npm dependencies installed"'
 
 # Complete setup (scanner + deps + test environment)
 setup-all: setup-scanner setup-deps test-setup
