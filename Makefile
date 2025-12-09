@@ -364,7 +364,13 @@ $(LOG_DIR):
 
 # Start servers (framework-aware)
 start: $(PID_DIR) $(LOG_DIR)
-	@FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
+	@bash -c '\
+	set -e; \
+	if ! command -v npm >/dev/null 2>&1 && [ -f ~/.nvm/nvm.sh ]; then \
+		. ~/.nvm/nvm.sh; \
+		nvm use default 2>/dev/null || nvm use node 2>/dev/null || true; \
+	fi; \
+	FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
 	echo "Starting servers (Framework: $$FRAMEWORK)..."; \
 	if [ "$$FRAMEWORK" = "nextjs" ]; then \
 		if [ -f $(SERVER_PID) ] && kill -0 `cat $(SERVER_PID)` 2>/dev/null; then \
@@ -440,7 +446,7 @@ start: $(PID_DIR) $(LOG_DIR)
 			fi; \
 			sleep 1; \
 		done; \
-	fi
+	fi'
 
 # Stop servers (framework-aware)
 stop:
