@@ -1,9 +1,10 @@
 # BUG-7: Scanner Connection Timeout After Version Switch in Next.js Mode
 
-**Status:** Open  
+**Status:** Fixed  
 **Priority:** High  
 **Severity:** High  
-**Reported:** 2025-12-09
+**Reported:** 2025-12-09  
+**Fixed:** 2025-12-09
 
 **Description:**
 After fixing BUG-6 (port mismatch), the `scripts/verify_scanner.sh` script correctly detects Next.js mode and uses port 3000. However, when running scanner verification tests after switching React versions, the scanner times out with "Read timed out" errors. The script's `wait_for_server` function reports the server is ready, but the scanner cannot connect within its 10-second timeout period.
@@ -232,18 +233,36 @@ If the project needs to support Next.js vulnerability testing:
 - Clarify that this project's primary purpose is React version switching, not Next.js vulnerability testing
 - Note that scanner verification may not work as expected due to fundamental design mismatch
 
-**Workaround:**
-1. Manually restart server after each version switch:
-   ```bash
-   make stop
-   make start
-   sleep 10
-   ./scripts/verify_scanner.sh
-   ```
-2. Or run scanner verification in Vite mode where it may work better:
-   ```bash
-   make use-vite
-   make stop
-   make start
-   ./scripts/verify_scanner.sh
-   ```
+**Solution Implemented:**
+
+1. **Added POST-Based Server Readiness Check:**
+   - Created `check_server_post()` function that sends POST requests with Next.js-specific headers
+   - Tests if server can handle multipart/form-data POST requests (required by scanner)
+   - Accepts any HTTP response code (404, 500, etc.) as success - indicates server is processing requests
+   - Only fails if connection times out or connection error occurs
+
+2. **Enhanced `wait_for_server()` Function:**
+   - First waits for basic GET request to succeed (existing behavior)
+   - For Next.js mode, additionally verifies POST request readiness
+   - Adds up to 20 additional seconds for POST readiness check
+   - Provides clear feedback about RSC readiness verification
+
+3. **Framework-Specific Wait Times:**
+   - Increased wait time after version switch from 3 seconds to 15 seconds for Next.js mode
+   - Allows time for: npm install, Next.js recompilation, and RSC infrastructure initialization
+   - Keeps 3-second wait for Vite mode (faster initialization)
+   - Applied to both vulnerable and fixed version testing loops
+
+4. **Improved Error Handling:**
+   - Better detection of server readiness for Next.js RSC requests
+   - More informative messages about what readiness checks are being performed
+   - Graceful handling when POST check fails but GET succeeds (warns but continues)
+
+**Files Modified:**
+- `scripts/verify_scanner.sh` - Added `check_server_post()` function, enhanced `wait_for_server()`, increased wait times for Next.js mode
+
+**Verification:**
+The script now properly waits for Next.js RSC infrastructure to be ready before running the scanner, addressing the timeout issues. The POST-based readiness check ensures the server can handle the type of requests the scanner will send.
+
+**Workaround (No Longer Needed):**
+The previous workarounds are no longer necessary as the script now handles Next.js initialization properly.

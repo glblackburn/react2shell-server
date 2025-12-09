@@ -8,7 +8,8 @@ script_dir=$(dirname $0)
 # Scanner Verification Script
 #
 # This script verifies that the react2shell-scanner correctly detects
-# vulnerabilities when scanning the application with different React versions.
+# vulnerabilities when scanning Next.js applications with different Next.js versions.
+# Note: The scanner is designed exclusively for Next.js applications with RSC.
 ################################################################################
 
 ################################################################################
@@ -26,10 +27,10 @@ SCANNER_PATH="/Users/lblackb/data/lblackb/git/third-party/react2shell-scanner"
 SCANNER_SCRIPT="${SCANNER_PATH}/scanner.py"
 # FRONTEND_URL will be set after framework detection
 
-# Vulnerable versions
-VULNERABLE_VERSIONS=("19.0" "19.1.0" "19.1.1" "19.2.0")
-# Fixed versions
-FIXED_VERSIONS=("19.0.1" "19.1.2" "19.2.1")
+# Vulnerable Next.js versions (scanner tests Next.js, not React)
+NEXTJS_VULNERABLE_VERSIONS=("14.0.0" "14.1.0" "15.0.0" "15.1.0")
+# Fixed Next.js versions
+NEXTJS_FIXED_VERSIONS=("14.0.1" "14.1.1")
 
 # Log file setup
 ts=$(date +%Y-%m-%d_%H%M%S)
@@ -65,7 +66,10 @@ function usage {
 Usage: ${script_name} [-hqv] [-s] [-a]
 
 This script verifies that the react2shell-scanner correctly detects
-vulnerabilities when scanning the application with different React versions.
+vulnerabilities when scanning Next.js applications with different Next.js versions.
+
+Note: The scanner is designed exclusively for Next.js applications with React Server Components.
+This script requires the project to be in Next.js mode (run 'make use-nextjs' first).
 
 Options:
   -h               : Display this help message.
@@ -153,7 +157,7 @@ fi
 # Functions
 ################################################################################
 
-# Function to check if server is running
+# Function to check if server is running (GET request)
 function check_server {
     if curl -s -f "${FRONTEND_URL}" > /dev/null 2>&1; then
         return 0
@@ -162,41 +166,107 @@ function check_server {
     fi
 }
 
+# Function to check if server can handle POST requests with Next.js headers
+# This is critical for Next.js mode where scanner sends POST with Next-Action header
+function check_server_post {
+    # Create a minimal multipart form data payload for testing
+    local boundary="----WebKitFormBoundaryTest"
+    # Use printf to properly format the multipart body with CRLF line endings
+    local body
+    body=$(printf '%s\r\n%s\r\n\r\n%s\r\n%s--' \
+        "------WebKitFormBoundaryTest" \
+        'Content-Disposition: form-data; name="test"' \
+        "test" \
+        "------WebKitFormBoundaryTest")
+    
+    # Send POST request with Next.js headers (similar to what scanner sends)
+    # First try with full headers
+    local http_code
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+        -X POST \
+        -H "Next-Action: x" \
+        -H "X-Nextjs-Request-Id: test" \
+        -H "Content-Type: multipart/form-data; boundary=${boundary}" \
+        -H "X-Nextjs-Html-Request-Id: test" \
+        --data-binary "${body}" \
+        --max-time 5 \
+        "${FRONTEND_URL}" 2>/dev/null)
+    
+    # If we got an HTTP response code (even error like 404/500), server is processing POST requests
+    # 000 means connection failed/timeout, which indicates server isn't ready
+    if [ -n "${http_code}" ] && [ "${http_code}" != "000" ]; then
+        return 0
+    fi
+    
+    return 1
+}
+
 # Function to wait for server
 function wait_for_server {
     local max_attempts=30
     local attempt=0
     
     ${QUIET} || echo "${cyan}Waiting for server to be ready at ${FRONTEND_URL}...${reset}"
+    
+    # First, wait for basic GET request to succeed
     while [ $attempt -lt $max_attempts ]; do
         if check_server; then
-            return 0
+            break
         fi
         sleep 1
         attempt=$((attempt + 1))
     done
     
-    echo "${red}Error: Server not ready after ${max_attempts} seconds at ${FRONTEND_URL}${reset}" >&2
-    echo "${yellow}Note: Check if framework mode (${FRAMEWORK_MODE}) matches the running server${reset}" >&2
-    return 1
+    if [ $attempt -ge $max_attempts ]; then
+        echo "${red}Error: Server not ready after ${max_attempts} seconds at ${FRONTEND_URL}${reset}" >&2
+        echo "${yellow}Note: Check if framework mode (${FRAMEWORK_MODE}) matches the running server${reset}" >&2
+        return 1
+    fi
+    
+    # For Next.js mode, also verify server can handle POST requests (scanner requirement)
+    if [ "${FRAMEWORK_MODE}" == "nextjs" ]; then
+        ${QUIET} || echo "${cyan}Verifying Next.js RSC readiness (POST request check)...${reset}"
+        local post_attempts=0
+        local post_max_attempts=20  # Additional 20 seconds for POST readiness
+        
+        while [ $post_attempts -lt $post_max_attempts ]; do
+            if check_server_post; then
+                ${QUIET} || echo "${green}✓ Server ready for Next.js RSC requests${reset}"
+                return 0
+            fi
+            sleep 1
+            post_attempts=$((post_attempts + 1))
+        done
+        
+        # If POST check fails but GET works, warn but continue (server may still work)
+        ${VERBOSE} && echo "${yellow}Warning: POST request check failed, but continuing (server may still process scanner requests)${reset}" >&2
+    fi
+    
+    return 0
 }
 
-# Function to switch React version
+# Function to switch Next.js version
 function switch_version {
     local version=$1
-    ${QUIET} || echo "${cyan}Switching to React ${version}...${reset}"
+    ${QUIET} || echo "${cyan}Switching to Next.js ${version}...${reset}"
+    
+    # Verify we're in Next.js mode
+    if [ "${FRAMEWORK_MODE}" != "nextjs" ]; then
+        echo "${red}Error: Scanner verification requires Next.js mode. Run 'make use-nextjs' first.${reset}" >&2
+        return 1
+    fi
     
     local original_dir="$(pwd)"
     cd "$PROJECT_ROOT" || {
         echo "${red}Error: Cannot change to project root: ${PROJECT_ROOT}${reset}" >&2
         return 1
     }
-    if make "react-${version}" > /dev/null 2>&1; then
-        ${QUIET} || echo "${green}✓ Switched to React ${version}${reset}"
+    if make "nextjs-${version}" > /dev/null 2>&1; then
+        ${QUIET} || echo "${green}✓ Switched to Next.js ${version}${reset}"
         cd "$original_dir"
         return 0
     else
-        echo "${red}✗ Failed to switch to React ${version}${reset}" >&2
+        echo "${red}✗ Failed to switch to Next.js ${version}${reset}" >&2
         cd "$original_dir"
         return 1
     fi
@@ -212,16 +282,17 @@ function run_scanner {
         scanner_args+=("--safe-check")
     fi
     
-    ${QUIET} || echo "${cyan}Running scanner against React ${version}...${reset}"
+    ${QUIET} || echo "${cyan}Running scanner against Next.js ${version}...${reset}"
     
     local result
     result=$(python3 "$SCANNER_SCRIPT" "${scanner_args[@]}" 2>&1) || true
     local exit_code=$?
     
-    ${VERBOSE} && cat<<EOF
-Scanner output for React ${version}:
-${result}
-EOF
+    # Always show scanner output (unless quiet mode)
+    if [ "${QUIET}" != true ]; then
+        echo "$result"
+        echo ""  # Blank line after scanner output
+    fi
     
     # Check if vulnerable was detected
     if echo "$result" | grep -q "\[VULNERABLE\]"; then
@@ -232,18 +303,16 @@ EOF
     
     # Verify detection matches expectation
     if [ "${expected_vulnerable}" == true ] && [ "${detected_vulnerable}" == true ]; then
-        echo "${green}✓ Correctly detected vulnerability for React ${version}${reset}"
+        echo "${green}✓ Correctly detected vulnerability for Next.js ${version}${reset}"
         return 0
     elif [ "${expected_vulnerable}" == false ] && [ "${detected_vulnerable}" == false ]; then
-        echo "${green}✓ Correctly did NOT detect vulnerability for React ${version}${reset}"
+        echo "${green}✓ Correctly did NOT detect vulnerability for Next.js ${version}${reset}"
         return 0
     elif [ "${expected_vulnerable}" == true ] && [ "${detected_vulnerable}" == false ]; then
-        echo "${red}✗ FAILED: Should detect vulnerability for React ${version} but did not${reset}" >&2
-        ${VERBOSE} || echo "$result"
+        echo "${red}✗ FAILED: Should detect vulnerability for Next.js ${version} but did not${reset}" >&2
         return 1
     else
-        echo "${red}✗ FAILED: Should NOT detect vulnerability for React ${version} but did${reset}" >&2
-        ${VERBOSE} || echo "$result"
+        echo "${red}✗ FAILED: Should NOT detect vulnerability for Next.js ${version} but did${reset}" >&2
         return 1
     fi
 }
@@ -318,11 +387,39 @@ EOF
     PASSED=0
     FAILED=0
 
-    # Test vulnerable versions
-    ${QUIET} || echo "${cyan}Testing VULNERABLE versions...${reset}"
-    for version in "${VULNERABLE_VERSIONS[@]}"; do
+    # Verify we're in Next.js mode (scanner only works with Next.js)
+    if [ "${FRAMEWORK_MODE}" != "nextjs" ]; then
+        echo "${red}Error: Scanner verification requires Next.js mode.${reset}" >&2
+        echo "${yellow}The react2shell-scanner is designed exclusively for Next.js applications.${reset}" >&2
+        echo "${yellow}Run 'make use-nextjs' to switch to Next.js mode, then try again.${reset}" >&2
+        return 1
+    fi
+
+    # Test vulnerable Next.js versions
+    ${QUIET} || echo "${cyan}Testing VULNERABLE Next.js versions...${reset}"
+    for version in "${NEXTJS_VULNERABLE_VERSIONS[@]}"; do
         if switch_version "$version"; then
-            sleep 3  # Wait for npm install and server restart
+            # Restart server after version switch to ensure new version is loaded
+            ${QUIET} || echo "${cyan}Restarting server with Next.js ${version}...${reset}"
+            original_dir="$(pwd)"
+            cd "$PROJECT_ROOT" || {
+                echo "${red}Error: Cannot change to project root: ${PROJECT_ROOT}${reset}" >&2
+                FAILED=$((FAILED + 1))
+                continue
+            }
+            make stop > /dev/null 2>&1
+            sleep 2  # Brief pause to ensure server stops
+            make start > /dev/null 2>&1
+            cd "$original_dir"
+            
+            # Wait longer for Next.js mode (needs time for RSC initialization)
+            if [ "${FRAMEWORK_MODE}" == "nextjs" ]; then
+                ${QUIET} || echo "${cyan}Waiting for Next.js RSC initialization (20 seconds)...${reset}"
+                sleep 20  # Longer wait for Next.js: server restart + recompilation + RSC init
+            else
+                sleep 3  # Shorter wait for Vite: npm install + server restart
+            fi
+            
             if wait_for_server; then
                 if run_scanner "$version" true; then
                     PASSED=$((PASSED + 1))
@@ -339,12 +436,32 @@ EOF
         ${QUIET} || echo ""
     done
 
-    # Test fixed versions if requested
+    # Test fixed Next.js versions if requested
     if [ "${TEST_ALL_VERSIONS}" == true ]; then
-        ${QUIET} || echo "${cyan}Testing FIXED versions...${reset}"
-        for version in "${FIXED_VERSIONS[@]}"; do
+        ${QUIET} || echo "${cyan}Testing FIXED Next.js versions...${reset}"
+        for version in "${NEXTJS_FIXED_VERSIONS[@]}"; do
             if switch_version "$version"; then
-                sleep 3  # Wait for npm install and server restart
+                # Restart server after version switch to ensure new version is loaded
+                ${QUIET} || echo "${cyan}Restarting server with Next.js ${version}...${reset}"
+                original_dir="$(pwd)"
+                cd "$PROJECT_ROOT" || {
+                    echo "${red}Error: Cannot change to project root: ${PROJECT_ROOT}${reset}" >&2
+                    FAILED=$((FAILED + 1))
+                    continue
+                }
+                make stop > /dev/null 2>&1
+                sleep 2  # Brief pause to ensure server stops
+                make start > /dev/null 2>&1
+                cd "$original_dir"
+                
+                # Wait longer for Next.js mode (needs time for RSC initialization)
+                if [ "${FRAMEWORK_MODE}" == "nextjs" ]; then
+                    ${QUIET} || echo "${cyan}Waiting for Next.js RSC initialization (20 seconds)...${reset}"
+                    sleep 20  # Longer wait for Next.js: server restart + recompilation + RSC init
+                else
+                    sleep 3  # Shorter wait for Vite: npm install + server restart
+                fi
+                
                 if wait_for_server; then
                     if run_scanner "$version" false; then
                         PASSED=$((PASSED + 1))
