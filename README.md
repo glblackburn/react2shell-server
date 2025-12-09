@@ -456,8 +456,8 @@ This section tracks known bugs and issues in the project.
 |----|--------|----------|----------|-------|-------------|
 | BUG-1 | Fixed | High | High | Version API Endpoint Not Accessible in Dev Mode | `/api/version` endpoint fails in development mode due to Vite proxy configuration | See details below |
 | BUG-2 | Fixed | High | High | Missing pytest Option Registration After Refactoring | `--update-baseline` option not registered, causing `ValueError: no option named '--update-baseline'` when running tests | See details below |
-| BUG-3 | Open | Medium | Medium | Next.js Version Not Displayed in UI | Next.js version is returned by API but not displayed in the UI. Should match React version display format with vulnerability status indicator | See details below |
-| BUG-4 | Open | Medium | Medium | Next.js Frontend Layout Mismatch | Next.js UI layout does not match React frontend layout. Visual differences in spacing, alignment, or component structure | See details below |
+| BUG-3 | Fixed | Medium | Medium | Next.js Version Not Displayed in UI | Next.js version is returned by API but not displayed in the UI. Should match React version display format with vulnerability status indicator | See details below |
+| BUG-4 | Fixed | Medium | Medium | Next.js Frontend Layout Mismatch | Next.js UI layout does not match React frontend layout. Visual differences in spacing, alignment, or component structure | See details below |
 | BUG-5 | Open | High | High | Next.js 15.1.0 Incorrectly Detected as VULNERABLE | Next.js 15.1.0 is listed as FIXED per CVE-2025-66478 but scanner detects it as VULNERABLE. May indicate vulnerability still exists or configuration issue | See details below |
 
 ### BUG-1: Version API Endpoint Not Accessible in Dev Mode
@@ -644,10 +644,11 @@ During Phase 3 refactoring, the `pytest_addoption` function that registers `--up
 
 ### BUG-3: Next.js Version Not Displayed in UI
 
-**Status:** Open  
+**Status:** Fixed  
 **Priority:** Medium  
 **Severity:** Medium  
-**Reported:** 2025-12-08
+**Reported:** 2025-12-08  
+**Fixed:** 2025-12-08
 
 **Description:**
 When running in Next.js mode, the version information display does not show the Next.js version, even though the API endpoint (`/api/version`) returns it in the response. The React version is displayed with vulnerability status indicators (⚠️ VULNERABLE or ✅ FIXED), but the Next.js version is missing from the UI.
@@ -681,7 +682,7 @@ When running in Next.js mode, the version information display does not show the 
 5. Notice that Next.js version is not displayed
 
 **Root Cause:**
-The Next.js page component (`frameworks/nextjs/app/page.tsx`) does not include a version item for Next.js, even though the API response includes `nextjs` field.
+The Next.js page component (`frameworks/nextjs/app/page.tsx`) did not include a version item for Next.js, even though the API response includes `nextjs` field.
 
 **Environment:**
 - Framework: Next.js mode
@@ -693,24 +694,36 @@ The Next.js page component (`frameworks/nextjs/app/page.tsx`) does not include a
 - `frameworks/nextjs/app/page.tsx` - Missing Next.js version display in version-details section
 - `frameworks/nextjs/app/api/version/route.ts` - API correctly returns nextjs field (no changes needed)
 
-**Solution:**
-Add Next.js version display to `frameworks/nextjs/app/page.tsx`:
-1. Add a new `version-item` div for Next.js version
-2. Display `versionInfo.nextjs` with appropriate vulnerability status
-3. Determine Next.js vulnerability status (vulnerable versions: 14.0.0, 14.1.0, 15.0.0)
-4. Apply same styling and format as React version display
+**Solution Implemented:**
+1. ✅ Added Next.js version display to `frameworks/nextjs/app/page.tsx`
+2. ✅ Created `isNextjsVulnerable()` helper function to determine vulnerability status
+3. ✅ Added conditional rendering for Next.js version item (lines 71-79)
+4. ✅ Applied same styling and format as React version display
+5. ✅ Next.js version displays with vulnerability status indicators (⚠️ VULNERABLE or ✅ FIXED)
+6. ✅ Version appears first in the version details list when present
 
-**Impact:**
-- **User Experience:** Users cannot see which Next.js version is running
-- **Security Testing:** Makes it harder to verify which Next.js version is active for vulnerability testing
-- **Consistency:** Inconsistent with React version display format
+**Files Modified:**
+- `frameworks/nextjs/app/page.tsx` - Added Next.js version display with vulnerability status
+
+**Verification:**
+✅ Fix verified - Next.js version now displays correctly in the UI:
+- Shows "Next.js: 14.0.0 ⚠️ VULNERABLE" for vulnerable versions
+- Shows "Next.js: 15.1.0 ✅ FIXED" for fixed versions
+- Matches React version display format
+- Appears at the top of version details when in Next.js mode
+
+**Additional Notes:**
+- Next.js version is conditionally displayed only when `versionInfo.nextjs` is present
+- Vulnerability status is determined by `isNextjsVulnerable()` function
+- Format matches React version display for consistency
 
 ### BUG-4: Next.js Frontend Layout Mismatch
 
-**Status:** Open  
+**Status:** Fixed  
 **Priority:** Medium  
 **Severity:** Medium  
-**Reported:** 2025-12-08
+**Reported:** 2025-12-08  
+**Fixed:** 2025-12-08
 
 **Description:**
 The Next.js frontend UI layout does not visually match the React (Vite) frontend layout. There are visual differences in spacing, alignment, component structure, or overall appearance that make the two frameworks look different to users, even though they should appear identical except for framework-specific version information.
@@ -746,11 +759,11 @@ The Next.js frontend UI layout does not visually match the React (Vite) frontend
 5. Compare the two screenshots - visual differences should be apparent
 
 **Root Cause:**
-The Next.js component structure or CSS may not exactly match the React component structure, causing visual layout differences. This could be due to:
+The Next.js component structure and CSS did not exactly match the React component structure, causing visual layout differences. This was due to:
+- Missing CSS import in Next.js layout
 - Different CSS class names or structure
 - Missing or different CSS rules
 - Component rendering differences between React and Next.js
-- Different default styles applied by Next.js
 
 **Environment:**
 - Framework: Both Vite+React and Next.js modes
@@ -760,20 +773,35 @@ The Next.js component structure or CSS may not exactly match the React component
 **Files Affected:**
 - `frameworks/nextjs/app/page.tsx` - Next.js page component structure
 - `frameworks/nextjs/app/globals.css` - Next.js global styles
+- `frameworks/nextjs/app/layout.tsx` - Next.js root layout (missing CSS import)
 - `frameworks/vite-react/src/App.jsx` - React component structure (reference)
 - `frameworks/vite-react/src/App.css` - React styles (reference)
 
-**Solution:**
-1. Compare React and Next.js component structures side-by-side
-2. Ensure CSS files are identical (except for framework-specific comments)
-3. Verify component JSX structure matches exactly
-4. Test visual appearance in both frameworks
-5. Add automated tests to ensure layouts stay in sync
+**Solution Implemented:**
+1. ✅ Added `import './globals.css';` to `frameworks/nextjs/app/layout.tsx`
+2. ✅ Created `frameworks/nextjs/app/globals.css` matching React styles
+3. ✅ Aligned component JSX structure in `page.tsx` to match React version
+4. ✅ Ensured all CSS classes match between frameworks
+5. ✅ Added automated tests (`test_ui_layout_sync.py`) to ensure layouts stay in sync
+6. ✅ Verified visual appearance matches between both frameworks
 
-**Impact:**
-- **User Experience:** Inconsistent UI between frameworks may confuse users
-- **Testing:** Makes it harder to verify that both frameworks work correctly
-- **Maintenance:** Requires keeping two separate implementations in sync
+**Files Modified:**
+- `frameworks/nextjs/app/layout.tsx` - Added CSS import
+- `frameworks/nextjs/app/globals.css` - Created matching styles
+- `frameworks/nextjs/app/page.tsx` - Aligned component structure
+- `tests/test_suites/test_ui_layout_sync.py` - Added layout sync tests
+
+**Verification:**
+✅ Fix verified - Next.js UI now matches React UI:
+- Same spacing, alignment, colors, and fonts
+- Identical component structure
+- Only difference is framework-specific version information (Next.js version in Next.js mode)
+- Automated tests ensure layouts stay in sync
+
+**Additional Notes:**
+- CSS file renamed from `App.css` to `globals.css` for Next.js conventions
+- All CSS classes and structure now match between frameworks
+- Layout sync tests prevent future regressions
 
 ### BUG-5: Next.js 15.1.0 Incorrectly Detected as VULNERABLE
 
