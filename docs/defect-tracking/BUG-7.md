@@ -51,12 +51,49 @@ Running scanner against React 19.0...
 5. Check that script reports server is ready, but scanner times out
 
 **Root Cause:**
-Unknown. Possible causes:
-1. **Server Not Restarting:** After version switch, Next.js server may not be restarting automatically
-2. **Insufficient Wait Time:** 3-second sleep + 30-second wait may not be enough for Next.js server to fully initialize after version switch
-3. **Server State Mismatch:** Server may respond to simple curl checks but not be fully ready for scanner's more complex requests
-4. **Scanner Timeout Too Short:** Scanner's 10-second timeout may be insufficient for Next.js server responses
-5. **Version Switch Process:** The `make react-${version}` command may not properly restart the Next.js server in Next.js mode
+**Mismatch between server readiness check and scanner request type:** The `verify_scanner.sh` script's `check_server` function only verifies that the server responds to simple GET requests, but the scanner sends complex POST requests with multipart/form-data payloads. After a React version switch in Next.js mode, the server may respond to GET requests before it's fully ready to handle POST requests with Next.js-specific headers and complex payloads.
+
+**Detailed Analysis:**
+
+1. **Server Readiness Check (Inadequate):**
+   - `check_server()` function (line 157-163) only performs: `curl -s -f "${FRONTEND_URL}"`
+   - This is a simple GET request that checks if the server accepts connections
+   - GET requests are lightweight and return quickly even if the server is still initializing
+
+2. **Scanner Request Type (Complex):**
+   - Scanner sends POST requests with `multipart/form-data` payloads (scanner.py line 241)
+   - Payloads can be large (especially with WAF bypass, up to 128KB+ of junk data)
+   - Scanner includes Next.js-specific headers:
+     - `Next-Action: x`
+     - `X-Nextjs-Request-Id: b5dce965`
+     - `X-Nextjs-Html-Request-Id: SSTMXm7OJ_g0Ncx6jpQt9`
+     - `Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryx8jO2oVc6SWP3Sad`
+   - Scanner has a 10-second timeout (scanner.py line 499, default)
+
+3. **Next.js Server Initialization After Version Switch:**
+   - After `make react-${version}`, the Makefile runs `npm install --legacy-peer-deps` (line 55)
+   - Next.js dev server needs time to:
+     - Detect package.json changes
+     - Recompile the application with new React version
+     - Initialize React Server Components (RSC) infrastructure
+     - Be ready to process POST requests with Next.js-specific headers
+   - The script only waits 3 seconds after version switch (line 325), then checks with GET request
+   - GET request succeeds, but POST requests with complex payloads may still fail
+
+4. **Timeout Mismatch:**
+   - Script's `wait_for_server` uses 30 attempts × 1 second = 30 seconds max wait
+   - But it only checks GET requests, which succeed before POST requests are ready
+   - Scanner has 10-second timeout for the actual POST request
+   - Server may not be ready for POST within 10 seconds even though GET succeeds
+
+5. **Request Processing Difference:**
+   - GET requests to `/` in Next.js are simple static file serving or basic routing
+   - POST requests with `Next-Action` header require Next.js Server Actions/RSC processing
+   - RSC infrastructure may need additional initialization time after version changes
+   - The server accepts connections (GET works) but can't process complex POST requests yet
+
+**Conclusion:**
+The root cause is that `check_server()` validates server readiness using GET requests, but the scanner requires the server to be ready for complex POST requests with Next.js-specific headers. After version switches, Next.js needs more time to initialize RSC infrastructure than the current 3-second wait provides, and the GET-based readiness check gives a false positive that the server is ready for scanner requests.
 
 **Evidence:**
 - Script's `wait_for_server` function succeeds (server responds to curl)
@@ -89,25 +126,37 @@ Unknown. Possible causes:
 - This bug appears after BUG-6 fix - server detection works but scanner connection fails
 
 **Proposed Solution:**
-1. **Increase Wait Time After Version Switch:**
-   - Increase sleep time from 3 seconds to 10-15 seconds for Next.js mode
-   - Allow more time for npm install and server restart
+1. **Improve Server Readiness Check (Primary Fix):**
+   - Replace GET-based `check_server()` with POST-based check that matches scanner behavior
+   - Send a test POST request with Next.js headers to verify server can handle scanner requests
+   - Or check for Next.js-specific endpoints/headers that indicate RSC is ready
+   - This ensures server is ready for actual scanner requests, not just GET requests
 
-2. **Improve Server Readiness Check:**
-   - Check server with more comprehensive health check (not just curl)
-   - Verify server is actually serving content, not just responding to connection
-   - Add additional wait after `wait_for_server` succeeds
+2. **Increase Wait Time After Version Switch:**
+   - Increase sleep time from 3 seconds to 15-20 seconds for Next.js mode
+   - Allow time for npm install, Next.js recompilation, and RSC initialization
+   - Use framework-specific wait times (longer for Next.js, shorter for Vite)
 
-3. **Restart Server After Version Switch:**
-   - Explicitly stop and restart server after version switch
-   - Ensure server fully restarts with new React version
+3. **Add POST-Based Health Check:**
+   - After `wait_for_server` succeeds, send a lightweight POST request with Next.js headers
+   - Verify the server responds (even if with error) within reasonable time
+   - Only proceed with scanner if POST request succeeds
+   - This validates server can handle the request type scanner will use
 
-4. **Increase Scanner Timeout:**
-   - If scanner supports timeout configuration, increase it for Next.js mode
-   - Or add delay before running scanner to ensure server is fully ready
+4. **Restart Server After Version Switch:**
+   - Explicitly stop and restart server after version switch in Next.js mode
+   - Ensure server fully restarts with new React version and reinitializes RSC
+   - This may be necessary if Next.js dev server doesn't auto-restart on package.json changes
 
-5. **Framework-Specific Wait Times:**
-   - Use longer wait times for Next.js mode (similar to scanner_verification_report.sh which uses 90 attempts for Next.js)
+5. **Increase Scanner Timeout (If Configurable):**
+   - Scanner timeout is hardcoded to 10 seconds (scanner.py line 499)
+   - If scanner supports timeout configuration via CLI, increase it for Next.js mode
+   - Or add additional delay after POST-based health check before running scanner
+
+6. **Framework-Specific Wait Times:**
+   - Use longer wait times for Next.js mode (similar to scanner_verification_report.sh which uses 90 attempts)
+   - Next.js requires more initialization time than Vite after version changes
+   - Consider: 15-20 seconds sleep + POST-based health check for Next.js vs 3-5 seconds for Vite
 
 **Workaround:**
 1. Manually restart server after each version switch:
