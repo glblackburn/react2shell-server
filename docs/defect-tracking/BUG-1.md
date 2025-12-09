@@ -3,8 +3,8 @@
 **Status:** Fixed  
 **Priority:** High  
 **Severity:** High  
-**Reported:** 2025-01-XX  
-**Fixed:** 2025-01-XX
+**Reported:** 2025-12-07  
+**Fixed:** 2025-12-07
 
 **Description:**
 The version information display shows "Unable to load version information" error message in red italicized text. The `/api/version` endpoint is not accessible when running in development mode (Vite dev server). The error occurs because the Vite proxy configuration in `vite.config.js` only proxies `/api` requests, but the frontend is trying to fetch `/api/version` which may not be properly routed to the Express backend server running on port 3000.
