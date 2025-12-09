@@ -9,7 +9,7 @@ This section tracks known bugs and issues in the project.
 | [BUG-3](BUG-3.md) | Fixed | Medium | Medium | Next.js Version Not Displayed in UI | Next.js version is returned by API but not displayed in the UI. Should match React version display format with vulnerability status indicator |
 | [BUG-4](BUG-4.md) | Fixed | Medium | Medium | Next.js Frontend Layout Mismatch | Next.js UI layout does not match React frontend layout. Visual differences in spacing, alignment, or component structure |
 | [BUG-5](BUG-5.md) | Open | High | High | Next.js 15.1.0 Incorrectly Detected as VULNERABLE | Next.js 15.1.0 is listed as FIXED per CVE-2025-66478 but scanner detects it as VULNERABLE. May indicate vulnerability still exists or configuration issue |
-| [BUG-6](BUG-6.md) | Open | High | High | verify_scanner.sh Fails Due to Port Mismatch | Scanner verification script hardcodes port 5173 (Vite) but doesn't detect framework mode, causing failures when system is in Next.js mode (port 3000) |
+| [BUG-6](BUG-6.md) | Fixed | High | High | verify_scanner.sh Fails Due to Port Mismatch | Scanner verification script hardcodes port 5173 (Vite) but doesn't detect framework mode, causing failures when system is in Next.js mode (port 3000) |
 
 ## Legend
 

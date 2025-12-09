@@ -24,7 +24,7 @@ VERBOSE=false
 ################################################################################
 SCANNER_PATH="/Users/lblackb/data/lblackb/git/third-party/react2shell-scanner"
 SCANNER_SCRIPT="${SCANNER_PATH}/scanner.py"
-FRONTEND_URL="http://localhost:5173"
+# FRONTEND_URL will be set after framework detection
 
 # Vulnerable versions
 VULNERABLE_VERSIONS=("19.0" "19.1.0" "19.1.1" "19.2.0")
@@ -137,6 +137,19 @@ if [ ! -f "${PROJECT_ROOT}/Makefile" ] || [ ! -f "${PROJECT_ROOT}/package.json" 
 fi
 
 ################################################################################
+# Framework detection and port configuration
+################################################################################
+# Detect framework mode from .framework-mode file
+FRAMEWORK_MODE=$(cat "${PROJECT_ROOT}/.framework-mode" 2>/dev/null | tr -d '[:space:]' || echo "vite")
+
+# Set FRONTEND_URL based on framework mode
+if [ "${FRAMEWORK_MODE}" == "nextjs" ]; then
+    FRONTEND_URL="http://localhost:3000"
+else
+    FRONTEND_URL="http://localhost:5173"
+fi
+
+################################################################################
 # Functions
 ################################################################################
 
@@ -154,7 +167,7 @@ function wait_for_server {
     local max_attempts=30
     local attempt=0
     
-    ${QUIET} || echo "${cyan}Waiting for server to be ready...${reset}"
+    ${QUIET} || echo "${cyan}Waiting for server to be ready at ${FRONTEND_URL}...${reset}"
     while [ $attempt -lt $max_attempts ]; do
         if check_server; then
             return 0
@@ -163,7 +176,8 @@ function wait_for_server {
         attempt=$((attempt + 1))
     done
     
-    echo "${red}Error: Server not ready after ${max_attempts} seconds${reset}" >&2
+    echo "${red}Error: Server not ready after ${max_attempts} seconds at ${FRONTEND_URL}${reset}" >&2
+    echo "${yellow}Note: Check if framework mode (${FRAMEWORK_MODE}) matches the running server${reset}" >&2
     return 1
 }
 
@@ -260,12 +274,16 @@ EOF
         return 1
     fi
 
+    # Display framework detection (unless quiet)
+    ${QUIET} || echo "${cyan}Detected framework: ${FRAMEWORK_MODE} (checking port ${FRONTEND_URL#http://localhost:})${reset}"
+
     ${VERBOSE} && cat<<EOF
 ################################################################################
 # Configuration
 ################################################################################
 SCANNER_PATH=[${SCANNER_PATH}]
 SCANNER_SCRIPT=[${SCANNER_SCRIPT}]
+FRAMEWORK_MODE=[${FRAMEWORK_MODE}]
 FRONTEND_URL=[${FRONTEND_URL}]
 PROJECT_ROOT=[${PROJECT_ROOT}]
 SAFE_CHECK=[${SAFE_CHECK}]
@@ -289,7 +307,10 @@ EOF
     fi
 
     if ! wait_for_server; then
-        echo "${red}Error: Could not start server${reset}" >&2
+        echo "${red}Error: Could not start server or server not accessible at ${FRONTEND_URL}${reset}" >&2
+        echo "${yellow}Framework mode: ${FRAMEWORK_MODE}${reset}" >&2
+        echo "${yellow}Expected port: ${FRONTEND_URL#http://localhost:}${reset}" >&2
+        echo "${yellow}Try: make status (to check which servers are running)${reset}" >&2
         return 1
     fi
 

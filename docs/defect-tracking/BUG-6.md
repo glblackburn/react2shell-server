@@ -1,9 +1,10 @@
 # BUG-6: verify_scanner.sh Fails Due to Port Mismatch
 
-**Status:** Open  
+**Status:** Fixed  
 **Priority:** High  
 **Severity:** High  
-**Reported:** 2025-12-09
+**Reported:** 2025-12-09  
+**Fixed:** 2025-12-09
 
 **Description:**
 The `scripts/verify_scanner.sh` script fails to start and verify the server because it hardcodes the frontend URL to port 5173 (Vite framework), but does not detect which framework mode is currently active. When the system is in Next.js mode, the server runs on port 3000, not 5173. The script waits for port 5173 which never becomes available, causing a timeout after 30 seconds.
@@ -120,11 +121,28 @@ Error: Could not start server
    - Display which port is being checked
    - Provide clearer error messages when port mismatch occurs
 
-**Workaround:**
-1. Switch to Vite mode before running script:
-   ```bash
-   make use-vite
-   make stop
-   ./scripts/verify_scanner.sh
-   ```
-2. Or manually edit `scripts/verify_scanner.sh` line 27 to use port 3000 when in Next.js mode
+**Solution Implemented:**
+1. ✅ Added framework detection by reading `.framework-mode` file
+2. ✅ Set `FRONTEND_URL` dynamically based on detected framework:
+   - Next.js mode: `http://localhost:3000`
+   - Vite mode: `http://localhost:5173` (default)
+3. ✅ Added framework mode display (unless quiet mode)
+4. ✅ Enhanced error messages to show which port/URL was being checked
+5. ✅ Added troubleshooting hints in error messages
+6. ✅ Included framework mode in verbose configuration output
+
+**Files Modified:**
+- `scripts/verify_scanner.sh` - Added framework detection and dynamic port selection
+
+**Verification:**
+✅ Fix verified - Script now correctly detects framework mode and uses the appropriate port:
+- In Vite mode: checks port 5173
+- In Next.js mode: checks port 3000
+- Displays detected framework and port (unless quiet)
+- Provides clear error messages with port information
+
+**Additional Notes:**
+- Framework detection reads `.framework-mode` file (same mechanism as Makefile)
+- Defaults to Vite mode if `.framework-mode` file doesn't exist
+- Error messages now include helpful troubleshooting hints
+- Script works correctly in both framework modes without manual modification
