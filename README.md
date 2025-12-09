@@ -482,7 +482,9 @@ This section tracks known bugs and issues in the project. For detailed defect re
 | [BUG-3](docs/defect-tracking/BUG-3.md) | Fixed | Medium | Medium | Next.js Version Not Displayed in UI |
 | [BUG-4](docs/defect-tracking/BUG-4.md) | Fixed | Medium | Medium | Next.js Frontend Layout Mismatch |
 | [BUG-5](docs/defect-tracking/BUG-5.md) | Open | High | High | Next.js 15.1.0 Incorrectly Detected as VULNERABLE |
-| [BUG-6](docs/defect-tracking/BUG-6.md) | Open | High | High | verify_scanner.sh Fails Due to Port Mismatch |
+| [BUG-6](docs/defect-tracking/BUG-6.md) | Fixed | High | High | verify_scanner.sh Fails Due to Port Mismatch |
+| [BUG-7](docs/defect-tracking/BUG-7.md) | Fixed | High | High | Scanner Connection Timeout After Version Switch in Next.js Mode |
+| [BUG-8](docs/defect-tracking/BUG-8.md) | Open | High | High | Next.js 14.x Versions Fail Scanner Tests Due to Server Startup Issues |
 
 For complete defect details, see the [Defect Tracking Documentation](docs/defect-tracking/README.md).
 

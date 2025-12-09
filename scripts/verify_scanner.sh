@@ -261,12 +261,32 @@ function switch_version {
         echo "${red}Error: Cannot change to project root: ${PROJECT_ROOT}${reset}" >&2
         return 1
     }
-    if make "nextjs-${version}" > /dev/null 2>&1; then
+    
+    # Switch version and capture output to check for errors
+    local switch_output
+    switch_output=$(make "nextjs-${version}" 2>&1)
+    local switch_exit=$?
+    
+    if [ $switch_exit -eq 0 ]; then
         ${QUIET} || echo "${green}✓ Switched to Next.js ${version}${reset}"
+        
+        # Verify next binary exists after installation
+        if [ ! -f "${PROJECT_ROOT}/frameworks/nextjs/node_modules/.bin/next" ]; then
+            echo "${yellow}Warning: next binary not found after installation. Waiting 5 seconds and checking again...${reset}" >&2
+            sleep 5
+            if [ ! -f "${PROJECT_ROOT}/frameworks/nextjs/node_modules/.bin/next" ]; then
+                echo "${red}Error: next binary still not found after installation${reset}" >&2
+                ${VERBOSE} && echo "$switch_output" >&2
+                cd "$original_dir"
+                return 1
+            fi
+        fi
+        
         cd "$original_dir"
         return 0
     else
         echo "${red}✗ Failed to switch to Next.js ${version}${reset}" >&2
+        ${VERBOSE} && echo "$switch_output" >&2
         cd "$original_dir"
         return 1
     fi
@@ -407,15 +427,34 @@ EOF
                 FAILED=$((FAILED + 1))
                 continue
             }
+            
+            # Verify next binary exists before starting server
+            if [ ! -f "frameworks/nextjs/node_modules/.bin/next" ]; then
+                echo "${yellow}Warning: next binary not found. Waiting 5 seconds for npm install to complete...${reset}" >&2
+                sleep 5
+                if [ ! -f "frameworks/nextjs/node_modules/.bin/next" ]; then
+                    echo "${red}Error: next binary not found after installation. Cannot start server.${reset}" >&2
+                    cd "$original_dir"
+                    FAILED=$((FAILED + 1))
+                    continue
+                fi
+            fi
+            
             make stop > /dev/null 2>&1
-            sleep 2  # Brief pause to ensure server stops
+            sleep 3  # Longer pause to ensure server fully stops
             make start > /dev/null 2>&1
             cd "$original_dir"
             
             # Wait longer for Next.js mode (needs time for RSC initialization)
+            # Next.js 14.x may need more time than 15.x
             if [ "${FRAMEWORK_MODE}" == "nextjs" ]; then
-                ${QUIET} || echo "${cyan}Waiting for Next.js RSC initialization (20 seconds)...${reset}"
-                sleep 20  # Longer wait for Next.js: server restart + recompilation + RSC init
+                if [[ "${version}" == 14.* ]]; then
+                    ${QUIET} || echo "${cyan}Waiting for Next.js 14.x RSC initialization (30 seconds)...${reset}"
+                    sleep 30  # Next.js 14.x needs more time, especially with React 19 compatibility
+                else
+                    ${QUIET} || echo "${cyan}Waiting for Next.js RSC initialization (20 seconds)...${reset}"
+                    sleep 20  # Next.js 15.x is faster
+                fi
             else
                 sleep 3  # Shorter wait for Vite: npm install + server restart
             fi
@@ -449,15 +488,34 @@ EOF
                     FAILED=$((FAILED + 1))
                     continue
                 }
+                
+                # Verify next binary exists before starting server
+                if [ ! -f "frameworks/nextjs/node_modules/.bin/next" ]; then
+                    echo "${yellow}Warning: next binary not found. Waiting 5 seconds for npm install to complete...${reset}" >&2
+                    sleep 5
+                    if [ ! -f "frameworks/nextjs/node_modules/.bin/next" ]; then
+                        echo "${red}Error: next binary not found after installation. Cannot start server.${reset}" >&2
+                        cd "$original_dir"
+                        FAILED=$((FAILED + 1))
+                        continue
+                    fi
+                fi
+                
                 make stop > /dev/null 2>&1
-                sleep 2  # Brief pause to ensure server stops
+                sleep 3  # Longer pause to ensure server fully stops
                 make start > /dev/null 2>&1
                 cd "$original_dir"
                 
                 # Wait longer for Next.js mode (needs time for RSC initialization)
+                # Next.js 14.x may need more time than 15.x
                 if [ "${FRAMEWORK_MODE}" == "nextjs" ]; then
-                    ${QUIET} || echo "${cyan}Waiting for Next.js RSC initialization (20 seconds)...${reset}"
-                    sleep 20  # Longer wait for Next.js: server restart + recompilation + RSC init
+                    if [[ "${version}" == 14.* ]]; then
+                        ${QUIET} || echo "${cyan}Waiting for Next.js 14.x RSC initialization (30 seconds)...${reset}"
+                        sleep 30  # Next.js 14.x needs more time, especially with React 19 compatibility
+                    else
+                        ${QUIET} || echo "${cyan}Waiting for Next.js RSC initialization (20 seconds)...${reset}"
+                        sleep 20  # Next.js 15.x is faster
+                    fi
                 else
                     sleep 3  # Shorter wait for Vite: npm install + server restart
                 fi
