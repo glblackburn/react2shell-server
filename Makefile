@@ -319,7 +319,7 @@ setup-deps:
 		exit 1; \
 	}; \
 	echo "Installing Vite framework dependencies..."; \
-	cd frameworks/vite-react && npm install || { \
+	cd frameworks/vite-react && npm install && cd ../.. || { \
 		echo "❌ Failed to install Vite dependencies"; \
 		exit 1; \
 	}; \
