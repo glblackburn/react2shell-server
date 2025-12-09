@@ -18,6 +18,7 @@
 - [Phase 10: DRY Refactoring and Code Quality Improvements](#phase-10-dry-refactoring-and-code-quality-improvements)
 - [Test-Fix-Repeat Loop: Next.js Conversion Stabilization](#test-fix-repeat-loop-nextjs-conversion-stabilization)
 - [Phase 11: Framework-Aware Server Improvements](#phase-11-framework-aware-server-improvements)
+- [Phase 12: Documentation and Defect Tracking Improvements](#phase-12-documentation-and-defect-tracking-improvements)
 - [Key Technical Decisions](#key-technical-decisions)
 - [Challenges and Solutions](#challenges-and-solutions)
 - [Project Evolution Timeline](#project-evolution-timeline)
@@ -47,9 +48,10 @@
 | BUG-2 | Missing pytest Option Registration | 12-08 08:46 | 12-08 08:54 | ~8 min | 3 |
 | Test Loop | Test-Fix-Repeat Loop (Next.js conversion) | 12-08 18:38 | 12-08 21:12 | ~2h 34m | 0* |
 | 11 | Framework-Aware Server Improvements | 12-08 21:12 | 12-08 21:28 | ~16 min | 1 |
+| 12 | Documentation and Defect Tracking Improvements | 12-09 03:36 | 12-09 04:10 | ~34 min | 4 |
 
-**Total Development Time:** ~14 hours 10 minutes  
-**Total Commits:** 39 commits across all phases
+**Total Development Time:** ~14 hours 44 minutes  
+**Total Commits:** 43 commits across all phases
 
 *Note: Test Loop represents iterative test execution and debugging (26 test runs, ~2h 7m total execution time) but no code commits during this period.*
 
@@ -804,6 +806,9 @@ Users needed to track performance trends over time, not just compare against a s
 17. **Code Quality** - Reorganized file structure, reduced complexity (~40%), improved code organization
 18. **Test-Fix-Repeat Loop** - 26 test iterations over 2h 34m to stabilize Next.js conversion, reduced failures from 9 to 3
 19. **Framework-Aware Server** - Express server now handles both Vite and Next.js modes gracefully, fixes 500 errors in dev mode
+20. **Defect Tracking Reorganization** - Moved defect tracking to dedicated folder structure, improved README navigation
+21. **Script Refactoring** - Refactored scripts to follow shell-template.sh patterns, improved error handling and logging
+22. **Documentation Improvements** - Added Table of Contents, improved cross-referencing, better organization
 
 ## Lessons Learned
 
@@ -844,6 +849,12 @@ Users needed to track performance trends over time, not just compare against a s
 18. **Hook Registration Order Matters:** Pytest hooks must be registered in the correct order - `pytest_addoption` before `pytest_configure`.
 
 19. **Single Source of Truth:** Centralizing constants and utilities makes codebase much easier to maintain and extend.
+
+20. **Organization Improves Maintainability:** Moving large sections (like defect tracking) to dedicated folders keeps main documents focused and navigable.
+
+21. **Consistent Patterns Matter:** Following established patterns (like shell-template.sh) improves code quality and makes scripts easier to maintain.
+
+22. **Navigation Aids Usability:** Table of Contents and clear cross-references significantly improve document usability.
 
 ## Phase 10: DRY Refactoring and Code Quality Improvements
 
@@ -1127,6 +1138,85 @@ After implementing dual-framework support (Vite and Next.js), the Express server
 - Version endpoint reads from framework-specific package.json with fallback
 - All changes are backward compatible with existing functionality
 
+## Phase 12: Documentation and Defect Tracking Improvements
+
+**Timeline:** 2025-12-09 03:36 - 2025-12-09 04:10  
+**Duration:** ~34 minutes
+
+### The Requirement
+
+As the project grew, the defect tracking section in README.md became too large (~560 lines), making the main README difficult to navigate. Additionally, shell scripts needed to follow consistent patterns for maintainability.
+
+### Implementation
+
+**1. Defect Tracking Reorganization:**
+- Extracted defect tracking from README.md to dedicated folder structure
+- Created `docs/defect-tracking/` directory
+- Separated each defect into individual markdown files:
+  - `BUG-1.md` through `BUG-6.md` (one file per defect)
+- Created main tracking table in `docs/defect-tracking/README.md`
+- Moved all bug images to `docs/defect-tracking/images/` subfolder
+- Updated image paths in defect files to use `images/` prefix
+- Simplified main README.md with table and link to detailed docs
+
+**2. Script Refactoring:**
+- Refactored `scripts/verify_scanner.sh` to follow `shell-template.sh` patterns
+- Updated shebang to use `/usr/bin/env bash`
+- Implemented stricter error handling with `set -euET -o pipefail`
+- Converted CLI options to `getopts` pattern (`-s`, `-a`, `-q`, `-v`)
+- Replaced ANSI color codes with `tput` commands
+- Added structured sections with clear headers
+- Added `usage()` function following template pattern
+- Wrapped main logic in function for better output capture
+- Added log file capture to `/tmp/` with `mktemp` and timestamp
+
+**3. Documentation Improvements:**
+- Added comprehensive Table of Contents to README.md
+- Included links to all main sections and subsections
+- Improved document navigation and accessibility
+- Added link to DEVELOPMENT_NARRATIVE.md in Development section
+
+**4. Defect Documentation:**
+- Added BUG-6: verify_scanner.sh port mismatch issue
+- Updated BUG-1 dates based on git history review (Reported: 2025-12-07, Fixed: 2025-12-07)
+
+### Results
+
+**Defect Tracking:**
+- Reduced README.md by ~560 lines
+- Better organization with dedicated folder structure
+- Individual defect files easier to maintain
+- Images organized in dedicated subfolder
+- Main README more focused and navigable
+
+**Script Quality:**
+- Consistent with project shell script patterns
+- Better error handling and logging
+- Improved CLI interface with proper option parsing
+- Automatic log file capture for debugging
+
+**Documentation:**
+- Enhanced navigation with Table of Contents
+- Clear links between related documents
+- Better discoverability of project features
+
+### Key Benefits
+
+1. **Maintainability:** Individual defect files easier to update and maintain
+2. **Navigation:** Table of Contents improves document accessibility
+3. **Consistency:** Scripts follow established patterns
+4. **Organization:** Dedicated folder structure for defect tracking
+5. **Traceability:** Log files automatically captured for debugging
+
+### Technical Details
+
+- Defect tracking folder: `docs/defect-tracking/`
+- Individual defect files: `BUG-1.md` through `BUG-6.md`
+- Main tracking table: `docs/defect-tracking/README.md`
+- Images folder: `docs/defect-tracking/images/`
+- Log file pattern: `/tmp/verify_scanner_YYYY-MM-DD_HHMMSS_XXXXXX.txt`
+- Script follows `shell-template.sh` patterns for consistency
+
 ## Current State
 
 The project now includes:
@@ -1151,12 +1241,14 @@ The project now includes:
 - Per-marker time limits (smoke: 10s, slow: 60s, version_switch: 120s)
 
 ✅ **Documentation:**
-- Main README with overview
+- Main README with overview and Table of Contents
 - Quick start guide
 - Comprehensive testing guide
 - Testing plan and strategy
 - Performance tracking guide
 - Performance limits guide
+- Development narrative (this document)
+- Defect tracking in dedicated folder structure
 - All documentation reviewed and up-to-date
 
 ✅ **Developer Experience:**
@@ -1176,6 +1268,10 @@ The project now includes:
 - DRY codebase with single source of truth for constants
 - Well-organized file structure (fixtures, plugins, utils)
 - Reduced code duplication (~72% maintenance point reduction)
+- Organized defect tracking with dedicated folder structure
+- Scripts following consistent patterns (shell-template.sh)
+- Automatic log file capture for debugging
+- Table of Contents for easy navigation
 
 ## Future Considerations
 
@@ -1211,13 +1307,15 @@ This project serves as both a functional tool and a learning resource for securi
 ---
 
 **Project Status:** Active Development  
-**Last Updated:** 2025-12-08  
+**Last Updated:** 2025-12-09  
 **Test Performance:** ~2m27s for full suite (58 tests, 7 React versions)  
 **Performance Tracking:** Enabled with baseline comparison, regression detection, and historical trend analysis  
 **Performance Limits:** Individual test limits, category-based limits, and suite limits  
-**Documentation:** Comprehensive guides for all features, including performance tracking and limits  
+**Documentation:** Comprehensive guides for all features, including performance tracking and limits, with Table of Contents for navigation  
 **Code Quality:** DRY refactoring complete - ~72% reduction in maintenance points, ~40% complexity reduction  
 **Code Organization:** Well-structured with fixtures/, plugins/, and utils/ directories  
 **Framework Support:** Dual-framework support (Vite and Next.js) with framework-aware server and utilities  
 **Server Architecture:** Framework-aware Express server handles both development and production modes gracefully  
+**Defect Tracking:** Organized in dedicated folder structure (docs/defect-tracking/) with individual files per defect  
+**Script Quality:** Scripts follow shell-template.sh patterns with improved error handling and logging  
 **Maintainer:** Development Team

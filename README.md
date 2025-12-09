@@ -229,6 +229,8 @@ This project includes automated scanner verification to ensure that security sca
 
 ## Development
 
+> **📖 Development History:** For a detailed narrative of the project's development journey, see [DEVELOPMENT_NARRATIVE.md](DEVELOPMENT_NARRATIVE.md).
+
 ### Quick Start (Recommended)
 
 **Start both servers with one command:**
