@@ -11,10 +11,10 @@ This section tracks known bugs and issues in the project.
 | [BUG-5](BUG-5.md) | Open | High | High | Next.js 15.1.0 Incorrectly Detected as VULNERABLE | Next.js 15.1.0 is listed as FIXED per CVE-2025-66478 but scanner detects it as VULNERABLE. May indicate vulnerability still exists or configuration issue |
 | [BUG-6](BUG-6.md) | Fixed | High | High | verify_scanner.sh Fails Due to Port Mismatch | Scanner verification script hardcodes port 5173 (Vite) but doesn't detect framework mode, causing failures when system is in Next.js mode (port 3000) |
 | [BUG-7](BUG-7.md) | Fixed | High | High | Scanner Connection Timeout After Version Switch in Next.js Mode | After version switch, scanner times out with "Read timed out" errors. Server appears ready to script but scanner cannot connect within 10-second timeout |
-| [BUG-8](BUG-8.md) | Open | High | High | Next.js 14.x Versions Fail Scanner Tests Due to Server Startup Issues | Next.js 14.0.0 and 14.1.0 fail with "Read timed out" errors due to server starting before npm install completes or next binary not found |
+| [BUG-8](BUG-8.md) | Not Fixable | High | High | Next.js 14.x Versions Fail Scanner Tests Due to Compatibility Bug | Next.js 14.0.0 and 14.1.0 fail with "Read timed out" errors due to Next.js 14.x + React 19 compatibility bug causing request handler to hang when processing RCE PoC payloads |
 
 ## Legend
 
-- **Status:** Fixed, Open, In Progress, Closed
+- **Status:** Fixed, Open, In Progress, Closed, Not Fixable
 - **Priority:** Low, Medium, High, Critical
 - **Severity:** Low, Medium, High, Critical
