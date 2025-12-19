@@ -46,8 +46,53 @@ def driver(request, start_servers):
         # Use cached driver (should be pre-installed via make test-driver-install)
         # This will use cached driver if available, avoiding network downloads
         try:
-            manager = ChromeDriverManager()
-            # Set cache_valid_range to avoid version checks if driver exists
+            # Try to use cached driver version to avoid version check network calls
+            # If we can determine the cached version, use it directly
+            from pathlib import Path
+            import glob
+            import re
+            
+            cached_version = None
+            # Check multiple possible cache locations
+            # Structure 1: ~/.wdm/drivers/chromedriver/mac64/VERSION/chromedriver-mac-x64/chromedriver
+            cache_dir1 = Path.home() / ".wdm" / "drivers" / "chromedriver"
+            if cache_dir1.exists():
+                # Check for OS-specific subdirectories (mac64, linux64, win32, etc.)
+                for os_dir in cache_dir1.iterdir():
+                    if os_dir.is_dir():
+                        # Check version directories
+                        for version_dir in os_dir.iterdir():
+                            if version_dir.is_dir():
+                                # Check for driver executable
+                                driver_exe = version_dir / "chromedriver-mac-x64" / "chromedriver"
+                                if not driver_exe.exists():
+                                    driver_exe = version_dir / "chromedriver"
+                                if driver_exe.exists() and driver_exe.is_file():
+                                    cached_version = version_dir.name
+                                    break
+                        if cached_version:
+                            break
+            
+            # Structure 2: ~/.wdm/gw*/drivers/chromedriver/mac64/VERSION/...
+            if not cached_version:
+                cache_pattern = str(Path.home() / ".wdm" / "gw*" / "drivers" / "chromedriver" / "*" / "*" / "chromedriver")
+                driver_paths = glob.glob(cache_pattern)
+                if driver_paths:
+                    # Extract version from path (e.g., .../143.0.7499.40/...)
+                    version_match = re.search(r'/(\d+\.\d+\.\d+\.\d+)/', driver_paths[0])
+                    if version_match:
+                        cached_version = version_match.group(1)
+            
+            if cached_version:
+                # Use specific driver_version to avoid version check network calls
+                # This completely eliminates network calls to googlechromelabs.github.io
+                manager = ChromeDriverManager(driver_version=cached_version)
+            else:
+                # Fallback: use default manager (may make network call)
+                manager = ChromeDriverManager()
+                # Set environment variable to extend cache validity
+                os.environ['WDM_CACHE_VALID_DAYS'] = '365'
+            
             driver_path = manager.install()
             service = Service(driver_path)
             driver = webdriver.Chrome(service=service, options=options)
@@ -68,6 +113,11 @@ def driver(request, start_servers):
         # This will use cached driver if available, avoiding network downloads
         try:
             manager = GeckoDriverManager()
+            # Set cache_valid_range to skip version checks when driver is cached
+            if hasattr(manager, 'cache_valid_range'):
+                manager.cache_valid_range = 365  # Cache valid for 1 year
+            # Also set via environment variable as fallback
+            os.environ['WDM_CACHE_VALID_DAYS'] = '365'
             driver_path = manager.install()
             service = FirefoxService(driver_path)
             driver = webdriver.Firefox(service=service, options=options)
