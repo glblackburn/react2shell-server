@@ -17,24 +17,26 @@ from .server_constants import (
 logger = logging.getLogger(__name__)
 
 
-def check_server_running(url, timeout=1):
+def check_server_running(url, timeout=2):
     """Check if a server is running at the given URL."""
     try:
         response = requests.get(url, timeout=timeout)
-        return response.status_code == 200
-    except requests.exceptions.RequestException:
+        # Accept any 2xx or 3xx status code as "running"
+        return 200 <= response.status_code < 400
+    except (requests.exceptions.RequestException, requests.exceptions.Timeout):
         return False
 
 
 def wait_for_server(url, max_attempts=30, delay=1):
     """Wait for server to be ready."""
     for attempt in range(max_attempts):
-        if check_server_running(url, timeout=0.5):  # Reduced timeout
+        if check_server_running(url, timeout=2):  # Increased timeout for Next.js
             logger.info(f"Server ready at {url}")
             return True
         if attempt < max_attempts - 1:  # Don't sleep on last attempt
             logger.debug(f"Waiting for server at {url} (attempt {attempt + 1}/{max_attempts})")
             time.sleep(delay)
+    logger.warning(f"Server not ready after {max_attempts} attempts")
     return False
 
 
@@ -92,22 +94,30 @@ def start_servers():
             vite_pid_file = os.path.join(pid_dir, "nextjs.pid")
             server_log = os.path.join(log_dir, "server.log")
             
-            # Check if already running
+            # Check if already running - verify both PID file and actual server response
             if os.path.exists(vite_pid_file):
                 try:
                     with open(vite_pid_file, "r") as f:
                         pid = int(f.read().strip())
                     # Check if process is running
                     os.kill(pid, 0)
-                    logger.info("Next.js server already running (PID: {})".format(pid))
-                    return True
+                    # Also verify server is actually responding
+                    if check_server_running(frontend_url, timeout=1):
+                        logger.info("Next.js server already running (PID: {})".format(pid))
+                        return True
+                    else:
+                        # PID exists but server not responding - stale PID file
+                        logger.warning("PID file exists but server not responding, removing stale PID file")
+                        os.remove(vite_pid_file)
                 except (OSError, ValueError):
-                    pass
+                    # PID file exists but process is dead - remove stale file
+                    if os.path.exists(vite_pid_file):
+                        os.remove(vite_pid_file)
             
             # Start Next.js server
             nextjs_dir = os.path.join(project_root, "frameworks", "nextjs")
             process = subprocess.Popen(
-                ["npm", "run", "dev"],
+                ["npx", "next", "dev"],
                 cwd=nextjs_dir,
                 stdout=open(server_log, "a"),
                 stderr=subprocess.STDOUT,

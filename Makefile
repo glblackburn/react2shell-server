@@ -85,10 +85,16 @@ define switch_nextjs_version
 			echo "Note: Next.js 14.x requires React 18, using React 18.2.0 (compatible) for testing..."; \
 			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.2.0';pkg.dependencies['react-dom']='18.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
 			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
-		15.0.4|15.1.8|15.2.5|15.3.5|15.4.7|15.5.6|16.0.6) \
+		15.0.4|15.1.8|15.2.5|15.3.5|15.4.7|15.5.6) \
 			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
 			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.0';pkg.dependencies['react-dom']='19.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
 			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
+		16.0.6) \
+			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
+			echo "⚠️  Note: Next.js 16.0.6 officially requires Node.js >= 20.9.0, but installing with --ignore-engines"; \
+			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.0';pkg.dependencies['react-dom']='19.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps --ignore-engines && \
+			python3 -c "import re; f='node_modules/next/dist/bin/next'; c=open(f).read(); c=re.sub(r'//.*?process\.exit.*?\n', '', c); c=re.sub(r'process\.exit\(1\)', r'// process.exit(1) - bypassed for Node.js 18 compatibility', c, count=1) if 'bypassed' not in c else c; open(f, 'w').write(c)" 2>/dev/null || echo "⚠️  Warning: Could not patch Next.js binary (may already be patched)" && \
+			echo "✓ Switched to Next.js $(1) (VULNERABLE - patched for Node.js 18 compatibility)" ;; \
 		14.0.1|14.1.1) \
 			echo "Switching to Next.js $(1) (FIXED - for security testing)..."; \
 			echo "Note: Next.js 14.x requires React 18, using React 18.2.0 (compatible) for testing..."; \
@@ -107,7 +113,7 @@ $(foreach version,$(FIXED_VERSIONS),$(eval react-$(version):;$(call switch_react
 $(foreach version,$(NEXTJS_VULNERABLE_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 $(foreach version,$(NEXTJS_FIXED_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 
-.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.4 nextjs-15.1.8 nextjs-15.2.5 nextjs-15.3.5 nextjs-15.4.7 nextjs-15.5.6 nextjs-16.0.6 nextjs-14.0.1 nextjs-14.1.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test-driver-install test-driver-status test-driver-clean test-driver-upgrade test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
+.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.4 nextjs-15.1.8 nextjs-15.2.5 nextjs-15.3.5 nextjs-15.4.7 nextjs-15.5.6 nextjs-16.0.6 nextjs-14.0.1 nextjs-14.1.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test-driver-install test-driver-status test-driver-clean test-driver-upgrade test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-nextjs-16 test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
 
 # Set help as the default target when make is run without arguments
 .DEFAULT_GOAL := help
@@ -176,6 +182,7 @@ help:
 	@echo "  make test-version    - Run version information tests"
 	@echo "  make test-security   - Run security status tests"
 	@echo "  make test-version-switch - Run version switch tests (tests all React versions, slower)"
+	@echo "  make test-nextjs-16  - Run Next.js 16.0.6 startup tests (requires Node.js >= 20.9.0)"
 	@echo "  make test-scanner   - Run scanner verification tests (requires external scanner)"
 	@echo "  make test-scanner-script - Run scanner verification script (standalone)"
 	@echo "  make test-browser    - Run tests with specific browser (use BROWSER=chrome|firefox|safari)"
@@ -267,7 +274,7 @@ start: $(PID_DIR) $(LOG_DIR)
 		if [ -f $(SERVER_PID) ] && kill -0 `cat $(SERVER_PID)` 2>/dev/null; then \
 			echo "⚠️  Next.js server is already running (PID: $$(cat $(SERVER_PID)))"; \
 		else \
-			cd frameworks/nextjs && nohup npm run dev > ../../$(SERVER_LOG) 2>&1 & \
+			cd frameworks/nextjs && nohup npx next dev > ../../$(SERVER_LOG) 2>&1 & \
 			PID=$$!; \
 			echo $$PID > ../../$(SERVER_PID); \
 			echo "✓ Started Next.js server (PID: $$PID)"; \
@@ -656,6 +663,26 @@ test-version-switch: check-venv
 	@echo ""
 	@echo "✓ Version switch tests completed!"
 	@echo "  Note: React version is now set to the last tested version"
+
+# Run Next.js 16.0.6 startup tests
+test-nextjs-16: check-venv
+	@echo "Running Next.js 16.0.6 startup tests..."
+	@echo "ℹ️  Note: Next.js 16.0.6 is patched to work with Node.js 18.20.8"
+	@echo "   Current Node.js version: $$(node --version 2>/dev/null || echo 'unknown')"
+	@echo ""
+	@# Ensure we're in Next.js mode
+	@FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
+	if [ "$$FRAMEWORK" != "nextjs" ]; then \
+		echo "⚠️  Switching to Next.js mode..."; \
+		$(MAKE) use-nextjs > /dev/null 2>&1; \
+	fi
+	@# Switch to Next.js 16.0.6
+	@echo "Switching to Next.js 16.0.6..."
+	@$(MAKE) nextjs-16.0.6 > /dev/null 2>&1
+	@# Ensure server is stopped before test
+	@$(MAKE) stop > /dev/null 2>&1 || true
+	@echo ""
+	@$(PYTEST) $(TEST_DIR)/test_suites/test_nextjs_16_startup.py -v
 
 # Run scanner verification tests (requires external scanner)
 test-scanner: check-venv
