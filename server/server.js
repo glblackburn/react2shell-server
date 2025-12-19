@@ -10,7 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Check framework mode and if dist directory exists
-const frameworkModeFile = join(__dirname, '.framework-mode');
+const frameworkModeFile = join(__dirname, '..', '.framework-mode');
 let isViteMode = true; // Default to Vite
 if (existsSync(frameworkModeFile)) {
   try {
@@ -21,7 +21,7 @@ if (existsSync(frameworkModeFile)) {
   }
 }
 
-const distExists = existsSync(join(__dirname, 'dist'));
+const distExists = existsSync(join(__dirname, '..', 'dist'));
 
 // Enable CORS for development
 app.use((req, res, next) => {
@@ -45,10 +45,10 @@ import { isVulnerableVersion, getVersionStatus } from './config/versions.js';
 function getPackageJsonPath() {
   if (isViteMode) {
     // Vite mode: read from frameworks/vite-react/package.json
-    return join(__dirname, 'frameworks', 'vite-react', 'package.json');
+    return join(__dirname, '..', 'frameworks', 'vite-react', 'package.json');
   } else {
     // Next.js mode: read from frameworks/nextjs/package.json
-    return join(__dirname, 'frameworks', 'nextjs', 'package.json');
+    return join(__dirname, '..', 'frameworks', 'nextjs', 'package.json');
   }
 }
 
@@ -62,8 +62,8 @@ app.get('/api/version', (req, res) => {
     if (existsSync(packageJsonPath)) {
       packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
     } else {
-      // Fallback to root package.json if framework package.json doesn't exist
-      packageJson = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf-8'));
+      // Framework package.json should always exist - this is an error condition
+      throw new Error(`Framework package.json not found at ${packageJsonPath}`);
     }
     
     const reactVersion = packageJson.dependencies?.react || 'unknown';
@@ -104,12 +104,12 @@ app.get('/api/hello', (req, res) => {
 // In Vite dev mode, Vite dev server handles frontend on port 5173
 if (distExists) {
   // Serve static files from dist directory (Vite build output)
-  app.use(express.static(join(__dirname, 'dist')));
+  app.use(express.static(join(__dirname, '..', 'dist')));
 
   // Serve index.html for all routes (SPA routing)
   app.get('*', (req, res) => {
     try {
-      const htmlPath = join(__dirname, 'dist', 'index.html');
+      const htmlPath = join(__dirname, '..', 'dist', 'index.html');
       const html = readFileSync(htmlPath, 'utf-8');
       res.send(html);
     } catch (error) {

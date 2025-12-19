@@ -177,10 +177,10 @@ To test your security scanner against vulnerable React versions:
    ```bash
    make start       # Starts both servers automatically
    ```
-   Or manually:
+   Or manually (not recommended - use `make start` instead):
    ```bash
-   npm run dev      # Terminal 1
-   npm run server   # Terminal 2
+   cd frameworks/vite-react && npm run dev      # Terminal 1
+   cd server && npm run server                 # Terminal 2
    ```
 
 4. **Run your security scanner** against the application
@@ -464,40 +464,39 @@ make stop
 
 ### Manual Start (Alternative)
 
-If you prefer to start servers manually:
+If you prefer to start servers manually (not recommended - use `make start` instead):
 
 1. **Start the Vite dev server** (runs on port 5173):
    ```bash
-   npm run dev
+   cd frameworks/vite-react && npm run dev
    ```
 
 2. **In a separate terminal, start the Express server** (runs on port 3000):
    ```bash
-   npm run server
+   cd server && npm run server
    ```
 
 3. **Open your browser** to `http://localhost:5173`
 
 The Vite dev server is configured to proxy API requests to the Express server.
 
+**Note:** The recommended approach is to use `make start` which handles both servers automatically.
+
 ### Production Mode
 
 1. **Build the React app**:
    ```bash
-   npm run build
+   cd frameworks/vite-react && npm run build
    ```
 
 2. **Start the server**:
    ```bash
-   npm run server
-   ```
-
-   Or use the combined command:
-   ```bash
-   npm start
+   cd server && npm run server
    ```
 
 3. **Open your browser** to `http://localhost:3000`
+
+**Note:** The recommended approach is to use `make start` which handles server startup automatically. For production builds, build the framework first, then use `make start`.
 
 ## Testing
 
@@ -554,15 +553,26 @@ make test-open-report
 ```
 react2shell-server/
 ├── Makefile                  # React version switching and server management
-├── package.json              # Dependencies (React version updated by Makefile)
-├── vite.config.js            # Vite build configuration
-├── server.js                 # Express server
-├── index.html                # HTML entry point
 ├── start-cursor-agent.sh     # Cursor IDE agent startup script
-├── src/
-│   ├── App.jsx               # Main React component
-│   ├── index.jsx             # React entry point
-│   └── App.css               # Styles
+├── server/                   # Backend server code
+│   ├── server.js             # Express server
+│   ├── package.json          # Server dependencies (Express only)
+│   └── config/
+│       └── versions.js        # Version constants
+├── frameworks/               # Framework-specific code
+│   ├── vite-react/           # Vite + React implementation
+│   │   ├── src/              # React source code
+│   │   ├── index.html        # HTML entry point
+│   │   ├── vite.config.js    # Vite configuration
+│   │   └── package.json      # Framework dependencies
+│   └── nextjs/               # Next.js implementation
+│       ├── app/              # Next.js app directory
+│       ├── next.config.js    # Next.js configuration
+│       └── package.json      # Framework dependencies
+├── scripts/                  # Utility scripts
+│   ├── verify_scanner.sh
+│   ├── scanner_verification_report.sh
+│   └── verify_tests.sh
 ├── tests/                    # Python Selenium tests
 │   ├── conftest.py           # Pytest fixtures and configuration
 │   ├── pytest.ini            # Pytest settings
@@ -660,8 +670,8 @@ make install
 ### Port already in use
 
 If port 3000 or 5173 is already in use, you can:
-- Change the port in `server.js` (PORT environment variable)
-- Change the port in `vite.config.js` (server.port)
+- Change the port in `server/server.js` (PORT environment variable)
+- Change the port in `frameworks/vite-react/vite.config.js` (server.port)
 
 ### Test-related Issues
 
