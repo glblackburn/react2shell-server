@@ -323,7 +323,7 @@ python3 /path/to/react2shell-scanner/scanner.py -u http://localhost:3000
 ```bash
 ./scripts/verify_scanner.sh
 ```
-This script automates the complete process above. See [Scanner Verification Script Usage](docs/VERIFY_SCANNER_USAGE.md) for details.
+This script automates the complete process above. See [Scanner Verification Script Usage](docs/scanner/verify-scanner-usage.md) for details.
 
 ### Scanner Verification
 
@@ -362,11 +362,11 @@ This project includes automated scanner verification to ensure that security sca
 - ✅ Fixed Next.js versions (14.0.1, 14.1.1) are correctly identified as not vulnerable
 
 **Documentation:**
-- **Usage Guide:** See [Scanner Verification Script Usage](docs/VERIFY_SCANNER_USAGE.md) for detailed usage instructions, options, and examples
-- **Example Output:** See [Example Run Output](docs/verify_scanner_example_output.txt) for a complete example
+- **Usage Guide:** See [Scanner Verification Script Usage](docs/scanner/verify-scanner-usage.md) for detailed usage instructions, options, and examples
+- **Example Output:** See [Example Run Output](docs/scanner/verify_scanner_example_output.txt) for a complete example
 - **Known Issues:** See [BUG-8](docs/defect-tracking/BUG-8.md) for Next.js 14.x timeout issues (Not Fixable)
 
-**Note:** Scanner verification is kept separate from the main test suite to avoid slowing down regular test execution. See `docs/SCANNER_INTEGRATION.md` for detailed analysis of pros/cons.
+**Note:** Scanner verification is kept separate from the main test suite to avoid slowing down regular test execution. See `docs/scanner/scanner-integration.md` for detailed analysis of pros/cons.
 
 ## Scanners
 
@@ -393,8 +393,8 @@ make use-nextjs
 ```
 
 **Documentation:**
-- **[Scanner Verification Script Usage](docs/VERIFY_SCANNER_USAGE.md)** - Complete usage guide with options, examples, and troubleshooting
-- **[Example Run Output](docs/verify_scanner_example_output.txt)** - Sample output from a complete verification run
+- **[Scanner Verification Script Usage](docs/scanner/verify-scanner-usage.md)** - Complete usage guide with options, examples, and troubleshooting
+- **[Example Run Output](docs/scanner/verify_scanner_example_output.txt)** - Sample output from a complete verification run
 
 **Features:**
 - Automatically tests all vulnerable Next.js versions
@@ -407,7 +407,7 @@ make use-nextjs
 - **Vulnerable:** 14.0.0, 14.1.0, 15.0.4, 15.1.8, 15.2.5, 15.3.5, 15.4.7, 15.5.6, 16.0.6
 - **Fixed:** 14.0.1, 14.1.1
 
-For detailed usage instructions, options, and troubleshooting, see the [Scanner Verification Script Usage](docs/VERIFY_SCANNER_USAGE.md) documentation.
+For detailed usage instructions, options, and troubleshooting, see the [Scanner Verification Script Usage](docs/scanner/verify-scanner-usage.md) documentation.
 
 ## Setup
 
@@ -547,7 +547,7 @@ make test-open-report
 - **[Quick Start Guide](tests/QUICKSTART.md)** - Get started in 5 minutes
 - **[Complete Testing Guide](tests/README.md)** - Comprehensive documentation
 - **[Performance Tracking Guide](tests/PERFORMANCE_TRACKING.md)** - Performance metrics and limits
-- **[Testing Plan](TESTING_PLAN.md)** - Testing strategy and implementation plan
+- **[Testing Plan](docs/planning/testing-plan.md)** - Testing strategy and implementation plan
 
 ## Project Structure
 

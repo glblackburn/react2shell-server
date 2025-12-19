@@ -445,7 +445,7 @@ make test-performance-trends
 
 ## See Also
 
-- `tests/PERFORMANCE_METRICS_DESIGN.md` - Design document for performance tracking
+- `tests/docs/performance-metrics-design.md` - Design document for performance tracking
 - `tests/performance_config.yaml` - Configuration file (where limits are set)
 - `tests/conftest.py` - Performance tracking implementation
 - `tests/generate_performance_report.sh` - Report generation script

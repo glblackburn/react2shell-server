@@ -179,7 +179,7 @@ SCAN SUMMARY
 
 ### Next.js 14.x Timeout Issue
 
-Next.js 14.0.0 and 14.1.0 may fail with "Read timed out" errors. This is a **known Next.js 14.x internal bug** (see [BUG-8](defect-tracking/BUG-8.md)) and is not a script issue. The bug causes the request handler to hang when processing RCE PoC payloads, regardless of React version.
+Next.js 14.0.0 and 14.1.0 may fail with "Read timed out" errors. This is a **known Next.js 14.x internal bug** (see [BUG-8](../defect-tracking/BUG-8.md)) and is not a script issue. The bug causes the request handler to hang when processing RCE PoC payloads, regardless of React version.
 
 **Status:** Not Fixable - This is a Next.js 14.x internal bug that cannot be resolved in our codebase.
 
@@ -227,8 +227,8 @@ This is equivalent to running `./scripts/verify_scanner.sh` directly.
 
 ## Related Documentation
 
-- [Scanner Timeout Analysis](defect-tracking/BUG-8/SCANNER_TIMEOUT_ANALYSIS.md) - Detailed analysis of Next.js 14.x timeout issues
-- [BUG-8](defect-tracking/BUG-8.md) - Next.js 14.x timeout issue (Not Fixable)
+- [Scanner Timeout Analysis](../defect-tracking/BUG-8/SCANNER_TIMEOUT_ANALYSIS.md) - Detailed analysis of Next.js 14.x timeout issues
+- [BUG-8](../defect-tracking/BUG-8.md) - Next.js 14.x timeout issue (Not Fixable)
 - [BUG-7](defect-tracking/BUG-7.md) - Scanner connection timeout (Fixed)
 - [Example Run Output](verify_scanner_example_output.txt) - Complete example output
 
