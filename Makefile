@@ -227,7 +227,12 @@ current-version:
 
 # Install dependencies
 install:
-	@npm install
+	@FRAMEWORK=$$(cat .framework-mode 2>/dev/null || echo "vite"); \
+	if [ "$$FRAMEWORK" = "nextjs" ]; then \
+		cd frameworks/nextjs && npm install --legacy-peer-deps; \
+	else \
+		cd frameworks/vite-react && npm install; \
+	fi
 
 # Clean node_modules
 clean:
