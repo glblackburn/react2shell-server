@@ -15,8 +15,14 @@ Run all test execution make targets that were not tested in the initial verifica
 ## Test Execution Targets to Verify
 
 ### Test Setup and Cleanup (2 targets)
-- `test-setup` - Set up Python virtual environment and install test dependencies
+- `test-setup` - Set up Python virtual environment and install test dependencies (now includes driver installation)
 - `test-clean` - Clean test artifacts (reports, screenshots, cache)
+
+### Driver Management (4 targets) - NEW
+- `test-driver-install` - Install and cache browser drivers (avoids network downloads)
+- `test-driver-status` - Check driver cache status
+- `test-driver-clean` - Clean driver cache
+- `test-driver-upgrade` - Upgrade drivers (clean and reinstall)
 
 ### Basic Test Execution (5 targets)
 - `test` - Run all tests (starts servers if needed)
@@ -42,7 +48,7 @@ Run all test execution make targets that were not tested in the initial verifica
 - `test-open-report` - Open test report in browser
 - `test-clean` - Clean test artifacts (already tested, but verify again)
 
-**Total: 16 test execution targets**
+**Total: 20 test execution targets** (16 original + 4 driver management)
 
 ---
 
@@ -72,23 +78,48 @@ Run all test execution make targets that were not tested in the initial verifica
 3. **Verify Prerequisites**
    - Python virtual environment available
    - Test dependencies installed
-   - Browser drivers available (Chrome, Firefox, Safari)
+   - Browser drivers should be installed via `test-driver-install` (avoids network downloads)
    - External scanner path (if available for scanner tests)
 
-### Phase 2: Test Setup and Cleanup
+4. **Install Browser Drivers**
+   - Run `test-driver-install` to cache drivers before tests
+   - Verify drivers are cached with `test-driver-status`
+   - This ensures no network downloads during test execution
+
+### Phase 2: Driver Management (NEW)
+
+**Sequence:**
+1. `test-driver-status` - Check current driver cache status
+2. `test-driver-install` - Install and cache browser drivers
+3. `test-driver-status` - Verify drivers are cached
+4. (Optional) `test-driver-clean` - Test clean functionality
+5. (Optional) `test-driver-upgrade` - Test upgrade functionality
+
+**What to Capture:**
+- Driver cache status before/after
+- Driver installation output
+- Cache directory location (`~/.wdm`)
+- Any errors or warnings
+- Verification that drivers are cached
+
+**Note:** `test-setup` now automatically runs `test-driver-install`, so drivers will be installed during Phase 3.
+
+### Phase 3: Test Setup and Cleanup
 
 **Sequence:**
 1. `test-clean` - Start with clean state
-2. `test-setup` - Ensure test environment is set up
+2. `test-setup` - Ensure test environment is set up (includes driver installation)
 3. Verify setup completed successfully
+4. `test-driver-status` - Verify drivers are cached after setup
 
 **What to Capture:**
 - Virtual environment creation/verification
 - Dependency installation output
+- Driver installation output (from test-setup dependency)
 - Any errors or warnings
-- File system changes (venv/, node_modules/, etc.)
+- File system changes (venv/, node_modules/, ~/.wdm/, etc.)
 
-### Phase 3: Basic Test Execution
+### Phase 4: Basic Test Execution
 
 **Prerequisites:**
 - Test environment set up
@@ -119,7 +150,7 @@ Run all test execution make targets that were not tested in the initial verifica
 
 **Total Estimated Time:** ~20-35 minutes
 
-### Phase 4: Specific Test Suites
+### Phase 5: Specific Test Suites
 
 **Prerequisites:**
 - Test environment set up
@@ -145,7 +176,7 @@ Run all test execution make targets that were not tested in the initial verifica
 
 **Total Estimated Time:** ~10-25 minutes
 
-### Phase 5: Scanner Tests
+### Phase 6: Scanner Tests
 
 **Prerequisites:**
 - External scanner available (may not be available)
@@ -168,7 +199,7 @@ Run all test execution make targets that were not tested in the initial verifica
 
 **Total Estimated Time:** ~3-7 minutes (or ~1 minute if scanner not available)
 
-### Phase 6: Browser-Specific Tests
+### Phase 7: Browser-Specific Tests
 
 **Prerequisites:**
 - Test environment set up
@@ -192,7 +223,7 @@ Run all test execution make targets that were not tested in the initial verifica
 
 **Total Estimated Time:** ~9-15 minutes
 
-### Phase 7: Test Utilities
+### Phase 8: Test Utilities
 
 **Prerequisites:**
 - Test report generated (from test-report target)
@@ -207,7 +238,7 @@ Run all test execution make targets that were not tested in the initial verifica
 
 **Expected Duration:** ~10-30 seconds
 
-### Phase 8: Cleanup and Verification
+### Phase 9: Cleanup and Verification
 
 **Sequence:**
 1. `test-clean` - Final cleanup
@@ -288,26 +319,32 @@ All output will be saved to:
    - Run `test-clean` first
    - Ensure no leftover test artifacts
 
-2. **Set Up Test Environment**
-   - Run `test-setup` if needed
+2. **Install and Cache Drivers**
+   - Run `test-driver-install` to cache drivers
+   - Verify drivers are cached (no network downloads during tests)
+   - This is critical to avoid timeout issues
+
+3. **Set Up Test Environment**
+   - Run `test-setup` if needed (now includes driver installation)
    - Verify virtual environment exists
    - Verify test dependencies installed
+   - Verify drivers are cached
 
-3. **Run Tests in Logical Order**
+4. **Run Tests in Logical Order**
    - Quick tests first (smoke, quick)
    - Full test runs
    - Specific test suites
    - Browser-specific tests
    - Scanner tests (may fail if scanner not available)
 
-4. **Capture Everything**
+5. **Capture Everything**
    - All stdout/stderr
    - All generated files
    - All test reports
    - All screenshots
    - All performance data
 
-5. **Allow Servers to Start Automatically**
+6. **Allow Servers to Start Automatically**
    - Test targets will start servers if needed
    - Capture server startup logs
    - Verify servers are running
@@ -330,7 +367,9 @@ All output will be saved to:
 - `test-browser BROWSER=safari` - May fail if Safari driver not available
 
 **Expected Success:**
-- `test-setup` - Should succeed
+- `test-driver-install` - Should succeed (downloads and caches drivers)
+- `test-driver-status` - Should succeed (shows cache status)
+- `test-setup` - Should succeed (includes driver installation)
 - `test-clean` - Should succeed
 - `test-smoke` - Should succeed
 - `test-quick` - Should succeed
@@ -411,7 +450,8 @@ All output will be saved to:
 
 ### Conservative Estimate
 
-- Test setup: ~2-3 minutes
+- Driver management: ~2-5 minutes (first time download, cached after)
+- Test setup: ~2-3 minutes (includes driver installation)
 - Basic test execution: ~20-35 minutes
 - Specific test suites: ~10-25 minutes
 - Scanner tests: ~3-7 minutes (or ~1 minute if not available)
@@ -419,7 +459,9 @@ All output will be saved to:
 - Test utilities: ~1 minute
 - Cleanup: ~1 minute
 
-**Total: ~45-85 minutes** (approximately 1-1.5 hours)
+**Total: ~47-90 minutes** (approximately 1-1.5 hours)
+
+**Note:** Driver installation adds ~2-5 minutes on first run, but subsequent runs use cached drivers (no download time).
 
 ### Factors Affecting Duration
 
@@ -509,8 +551,9 @@ Before starting, verify:
 
 - [ ] Python virtual environment can be created/accessed
 - [ ] Test dependencies can be installed
-- [ ] Browser drivers available (Chrome at minimum)
-- [ ] Sufficient disk space for test artifacts
+- [ ] Browser drivers will be installed via `test-driver-install` (avoids network downloads during tests)
+- [ ] Network available for initial driver download (only needed once)
+- [ ] Sufficient disk space for test artifacts and driver cache (~/.wdm)
 - [ ] Time available for full test execution (~1-1.5 hours)
 
 ---
