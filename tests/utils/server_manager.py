@@ -41,6 +41,7 @@ def wait_for_server(url, max_attempts=30, delay=1):
 def start_servers():
     """Start servers using Makefile (framework-aware)."""
     from .framework_detector import get_framework_mode
+    import os
     
     framework = get_framework_mode()
     logger.info(f"Starting servers (Framework: {framework})...")
@@ -59,22 +60,64 @@ def start_servers():
             logger.info("Servers already running")
             return True
     
+    # Get project root (assume we're in tests/utils/, go up 2 levels)
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    pid_dir = os.path.join(project_root, ".pids")
+    log_dir = os.path.join(project_root, ".logs")
+    os.makedirs(pid_dir, exist_ok=True)
+    os.makedirs(log_dir, exist_ok=True)
+    
+    # Ensure server dependencies are installed
+    server_dir = os.path.join(project_root, "server")
+    server_node_modules = os.path.join(server_dir, "node_modules")
+    if not os.path.exists(server_node_modules):
+        logger.info("Server dependencies not found, installing...")
+        try:
+            subprocess.run(
+                ["npm", "install"],
+                cwd=server_dir,
+                check=True,
+                capture_output=True,
+                timeout=60
+            )
+            logger.info("Server dependencies installed")
+        except Exception as e:
+            logger.warning(f"Failed to install server dependencies: {e}")
+            # Continue anyway - might work if dependencies are elsewhere
+    
     try:
-        # Start servers using Makefile (suppress output for speed)
-        result = subprocess.run(
-            ["make", "start"],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=10  # Fail fast if start hangs
-        )
-        logger.info("Started servers with 'make start'")
-        
-        # Wait for servers to be ready with adequate timeouts
-        logger.info("Waiting for servers to be ready...")
-        frontend_url = get_frontend_url()
         if framework == "nextjs":
-            # Next.js: only wait for port 3000, with longer timeout for initial startup
+            # Start Next.js server
+            logger.info("Starting Next.js server...")
+            vite_pid_file = os.path.join(pid_dir, "nextjs.pid")
+            server_log = os.path.join(log_dir, "server.log")
+            
+            # Check if already running
+            if os.path.exists(vite_pid_file):
+                try:
+                    with open(vite_pid_file, "r") as f:
+                        pid = int(f.read().strip())
+                    # Check if process is running
+                    os.kill(pid, 0)
+                    logger.info("Next.js server already running (PID: {})".format(pid))
+                    return True
+                except (OSError, ValueError):
+                    pass
+            
+            # Start Next.js server
+            nextjs_dir = os.path.join(project_root, "frameworks", "nextjs")
+            process = subprocess.Popen(
+                ["npm", "run", "dev"],
+                cwd=nextjs_dir,
+                stdout=open(server_log, "a"),
+                stderr=subprocess.STDOUT,
+                preexec_fn=os.setsid  # Create new process group
+            )
+            with open(vite_pid_file, "w") as f:
+                f.write(str(process.pid))
+            logger.info("Started Next.js server (PID: {})".format(process.pid))
+            
+            # Wait for server to be ready
             server_ready = wait_for_server(frontend_url, max_attempts=60, delay=1)
             if server_ready:
                 logger.info("Next.js server is ready!")
@@ -83,7 +126,52 @@ def start_servers():
                 logger.error("Next.js server failed to start or become ready")
                 return False
         else:
-            # Vite: wait for both ports
+            # Vite mode: start both Vite and Express servers
+            logger.info("Starting Vite and Express servers...")
+            vite_pid_file = os.path.join(pid_dir, "vite.pid")
+            server_pid_file = os.path.join(pid_dir, "server.pid")
+            vite_log = os.path.join(log_dir, "vite.log")
+            server_log = os.path.join(log_dir, "server.log")
+            
+            # Start Vite server
+            vite_dir = os.path.join(project_root, "frameworks", "vite-react")
+            if not os.path.exists(vite_pid_file) or not _check_pid_file(vite_pid_file):
+                vite_process = subprocess.Popen(
+                    ["npm", "run", "dev"],
+                    cwd=vite_dir,
+                    stdout=open(vite_log, "a"),
+                    stderr=subprocess.STDOUT,
+                    preexec_fn=os.setsid
+                )
+                with open(vite_pid_file, "w") as f:
+                    f.write(str(vite_process.pid))
+                logger.info("Started Vite server (PID: {})".format(vite_process.pid))
+            else:
+                logger.info("Vite server already running")
+            
+            # Start Express server
+            server_dir = os.path.join(project_root, "server")
+            if not os.path.exists(server_pid_file) or not _check_pid_file(server_pid_file):
+                # Ensure log file exists and is writable
+                with open(server_log, "a") as log_file:
+                    log_file.write("")  # Ensure file exists
+                
+                server_process = subprocess.Popen(
+                    ["node", "server.js"],
+                    cwd=server_dir,
+                    stdout=open(server_log, "a"),
+                    stderr=subprocess.STDOUT,
+                    preexec_fn=os.setsid if hasattr(os, 'setsid') else None
+                )
+                with open(server_pid_file, "w") as f:
+                    f.write(str(server_process.pid))
+                logger.info("Started Express server (PID: {})".format(server_process.pid))
+                # Give server a moment to start
+                time.sleep(2)
+            else:
+                logger.info("Express server already running")
+            
+            # Wait for both servers to be ready
             api_endpoint = get_api_endpoint()
             frontend_ready = wait_for_server(frontend_url, max_attempts=60, delay=1)
             backend_ready = wait_for_server(api_endpoint, max_attempts=60, delay=1)
@@ -93,31 +181,33 @@ def start_servers():
                 return True
             else:
                 logger.error("Servers failed to start or become ready")
+                if frontend_ready:
+                    logger.error("Frontend ready but backend not ready")
+                elif backend_ready:
+                    logger.error("Backend ready but frontend not ready")
+                else:
+                    logger.error("Neither server is ready")
                 return False
             
-    except subprocess.TimeoutExpired:
-        logger.error("Server start command timed out, but checking if server is running...")
-        # Even if make start timed out, the server might still be starting
-        # Give it a bit more time and check if it's actually running
-        import time
-        time.sleep(2)
-        frontend_url = get_frontend_url()
-        if framework == "nextjs":
-            if check_server_running(frontend_url, timeout=1):
-                logger.info("Next.js server is actually running despite timeout")
-                return True
-        else:
-            api_endpoint = get_api_endpoint()
-            if check_server_running(frontend_url, timeout=1) and check_server_running(api_endpoint, timeout=1):
-                logger.info("Servers are actually running despite timeout")
-                return True
-        logger.error("Server start timed out and server is not running")
-        return False
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         logger.error(f"Error starting servers: {e}")
-        logger.error(f"stdout: {e.stdout}")
-        logger.error(f"stderr: {e.stderr}")
+        import traceback
+        logger.error(traceback.format_exc())
         return False
+
+
+def _check_pid_file(pid_file):
+    """Check if PID file exists and process is running."""
+    try:
+        if os.path.exists(pid_file):
+            with open(pid_file, "r") as f:
+                pid = int(f.read().strip())
+            # Check if process is running (signal 0 doesn't kill, just checks)
+            os.kill(pid, 0)
+            return True
+    except (OSError, ValueError):
+        pass
+    return False
 
 
 def stop_servers():
