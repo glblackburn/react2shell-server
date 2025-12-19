@@ -697,6 +697,7 @@ This section tracks known bugs and issues in the project. For detailed defect re
 | [BUG-6](docs/defect-tracking/BUG-6.md) | Fixed | High | High | verify_scanner.sh Fails Due to Port Mismatch |
 | [BUG-7](docs/defect-tracking/BUG-7.md) | Fixed | High | High | Scanner Connection Timeout After Version Switch in Next.js Mode |
 | [BUG-8](docs/defect-tracking/BUG-8.md) | Not Fixable | High | High | Next.js 14.x Versions Fail Scanner Tests Due to Compatibility Bug |
+| [BUG-9](docs/defect-tracking/BUG-9.md) | Fixed | High | Medium | WebDriver Timeout During Test Execution |
 
 For complete defect details, see the [Defect Tracking Documentation](docs/defect-tracking/README.md).
 

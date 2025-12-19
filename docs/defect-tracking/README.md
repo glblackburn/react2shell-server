@@ -12,6 +12,7 @@ This section tracks known bugs and issues in the project.
 | [BUG-6](BUG-6.md) | Fixed | High | High | verify_scanner.sh Fails Due to Port Mismatch | Scanner verification script hardcodes port 5173 (Vite) but doesn't detect framework mode, causing failures when system is in Next.js mode (port 3000) |
 | [BUG-7](BUG-7.md) | Fixed | High | High | Scanner Connection Timeout After Version Switch in Next.js Mode | After version switch, scanner times out with "Read timed out" errors. Server appears ready to script but scanner cannot connect within 10-second timeout |
 | [BUG-8](BUG-8.md) | Not Fixable | High | High | Next.js 14.x Versions Fail Scanner Tests Due to Compatibility Bug | Next.js 14.0.0 and 14.1.0 fail with "Read timed out" errors due to Next.js 14.x + React 19 compatibility bug causing request handler to hang when processing RCE PoC payloads |
+| [BUG-9](BUG-9.md) | Fixed | High | Medium | WebDriver Timeout During Test Execution | Tests fail with network timeout when webdriver-manager downloads Chrome drivers from googlechromelabs.github.io during test execution. Fixed by implementing driver caching system to pre-install drivers before tests run |
 
 ## Legend
 
