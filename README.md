@@ -570,9 +570,11 @@ react2shell-server/
 │       ├── next.config.js    # Next.js configuration
 │       └── package.json      # Framework dependencies
 ├── scripts/                  # Utility scripts
-│   ├── verify_scanner.sh
-│   ├── scanner_verification_report.sh
-│   └── verify_tests.sh
+│   ├── README.md             # Scripts documentation
+│   ├── run_test_target.sh    # Test execution helper (captures output, tracks processes)
+│   ├── verify_tests.sh       # Test suite verification
+│   ├── verify_scanner.sh     # Scanner verification (multiple Next.js versions)
+│   └── scanner_verification_report.sh
 ├── tests/                    # Python Selenium tests
 │   ├── conftest.py           # Pytest fixtures and configuration
 │   ├── pytest.ini            # Pytest settings

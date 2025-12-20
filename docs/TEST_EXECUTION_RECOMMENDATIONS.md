@@ -274,26 +274,22 @@ def start_servers():
 
 ### Root Cause
 
-The `test-parallel` Makefile target spawns background processes that continue after the make command returns. The helper script (`/tmp/run_test_target.sh`) only waits for the make command to complete, not for child processes.
+The `test-parallel` Makefile target spawns background processes that continue after the make command returns. The helper script (`scripts/run_test_target.sh`) has been updated to wait for child processes.
 
 ### Recommendations
 
-#### Priority 1: Update Helper Script to Track Child Processes
+#### Priority 1: Update Helper Script to Track Child Processes ✅ COMPLETED
 
 **Action:** Modify verification helper script to wait for all child processes
 
-**File:** `/tmp/run_test_target.sh` (or create new version)
+**File:** `scripts/run_test_target.sh`
 
-**Recommended Change:**
+**Status:** ✅ Implemented - The script now automatically waits for background processes when running `test-parallel`. See [scripts/README.md](../scripts/README.md) for documentation.
+
+**Implemented Solution:**
+The script at `scripts/run_test_target.sh` now includes background process tracking:
+
 ```bash
-# After running make target, wait for all child processes
-START_TIME=$(date +%s)
-if make "$TARGET_NAME" > "$OUTPUT_DIR/output/${TARGET_NAME}-stdout.txt" 2> "$OUTPUT_DIR/output/${TARGET_NAME}-stderr.txt"; then
-    EXIT_CODE=0
-else
-    EXIT_CODE=$?
-fi
-
 # For test-parallel, wait for all child processes
 if [ "$TARGET_NAME" = "test-parallel" ]; then
     echo "Waiting for background processes to complete..."
@@ -319,11 +315,15 @@ DURATION=$((END_TIME - START_TIME))
 - Prevents "stuck" verification appearance
 - Better resource management
 
-#### Priority 2: Document Background Process Behavior
+#### Priority 2: Document Background Process Behavior ✅ COMPLETED
 
 **Action:** Document that `test-parallel` spawns long-running background processes
 
-**File:** `docs/TEST_EXECUTION_VERIFICATION_REPORT_V3.md` or new documentation
+**Files:** 
+- `docs/TEST_EXECUTION_VERIFICATION_REPORT_V3.md` - Background process behavior documented
+- `scripts/README.md` - Script documentation includes background process tracking details
+
+**Status:** ✅ Implemented - Background process behavior is documented in the verification report and scripts README.
 
 **Content:**
 ```markdown
@@ -544,14 +544,14 @@ def start_servers():
    - Effort: Low - Verification code
    - Risk: Low - Defensive check
 
-5. **Update helper script for background processes** (Priority 1, Issue 2)
+5. **Update helper script for background processes** (Priority 1, Issue 2) ✅ COMPLETED - See `scripts/run_test_target.sh` and [scripts/README.md](../scripts/README.md)
    - Impact: Medium - Better verification accuracy
    - Effort: Medium - Script changes
    - Risk: Low - Only affects verification
 
 ### Phase 3: Documentation and Polish (Medium-term)
 
-6. **Document background process behavior** (Priority 2, Issue 2)
+6. **Document background process behavior** (Priority 2, Issue 2) ✅ COMPLETED - Documented in verification report and scripts README
    - Impact: Low - Documentation only
    - Effort: Low - Writing
    - Risk: None

@@ -45,6 +45,13 @@ make start  # Or manually: npm run dev & npm run server
 
 ## Running Tests
 
+### Test Execution Utilities
+
+For comprehensive test execution and verification, see the utility scripts:
+- **`scripts/run_test_target.sh`** - Helper script for capturing test execution output, tracking processes, and managing background processes
+- **`scripts/verify_tests.sh`** - Quick test suite verification
+- See [scripts/README.md](../scripts/README.md) for complete documentation
+
 ### Using Makefile (Recommended)
 
 ```bash

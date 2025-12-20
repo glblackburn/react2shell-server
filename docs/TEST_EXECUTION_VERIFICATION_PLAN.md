@@ -476,11 +476,23 @@ All output will be saved to:
 
 ## Helper Script
 
-Use the same helper script from previous verification:
-- `/tmp/run_make_target.sh`
-- Captures all output
-- Saves file states
-- Records metadata
+Use the project's test execution helper script:
+- **Location:** `scripts/run_test_target.sh`
+- **Documentation:** See [scripts/README.md](../scripts/README.md)
+- **Features:**
+  - Captures all output (stdout/stderr separately)
+  - Saves file states before/after
+  - Records running processes
+  - Saves metadata (exit code, duration, timestamps)
+  - **Special handling:** Automatically waits for background processes when running `test-parallel`
+
+**Usage:**
+```bash
+OUTPUT_DIR="/tmp/test-execution-verification-$(date +%Y-%m-%d-%H%M%S)"
+mkdir -p "$OUTPUT_DIR"/{files-before,files-after,output,reports,artifacts}
+
+./scripts/run_test_target.sh <TARGET_NAME> "$OUTPUT_DIR"
+```
 
 ### Adaptations for Test Targets
 
