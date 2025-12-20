@@ -31,20 +31,59 @@ This document outlines the **iterative fix loop** approach to fix `make test`. T
    ```
    - Script uses pytest `-x` flag to stop immediately at first failure
    - Script exits with code 1 if error detected, code 0 if all pass
-   - All output saved to `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/`
+   - **Each run creates a NEW top-level directory:** `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/`
+     - Example: First run creates `/tmp/make-test-fix-2025-12-20-013045/`
+     - Example: Second run creates `/tmp/make-test-fix-2025-12-20-013150/` (new timestamp)
+   - **Determine the output directory:**
+     - **Primary method:** The script prints "Output directory: /tmp/make-test-fix-..." at the start of execution
+     - **From script output:** Look for the line "Output directory: /tmp/make-test-fix-YYYY-MM-DD-HHMMSS"
+     - **Fallback method:** If output is not available, find the most recent directory:
+       ```bash
+       ls -td /tmp/make-test-fix-* | head -1
+       ```
+     - **Note:** Each run creates a new timestamped directory, so the most recent one is the current run
+   - **Use the current run's directory** for documentation
+   - **Distinguish Script Failures vs Test Failures:**
+     - **Script Failure:** Error occurs BEFORE "=== Running tests ===" appears in output
+       - Examples: pytest not found, script syntax error, directory creation failure
+       - **Action:** Fix the infrastructure/script issue first, then re-run (this is NOT a test failure)
+     - **Test Failure:** Error occurs AFTER "=== Running tests ===" appears in output
+       - This is a pytest test failure - proceed with the fix loop (step 3)
 
 2. **Stop at First Error** (Automatic)
-   - Pytest's `-x` flag stops immediately when first test fails
+   - **If script failure:** Script exits with code 1 before pytest runs (see step 1 for handling)
+   - **If test failure:** Pytest's `-x` flag stops immediately when first test fails
    - No more tests run after first failure
    - Script exits with code 1
 
 3. **Analyze the Error**
-   - Review error message and stack trace from `output/make-test-live.txt`
-   - Check server logs: `logs/server.log`, `logs/vite.log`
+   - **First, verify this is a TEST failure (not a script failure):**
+     - Check if `output/make-test-live.txt` contains "=== Running tests ==="
+     - If NOT present: This is a script failure - fix infrastructure issue and re-run (skip to step 1)
+     - If present: This is a test failure - proceed with analysis below
+   - Review error message and stack trace from `output/make-test-live.txt` in the **current run's output directory**
+   - Check server logs: `logs/server.log`, `logs/vite.log` in the **current run's output directory**
    - Check port status: `netstat -an | grep LISTEN | grep -E "\.300[0-9]|\.5173"`
-   - Check process status: `files-after/processes-after.txt`
+   - Check process status: `files-after/processes-after.txt` in the **current run's output directory**
    - Identify root cause
-   - Document in `iterations/iteration-N/error-analysis.txt`
+   - **Determine if this is a NEW error:**
+     - **Review the test output in order** from `output/make-test-live.txt`
+     - **If this is iteration 2+:** Check if the previous failing test (from the last iteration) appears in the output and PASSED
+       - **If previous test PASSED:** The current failure is a NEW error (fix worked, now encountering next failure)
+       - **If previous test is still FAILING (or not in output):** This is the SAME error (fix didn't work, continue iterating)
+     - **If this is iteration 1:** This is the first error (no previous test to compare)
+     - **Note:** Since the script stops at the first error, if the previous test passed, you've moved on to a new error
+     - **How to find previous failing test:**
+       - Check the previous run's `output/make-test-live.txt` for the failing test name
+       - Or check `docs/TEST_FIX_PLAN.md` "Fixes Applied" section for the last iteration's failing test
+       - Look for the test name in the current run's output to see if it passed
+   - **Document in the current run's output directory: `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/error-analysis.txt`**
+     - Note: `YYYY-MM-DD-HHMMSS` is the timestamp from the current run's directory
+   - **If this is a NEW error: Update `docs/TEST_FIX_PLAN.md` - Add to "Known Issues" section with status OUTSTANDING**
+     - Use the format template in the "Known Issues" section
+     - Add at the end of the "Known Issues" section, before "Fixes Applied (By Iteration)"
+     - Number sequentially (Issue 3, Issue 4, etc.)
+     - Include: Status, Priority, Symptoms, Root Cause, Files Changed (if any)
 
 4. **Devise Fix**
    - Based on root cause analysis
@@ -55,20 +94,43 @@ This document outlines the **iterative fix loop** approach to fix `make test`. T
 5. **Apply Fix**
    - Make code changes
    - Ensure fix addresses root cause
-   - Document in `iterations/iteration-N/fix-applied.txt`:
+   - **Document the fix plan in the current run's output directory: `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/fix-applied.txt`**
      - Files changed
      - What was changed
      - Why it fixes the error
+     - Note: `YYYY-MM-DD-HHMMSS` is the timestamp from the current run's directory (where error was analyzed)
+     - **Important:** This fix documentation is in the previous run's directory. The next run (step 6) will create a new directory with the test results.
+   - **Do NOT commit yet** - Wait for confirmation that fix works (exit code 0)
 
 6. **Test Fix**
    ```bash
    ./scripts/run_make_test_stop_on_error.sh
    ```
-   - Exit code 0: ✅ Success! All tests pass.
-   - Exit code 1: ❌ New error detected. Go to step 3 (analyze new error).
+   - **This creates a NEW top-level directory** `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/` with the test results
+     - Example: If previous run was `/tmp/make-test-fix-2025-12-20-013045/`, this run creates `/tmp/make-test-fix-2025-12-20-013150/`
+   - **The fix documentation is in the PREVIOUS run's directory** (from step 5)
+   - **Exit code 0: ✅ Success! The test that failed is now passing (fix confirmed).**
+     - **Verify:** The specific test that failed in the previous run is now passing
+       - Check the test output in `output/make-test-live.txt` in the new directory
+       - Process the output in order - the previously failing test should appear and PASS
+       - If all tests pass, the script exits with code 0
+     - **Commit the confirmed fix** (only commit when the test that failed is now passing after applying the fix)
+     - **Update `docs/TEST_FIX_PLAN.md`:**
+       - Update issue status (OUTSTANDING → FIXED) in "Known Issues" section
+       - Update "Fixes Applied" section with iteration details
+       - Update "Current Status" section with progress
+     - **Proceed to step 7 (Repeat or Completion)** - Continue to verify stability with 2 more runs
+   - **Exit code 1: ❌ Fix didn't work or new error detected.**
+     - **Do NOT commit** - Continue iterating without committing
+     - **Use the NEW output directory** (from this run) for step 3 (analyze error)
 
-7. **Repeat**
-   - Continue until script exits with code 0
+7. **Repeat or Complete**
+   - **If exit code was 1:** Continue loop - Go to step 1 (run test again)
+   - **If exit code was 0:** 
+     - **After committing the fix (from step 6):** Verify stability with additional runs
+     - **Run the script 2 more times** (total 3 consecutive successful runs) with **no code changes**
+     - **If all 3 runs exit with code 0:** ✅ **COMPLETE** - All tests pass consistently
+     - **If any of the 2 additional runs exit with code 1:** Go to step 3 (analyze new error)
    - Each iteration fixes ONE error
    - Track all errors and fixes in summary files
 
@@ -79,6 +141,7 @@ This document outlines the **iterative fix loop** approach to fix `make test`. T
 3. **Analyze completely** - Understand root cause before fixing
 4. **Test after each fix** - Verify fix works before moving on
 5. **Document everything** - Save all output, analysis, fixes
+6. **Commit only confirmed fixes** - Only commit when fix is confirmed (exit code 0). Do NOT commit attempts that haven't been verified to fix the issue.
 
 ---
 
@@ -112,6 +175,9 @@ make stop
 
 **Output Location:**
 - `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/` (or specified directory)
+- **Finding the output directory:**
+  - **Primary:** Script prints "Output directory: /tmp/make-test-fix-..." at start
+  - **Fallback:** `ls -td /tmp/make-test-fix-* | head -1` (most recent directory)
 - Live output: `output/make-test-live.txt`
 - Exit code: `output/make-test-exitcode.txt`
 - Duration: `output/make-test-duration.txt`
@@ -120,7 +186,16 @@ make stop
 
 **Exit Codes:**
 - `0` - All tests passed
-- `1` - Error or failure detected (stopped at first error)
+- `1` - Error or failure detected (could be script failure or test failure - check output to distinguish)
+
+**Distinguishing Script Failures from Test Failures:**
+- **Script Failure:** 
+  - Error message appears BEFORE "=== Running tests ===" in output
+  - Common causes: pytest not found, script syntax error, directory creation failure
+  - **Action:** Fix the infrastructure/script issue, then re-run (do NOT follow test fix loop)
+- **Test Failure:**
+  - "=== Running tests ===" appears in output, then pytest finds a failing test
+  - **Action:** Follow the test fix loop (proceed to step 3)
 
 ### Alternative: Manual Run
 
@@ -143,8 +218,10 @@ venv/bin/pytest tests/ -v -x --tb=short
 
 ### Directory Structure
 
+**Each run creates a NEW top-level directory with a unique timestamp:**
+
 ```
-/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/
+/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/    # New directory for each run
 ├── output/                    # Test execution output
 │   ├── make-test-live.txt     # Live output (stdout/stderr)
 │   ├── make-test-exitcode.txt # Exit code (0 or 1)
@@ -162,32 +239,68 @@ venv/bin/pytest tests/ -v -x --tb=short
 ├── logs/                      # Server logs
 │   ├── server.log
 │   └── vite.log
-├── iterations/                # Per-iteration analysis
-│   ├── iteration-1/
-│   │   ├── error-analysis.txt
-│   │   └── fix-applied.txt
-│   └── iteration-2/
+├── error-analysis.txt         # Error analysis for this run
+├── fix-applied.txt            # Fix plan for this run (if applicable)
 └── summary/                   # Overall summary
     ├── all-errors-found.txt
     ├── all-fixes-applied.txt
     └── final-status.txt
 ```
 
-### What to Document After Each Iteration
+**Example:**
+- Run 1: `/tmp/make-test-fix-2025-12-20-013045/` (contains error analysis and fix plan)
+- Run 2: `/tmp/make-test-fix-2025-12-20-013150/` (contains test results for fix from run 1)
+- Run 3: `/tmp/make-test-fix-2025-12-20-013255/` (if new error, contains new error analysis)
 
-1. **Error Analysis** (`iterations/iteration-N/error-analysis.txt`):
-   - Error message and stack trace
-   - Which test failed
-   - Root cause analysis
-   - Port/process status
-   - Server log excerpts
+### What to Document During Each Iteration
 
-2. **Fix Applied** (`iterations/iteration-N/fix-applied.txt`):
-   - Files changed
-   - What was changed
-   - Why it fixes the error
+**Documentation Workflow:**
+- **Each run creates a NEW top-level directory:** `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/`
+  - Each directory has a unique timestamp, so each run gets its own folder
+- **Use the CURRENT run's directory** to document the error analysis and fix plan
+- **The NEXT run** (testing the fix) creates a NEW top-level directory with test results
+- **The fix documentation stays in the PREVIOUS run's directory** (where the error was analyzed)
 
-3. **Update Summary Files:**
+**Documentation Location:** All iteration documentation is created directly in `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/`
+- **Each run creates a NEW top-level directory:** `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/` (unique timestamp per run)
+- **Finding the output directory:**
+  - **Primary:** Script prints "Output directory: /tmp/make-test-fix-..." at start
+  - **Fallback:** `ls -td /tmp/make-test-fix-* | head -1` (most recent directory)
+- Files are created directly in the output directory (not in a subdirectory)
+- Note: `YYYY-MM-DD-HHMMSS` is the timestamp from the current run's directory
+
+1. **Error Analysis** (During Step 3):
+   - **Use the current run's output directory** (the one just created in step 1)
+   - **Determine if this is a NEW error:**
+     - **Review test output in order** from `output/make-test-live.txt`
+     - **If iteration 2+:** Check if the previous failing test (from last iteration) appears and PASSED in the output
+       - **Previous test PASSED:** NEW error (fix worked, now on next failure)
+       - **Previous test still FAILING:** SAME error (fix didn't work, continue iterating)
+     - **Find previous failing test:**
+       - Check previous run's `output/make-test-live.txt` for the failing test name
+       - Or check `docs/TEST_FIX_PLAN.md` "Fixes Applied" section for last iteration's failing test
+       - Look for that test name in current output to verify it passed
+   - Create `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/error-analysis.txt` in that directory
+   - Document: Error message, stack trace, which test failed, root cause analysis, port/process status, server log excerpts
+   - **If NEW error:** Update `docs/TEST_FIX_PLAN.md` - Add to "Known Issues" with status OUTSTANDING
+
+2. **Fix Applied** (During Step 5):
+   - **Use the SAME output directory** from step 3 (where error was analyzed)
+   - Create `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/fix-applied.txt` in that directory
+   - Document: Files changed, what was changed, why it fixes the error
+   - **Do NOT commit yet** - Wait for test confirmation (exit code 0)
+   - **Note:** This fix documentation is in the previous run's directory. The next run (step 6) will create a new directory.
+
+3. **After Test Confirms Fix** (During Step 6, when exit code 0):
+   - **The test results are in the NEW output directory** (created by step 6)
+   - **The fix documentation is in the PREVIOUS output directory** (from step 5)
+   - **Commit the confirmed fix**
+   - **Update `docs/TEST_FIX_PLAN.md`:**
+     - Update issue status (OUTSTANDING → FIXED) in "Known Issues"
+     - Add iteration details to "Fixes Applied" section
+     - Update "Current Status" section with progress
+
+4. **Update Summary Files** (Optional, in output directory):
    - Add error to `summary/all-errors-found.txt`
    - Add fix to `summary/all-fixes-applied.txt`
    - Update `summary/final-status.txt`
@@ -197,6 +310,41 @@ venv/bin/pytest tests/ -v -x --tb=short
 ## Known Issues (Status Tracking)
 
 This section tracks known issues that may appear. Status: ✅ **FIXED**, 🔴 **OUTSTANDING**, 🟡 **PENDING**, or 🟢 **PARTIALLY FIXED**.
+
+### Format for Adding New Issues
+
+When adding a new issue to this section, use the following format:
+
+```markdown
+### Issue N: [Brief Descriptive Title]
+
+**Status:** 🔴 **OUTSTANDING** (Iteration N)  
+**Priority:** CRITICAL | HIGH | MEDIUM | LOW
+
+**Symptoms:**
+- [Error message or observable behavior]
+- [What test fails or what doesn't work]
+- [Any relevant error codes or messages]
+
+**Root Cause:**
+- [Explanation of why this is happening]
+- [Technical details about the underlying problem]
+
+**Fix Applied:** (or **Fix Attempted:** if not yet confirmed)
+- [Description of fix approach]
+- [What was changed]
+
+**Files Changed:**
+- `path/to/file` - [What was changed in this file]
+
+**Status:** [Additional status note if needed]
+```
+
+**Where to add:** Add new issues at the end of the "Known Issues" section, before the "Fixes Applied (By Iteration)" section. Number sequentially (Issue 3, Issue 4, etc.).
+
+**When to update:** 
+- When status changes to FIXED: Update status to ✅ **FIXED** and add iteration number
+- When fix is attempted but not confirmed: Change "Fix Applied" to "Fix Attempted" and update status accordingly
 
 ### Issue 1: Port Conflicts - Multiple Servers on Different Ports
 
@@ -361,12 +509,14 @@ This section tracks known issues that may appear. Status: ✅ **FIXED**, 🔴 **
 
 ### Next Steps
 
+Follow the 7-Step Iterative Fix Loop Process (see "The Iterative Fix Loop Process" section above):
 1. Run `./scripts/run_make_test_stop_on_error.sh`
 2. Analyze the first error (check if it's still Issue 2 or a new error)
 3. Devise fix based on analysis
 4. Apply fix
 5. Test again (run script again)
-6. Repeat until script exits with code 0
+6. If exit code 0: Commit fix and verify stability with 2 more runs
+7. If exit code 1: Continue iterating without committing
 
 ---
 
@@ -378,10 +528,25 @@ This section tracks known issues that may appear. Status: ✅ **FIXED**, 🔴 **
 - No errors in output
 - Servers start and stop correctly
 
+**Completion Criteria:**
+- **3 consecutive successful runs** (exit code 0) with **no code changes** between runs
+- This ensures the fix is stable and consistent, not just a one-time success
+
 **How to Verify:**
 ```bash
+# Run 1
 ./scripts/run_make_test_stop_on_error.sh
 echo $?  # Should be 0
+
+# Run 2 (no changes made)
+./scripts/run_make_test_stop_on_error.sh
+echo $?  # Should be 0
+
+# Run 3 (no changes made)
+./scripts/run_make_test_stop_on_error.sh
+echo $?  # Should be 0
+
+# If all 3 runs exit with code 0: ✅ COMPLETE
 ```
 
 ---
@@ -398,3 +563,29 @@ echo $?  # Should be 0
 **Document Created:** 2025-12-19  
 **Last Updated:** 2025-12-20  
 **Status:** Active - Iterative Fix Loop in Progress
+
+## Workflow Clarifications
+
+**Note:** These clarifications are integrated into the 7-Step Loop above. This section provides additional context.
+
+### Documentation Location
+- All iteration documentation files (`error-analysis.txt`, `fix-applied.txt`) are created directly in `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/`
+- The timestamp (`YYYY-MM-DD-HHMMSS`) is generated by the script automatically
+- Files are created directly in the output directory (not in a subdirectory)
+
+### Plan Updates
+- Update `docs/TEST_FIX_PLAN.md` as changes are made and tested (see steps 3, 6, and 7):
+  - When a new error is found: Add to "Known Issues" with status OUTSTANDING
+  - When a fix is confirmed: Update issue status (OUTSTANDING → FIXED)
+  - After each iteration: Update "Fixes Applied" section
+  - Continuously: Update "Current Status" section
+
+### Commit Workflow
+- **Only commit when a fix is confirmed** (script exits with code 0 and the test that failed is now passing)
+- **Do NOT commit attempts** that haven't been verified to fix the issue
+- If a fix doesn't work, continue iterating without committing until it's confirmed
+
+### Completion Criteria
+- **3 consecutive successful runs** (exit code 0) with **no code changes** between runs
+- This ensures stability and consistency, not just a one-time success
+- After the first successful run (exit code 0), run 2 more times without making any changes
