@@ -219,11 +219,21 @@ if not server_ready:
 - Server logs may show why startup failed
 - Progress logging helps understand timing issues
 
-#### Priority 4: Verify Framework Mode Before Starting
+#### Priority 4: Verify Framework Mode Before Starting ✅ COMPLETED
 
 **Action:** Ensure framework mode is set correctly before server startup
 
 **File:** `tests/utils/server_manager.py`
+
+**Status:** ✅ **COMPLETED** (Committed: 69c4c41, 5e93ed4)
+
+**What was done:**
+- ✅ Framework mode verification before starting servers
+- ✅ Framework mode logging and warnings
+- ✅ Framework mode included in error messages (added in 5e93ed4)
+- ✅ Defaults to "vite" if framework mode file missing
+
+**Verification:** `make check-nextjs-16` passes (11-12s)
 
 **Recommended Change:**
 ```python
@@ -398,32 +408,36 @@ test-parallel: check-venv
 
 ### Recommendations
 
-#### Priority 1: Initialize Performance Baseline
+#### Priority 1: Initialize Performance Baseline ✅ COMPLETED
 
 **Action:** Ensure performance baseline exists before running performance checks
 
 **File:** `Makefile` (performance test targets)
 
-**Recommended Change:**
-```makefile
-test-performance-check: check-venv
-	@if [ ! -f tests/PERFORMANCE_BASELINE.txt ]; then \
-		echo "⚠️  Performance baseline not found. Running test-update-baseline first..."; \
-		$(MAKE) test-update-baseline; \
-	fi
-	@$(PYTEST) tests/performance_report.py::test_performance_check -v
-```
+**Status:** ✅ **COMPLETED** (Committed: 69c4c41)
+
+**What was done:**
+- ✅ Added baseline check to `test-performance-check` target
+- ✅ Auto-runs `test-update-baseline` if baseline missing
+- ✅ Prevents failures due to missing baseline
 
 **Rationale:**
 - Performance checks require baseline data
 - Auto-initialization prevents failures
 - Better user experience
 
-#### Priority 2: Add Performance Test Documentation
+#### Priority 2: Add Performance Test Documentation ✅ COMPLETED
 
 **Action:** Document performance test requirements and setup
 
-**File:** `tests/PERFORMANCE_LIMITS_GUIDE.md` or new file
+**File:** `tests/README.md`
+
+**Status:** ✅ **COMPLETED** (Committed: 69c4c41)
+
+**What was done:**
+- ✅ Added "Performance Test Setup" section to `tests/README.md`
+- ✅ Documented prerequisites, baseline setup, and usage
+- ✅ Comprehensive guide for performance testing
 
 **Content:**
 ```markdown
@@ -520,51 +534,64 @@ def start_servers():
 
 ## Implementation Priority
 
-### Phase 1: Critical Fixes (Immediate)
+### Phase 1: Critical Fixes (Immediate) ✅ COMPLETE
 
-1. **Increase server startup timeout** (Priority 1, Issue 1)
-   - Impact: High - May fix most failures
-   - Effort: Low - Simple change
-   - Risk: Low - Only increases wait time
+1. **Implement fast polling** (Priority 1, Issue 1) ✅ COMPLETED
+   - Impact: High - Reduces wait times significantly
+   - Effort: Medium - Function rewrite and call site updates
+   - Risk: Low - Backward compatible
+   - **Status:** ✅ Completed (7e46cd9)
 
-2. **Improve port cleanup** (Priority 2, Issue 1)
+2. **Improve port cleanup** (Priority 2, Issue 1) ✅ COMPLETED
    - Impact: High - Prevents port conflicts
    - Effort: Medium - Requires testing
    - Risk: Low - Similar to existing `check-nextjs-16` fix
+   - **Status:** ✅ Completed (69c4c41)
 
-3. **Add server startup diagnostics** (Priority 3, Issue 1)
+3. **Add server startup diagnostics** (Priority 3, Issue 1) ✅ COMPLETED
    - Impact: Medium - Better debugging
    - Effort: Low - Logging changes
    - Risk: Low - No functional changes
+   - **Status:** ✅ Completed (69c4c41, 5e93ed4)
 
 ### Phase 2: Important Improvements (Short-term)
 
-4. **Verify framework mode before starting** (Priority 4, Issue 1)
+4. **Verify framework mode before starting** (Priority 4, Issue 1) ✅ COMPLETED
    - Impact: Medium - Prevents mode mismatches
    - Effort: Low - Verification code
    - Risk: Low - Defensive check
+   - **Status:** ✅ Completed (69c4c41, 5e93ed4)
 
 5. **Update helper script for background processes** (Priority 1, Issue 2) ✅ COMPLETED - See `scripts/run_test_target.sh` and [scripts/README.md](../scripts/README.md)
    - Impact: Medium - Better verification accuracy
    - Effort: Medium - Script changes
    - Risk: Low - Only affects verification
 
-### Phase 3: Documentation and Polish (Medium-term)
+### Phase 3: Documentation and Polish (Medium-term) ✅ COMPLETE
 
-6. **Document background process behavior** (Priority 2, Issue 2) ✅ COMPLETED - Documented in verification report and scripts README
+6. **Document background process behavior** (Priority 2, Issue 2) ✅ COMPLETED
    - Impact: Low - Documentation only
    - Effort: Low - Writing
    - Risk: None
+   - **Status:** ✅ Completed (69c4c41)
 
-7. **Initialize performance baseline** (Priority 1, Issue 3)
+7. **Initialize performance baseline** (Priority 1, Issue 3) ✅ COMPLETED
    - Impact: Low - Fixes performance test failures
    - Effort: Low - Makefile change
    - Risk: Low
+   - **Status:** ✅ Completed (69c4c41)
 
-8. **Add framework mode verification** (Priority 1, Issue 4)
+8. **Add framework mode verification** (Priority 1, Issue 4) ✅ COMPLETED
    - Impact: Low - Better diagnostics
    - Effort: Low - Fixture addition
    - Risk: Low
+   - **Status:** ✅ Completed (69c4c41)
+
+9. **Add framework mode to test output** (Priority 2, Issue 4) ✅ COMPLETED
+   - Impact: Low - Better visibility
+   - Effort: Low - Logging additions
+   - Risk: Low
+   - **Status:** ✅ Completed (69c4c41, 5e93ed4)
 
 ---
 
