@@ -115,6 +115,9 @@ This document outlines the **iterative fix loop** approach to fix `make test`. T
        - Process the output in order - the previously failing test should appear and PASS
        - If all tests pass, the script exits with code 0
      - **Commit the confirmed fix** (only commit when the test that failed is now passing after applying the fix)
+       - **Save commit message:** Save the commit message text to `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/commit-message.txt` in the current run's output directory
+       - **Show what will be committed:** Display the commit message, list of files, and changes summary
+       - **Commit automatically:** Commit only the files changed for this specific fix (no waiting for confirmation - exit code 0 confirms the fix)
      - **Update `docs/TEST_FIX_PLAN.md`:**
        - Update issue status (OUTSTANDING → FIXED) in "Known Issues" section
        - Update "Fixes Applied" section with iteration details
@@ -581,9 +584,20 @@ echo $?  # Should be 0
   - Continuously: Update "Current Status" section
 
 ### Commit Workflow
-- **Only commit when a fix is confirmed** (script exits with code 0 and the test that failed is now passing)
+
+**During the Test Fix Loop:**
+- **Only commit at checkpoints** - When exit code 0 confirms a fix is working
+- **Ignore manual "commit" requests** - Do not commit when user says "commit" during the loop
 - **Do NOT commit attempts** that haven't been verified to fix the issue
-- If a fix doesn't work, continue iterating without committing until it's confirmed
+- If a fix doesn't work (exit code 1), continue iterating without committing until it's confirmed
+
+**When Exit Code 0 (Fix Confirmed):**
+1. **Save commit message:** Save the commit message text (just the message, no file list or diff) to `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/commit-message.txt` in the current run's output directory
+2. **Show what will be committed:** Display the commit message, list of files, and changes summary
+3. **Commit automatically:** Commit only the files changed for this specific fix (no waiting for confirmation - exit code 0 confirms the fix)
+
+**If Loop is Broken/Stopped:**
+- If the test fix loop is interrupted and testing is stopped, then follow the normal AI coding standards commit workflow (two-step process with confirmation)
 
 ### Completion Criteria
 - **3 consecutive successful runs** (exit code 0) with **no code changes** between runs
