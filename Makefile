@@ -348,6 +348,8 @@ stop:
 			echo "⚠️  No Next.js PID file found"; \
 		fi; \
 		lsof -ti:3000 2>/dev/null | xargs kill -9 2>/dev/null && echo "✓ Killed process on port 3000" || true; \
+		rm -f frameworks/nextjs/.next/dev/lock 2>/dev/null || true; \
+		rm -rf frameworks/nextjs/.next/dev/*.pid 2>/dev/null || true; \
 		echo "✓ Server stopped"; \
 	else \
 		if [ -f $(VITE_PID) ]; then \
@@ -631,24 +633,26 @@ test-version-switch: check-venv
 check-nextjs-16:
 	@echo "Running quick spot check for Next.js 16.0.6..."
 	@echo ""
-	@# Stop any running servers
 	@$(MAKE) stop > /dev/null 2>&1 || true
-	@# Switch to Next.js 16.0.6
+	@sleep 2
 	@$(MAKE) nextjs-16.0.6 > /dev/null 2>&1
-	@# Start server in background
 	@$(MAKE) start > /dev/null 2>&1 &
 	@SERVER_PID=$$!; \
 	echo "Waiting for server to start..."; \
-	MAX_WAIT=30; \
+	MAX_WAIT=60; \
 	WAITED=0; \
+	HTTP_CODE="000"; \
 	while [ $$WAITED -lt $$MAX_WAIT ]; do \
-		if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null | grep -q "200"; then \
+		HTTP_CODE=$$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null || echo "000"); \
+		if [ "$$HTTP_CODE" = "200" ]; then \
 			break; \
 		fi; \
 		sleep 1; \
 		WAITED=$$((WAITED + 1)); \
+		if [ $$((WAITED % 5)) -eq 0 ]; then \
+			echo "  Still waiting... ($$WAITED/$$MAX_WAIT seconds)"; \
+		fi; \
 	done; \
-	HTTP_CODE=$$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null || echo "000"); \
 	$(MAKE) stop > /dev/null 2>&1; \
 	wait $$SERVER_PID 2>/dev/null || true; \
 	if [ "$$HTTP_CODE" = "200" ]; then \
@@ -657,6 +661,7 @@ check-nextjs-16:
 	else \
 		echo "❌ FAIL: Next.js 16.0.6 not responding correctly (HTTP $$HTTP_CODE)"; \
 		echo "   Expected HTTP 200, got $$HTTP_CODE"; \
+		echo "   Check .logs/server.log for details"; \
 		exit 1; \
 	fi
 
