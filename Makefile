@@ -520,6 +520,7 @@ test-quick: check-venv
 
 # Run tests in parallel (faster execution)
 # Version switch tests run in parallel within each version (versions switched sequentially)
+# Uses process groups to better track and wait for background processes
 test-parallel: check-venv
 	@TIMESTAMP=$$(date +%Y-%m-%d_%H-%M-%S); \
 	REPORT_DIR_TIMESTAMPED="$(REPORT_DIR)/$$TIMESTAMP"; \

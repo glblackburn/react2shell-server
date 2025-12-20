@@ -142,8 +142,8 @@ def run_tests_for_version(version: str, workers: int = 10, test_dir: str = "test
             # Restart servers
             start_servers()
             # Use shorter waits - servers should be ready quickly
-                    wait_for_server(FRONTEND_URL, max_attempts=8, initial_delay=0.2, max_delay=2.0)
-                    wait_for_server(API_ENDPOINT, max_attempts=8, initial_delay=0.2, max_delay=2.0)
+            wait_for_server(FRONTEND_URL, max_attempts=8, initial_delay=0.2, max_delay=2.0)
+            wait_for_server(API_ENDPOINT, max_attempts=8, initial_delay=0.2, max_delay=2.0)
         finally:
             os.chdir(original_cwd)
     

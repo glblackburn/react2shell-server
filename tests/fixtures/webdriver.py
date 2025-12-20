@@ -132,6 +132,7 @@ def driver(request, start_servers):
         pytest.fail(f"Unsupported browser: {browser}")
     
     driver.implicitly_wait(3)  # Reduced from 5 to 3 seconds for faster execution
+    driver.set_page_load_timeout(30)  # 30 second timeout for page loads to prevent hanging
     driver.maximize_window()
     
     yield driver

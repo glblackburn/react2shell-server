@@ -21,17 +21,24 @@ def start_servers():
     framework = get_framework_mode()
     print(f"\n🚀 Starting servers (Framework: {framework})...")
     
-    # Check if servers are already running
+    # Check if servers are already running (use timeout-safe check)
     try:
         frontend_url = get_frontend_url()
-        requests.get(frontend_url, timeout=2)
-        if framework == "vite":
-            api_endpoint = get_api_endpoint()
-            requests.get(api_endpoint, timeout=2)
-        print("✓ Servers already running")
-        yield
-        return
-    except requests.exceptions.RequestException:
+        # Use check_server_running which has timeout protection
+        if check_server_running(frontend_url, timeout=3):
+            if framework == "vite":
+                api_endpoint = get_api_endpoint()
+                if check_server_running(api_endpoint, timeout=3):
+                    print("✓ Servers already running")
+                    yield
+                    return
+            else:
+                # Next.js mode - only frontend check needed
+                print("✓ Servers already running")
+                yield
+                return
+    except Exception:
+        # Server not responding - will start it below
         pass
     
     # Start servers using server_manager

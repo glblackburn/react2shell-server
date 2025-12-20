@@ -4,7 +4,7 @@ Base Page class with common functionality for all page objects.
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, WebDriverException
 import logging
 
 
@@ -39,9 +39,23 @@ class BasePage:
                 target_url = "http://localhost:3000"
             
             self.logger.info(f"Navigating to: {target_url}")
-            self.driver.get(target_url)
-        
-        self.logger.info(f"Navigated to: {self.driver.current_url}")
+            try:
+                self.driver.get(target_url)
+                self.logger.info(f"Navigated to: {self.driver.current_url}")
+            except (TimeoutException, WebDriverException) as e:
+                self.logger.error(f"Failed to navigate to {target_url}: {e}")
+                # Check if server is running
+                try:
+                    from utils.server_manager import check_server_running
+                    server_running = check_server_running(target_url, timeout=2)
+                    if not server_running:
+                        raise Exception(f"Server is not running at {target_url}. Navigation timed out after 30s. Please ensure the server is started.")
+                except Exception as check_error:
+                    self.logger.error(f"Server check failed: {check_error}")
+                raise
+            except Exception as e:
+                self.logger.error(f"Unexpected error navigating to {target_url}: {e}")
+                raise
     
     def find_element(self, by, value, timeout=3):
         """Find element with explicit wait."""

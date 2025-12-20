@@ -37,17 +37,22 @@ def react_version(request):
                 frontend_url = get_frontend_url()
                 if not check_server_running(frontend_url):
                     print(f"🔄 Server not running, starting for React {version}...")
-                    start_servers_func()
-                    wait_for_server(frontend_url, max_attempts=20, initial_delay=0.2, max_delay=2.0)
+                    if not start_servers_func():
+                        pytest.fail(f"Failed to start server for React {version}")
+                    if not wait_for_server(frontend_url, max_attempts=60, initial_delay=0.2, max_delay=2.0, max_wait_seconds=60):
+                        pytest.fail(f"Server not ready after starting for React {version}")
             else:
                 # Vite: check both ports
                 frontend_url = get_frontend_url()
                 api_endpoint = get_api_endpoint()
                 if not check_server_running(frontend_url) or not check_server_running(api_endpoint):
                     print(f"🔄 Servers not running, starting for React {version}...")
-                    start_servers_func()
-                    wait_for_server(frontend_url, max_attempts=20, initial_delay=0.2, max_delay=2.0)
-                    wait_for_server(api_endpoint, max_attempts=20, initial_delay=0.2, max_delay=2.0)
+                    if not start_servers_func():
+                        pytest.fail(f"Failed to start servers for React {version}")
+                    if not wait_for_server(frontend_url, max_attempts=60, initial_delay=0.2, max_delay=2.0, max_wait_seconds=60):
+                        pytest.fail(f"Frontend server not ready after starting for React {version}")
+                    if not wait_for_server(api_endpoint, max_attempts=60, initial_delay=0.2, max_delay=2.0, max_wait_seconds=60):
+                        pytest.fail(f"Backend server not ready after starting for React {version}")
         else:
             print(f"\n🔄 Switching to React {version}...")
             # Stop servers before switching version
@@ -68,15 +73,15 @@ def react_version(request):
             if framework == "nextjs":
                 # Next.js: only wait for port 3000, with longer timeout for version switch
                 frontend_url = get_frontend_url()
-                if not wait_for_server(frontend_url, max_attempts=60, initial_delay=0.2, max_delay=2.0):
+                if not wait_for_server(frontend_url, max_attempts=60, initial_delay=0.2, max_delay=2.0, max_wait_seconds=60):
                     pytest.fail(f"Next.js server not ready after switching to React {version}")
             else:
                 # Vite: wait for both ports, with longer timeout for version switch
                 frontend_url = get_frontend_url()
                 api_endpoint = get_api_endpoint()
-                if not wait_for_server(frontend_url, max_attempts=60, initial_delay=0.2, max_delay=2.0):
+                if not wait_for_server(frontend_url, max_attempts=60, initial_delay=0.2, max_delay=2.0, max_wait_seconds=60):
                     pytest.fail(f"Frontend server not ready after switching to React {version}")
-                if not wait_for_server(api_endpoint, max_attempts=60, initial_delay=0.2, max_delay=2.0):
+                if not wait_for_server(api_endpoint, max_attempts=60, initial_delay=0.2, max_delay=2.0, max_wait_seconds=60):
                     pytest.fail(f"Backend server not ready after switching to React {version}")
             
             if version_switch_success:

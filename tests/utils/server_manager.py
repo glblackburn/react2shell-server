@@ -8,6 +8,9 @@ import logging
 import json
 import os
 import signal
+import socket
+import threading
+from urllib.parse import urlparse
 from .server_constants import (
     get_frontend_url,
     get_backend_url,
@@ -18,14 +21,106 @@ from .server_constants import (
 logger = logging.getLogger(__name__)
 
 
-def check_server_running(url, timeout=2):
-    """Check if a server is running at the given URL."""
+def _check_server_running_impl(url, timeout):
+    """Internal implementation of server check with timeout protection."""
+    # Parse URL to get host and port
+    parsed = urlparse(url)
+    host = parsed.hostname or 'localhost'
+    port = parsed.port
+    if port is None:
+        # Default ports based on scheme
+        port = 443 if parsed.scheme == 'https' else 80
+    
+    # Step 1: Quick socket check to see if port is open (non-blocking)
+    # This prevents hanging on connection attempts
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(0.5)  # Very short timeout for socket check
     try:
-        response = requests.get(url, timeout=timeout)
+        result = sock.connect_ex((host, port))
+        if result != 0:
+            # Port is not open, server is definitely not running
+            return False
+    except (socket.timeout, socket.error, OSError):
+        return False
+    finally:
+        # Always close the socket
+        try:
+            sock.close()
+        except Exception:
+            pass
+    
+    # Step 2: Port is open, make HTTP request with explicit timeouts
+    # For Next.js, initial requests can be slow (compilation), so use more generous timeouts
+    # Use tuple for (connect_timeout, read_timeout) to be more explicit
+    # Give more time for read since Next.js may need to compile on first request
+    connect_timeout = min(timeout * 0.2, 0.5)  # 20% of timeout or max 0.5s for connect
+    read_timeout = max(timeout - connect_timeout, 2.0)  # Rest for read, min 2.0s for Next.js compilation
+    
+    try:
+        response = requests.get(
+            url,
+            timeout=(connect_timeout, read_timeout),
+            allow_redirects=True
+        )
         # Accept any 2xx or 3xx status code as "running"
         return 200 <= response.status_code < 400
-    except (requests.exceptions.RequestException, requests.exceptions.Timeout):
+    except requests.exceptions.Timeout as e:
+        # Log timeout details for debugging
+        logger.debug(f"HTTP request timeout for {url}: connect_timeout={connect_timeout}, read_timeout={read_timeout}, error={e}")
         return False
+    except requests.exceptions.RequestException as e:
+        # Log other request errors for debugging
+        logger.debug(f"HTTP request error for {url}: {e}")
+        return False
+
+
+def check_server_running(url, timeout=2):
+    """
+    Check if a server is running at the given URL.
+    
+    Uses a two-step approach:
+    1. First checks if the port is open using socket (fast, non-blocking)
+    2. Then makes HTTP request with explicit connect/read timeouts
+    
+    This prevents hanging on connection attempts that don't respond.
+    Uses a thread-based timeout wrapper to ensure it never blocks indefinitely.
+    
+    Note: For Next.js servers, timeout should be at least 3-5 seconds to allow
+    for initial compilation on first request.
+    """
+    result_container = {'value': None, 'exception': None}
+    
+    def run_check():
+        try:
+            result_container['value'] = _check_server_running_impl(url, timeout)
+        except Exception as e:
+            result_container['exception'] = e
+    
+    # Run the check in a thread with a hard timeout
+    # Give it more time than the HTTP timeout to account for thread overhead
+    thread_timeout = max(timeout + 2.0, 5.0)  # At least 5s for Next.js compilation
+    thread = threading.Thread(target=run_check, daemon=True)
+    thread.start()
+    thread.join(timeout=thread_timeout)
+    
+    if thread.is_alive():
+        # Thread is still running - it hung, return False
+        logger.debug(f"check_server_running thread timed out for {url} after {thread_timeout}s")
+        return False
+    
+    # Check if an exception was raised
+    if result_container['exception']:
+        exc = result_container['exception']
+        if isinstance(exc, KeyboardInterrupt):
+            # Re-raise keyboard interrupts
+            raise exc
+        # Log other exceptions for debugging
+        logger.debug(f"check_server_running exception for {url}: {exc}")
+        # For other exceptions, return False
+        return False
+    
+    # Return the result
+    return result_container['value'] if result_container['value'] is not None else False
 
 
 def _cleanup_port(port):
@@ -61,7 +156,7 @@ def _cleanup_port(port):
         pass
 
 
-def wait_for_server(url, max_attempts=300, initial_delay=0.2, max_delay=2.0):
+def wait_for_server(url, max_attempts=60, initial_delay=0.2, max_delay=2.0, max_wait_seconds=60):
     """
     Wait for server to be ready with fast polling.
     
@@ -71,19 +166,32 @@ def wait_for_server(url, max_attempts=300, initial_delay=0.2, max_delay=2.0):
     
     Args:
         url: Server URL to check
-        max_attempts: Maximum number of checks (default 300 = ~60 seconds worst case)
+        max_attempts: Maximum number of checks (default 60)
         initial_delay: Initial delay between checks in seconds (default 0.2)
         max_delay: Maximum delay between checks in seconds (default 2.0)
+        max_wait_seconds: Hard time limit in seconds (default 60). If exceeded, returns False immediately.
     
     Returns:
         True if server is ready, False if timeout reached
     """
     delay = initial_delay
     start_time = time.time()
+    logger.info(f"Waiting for server at {url} (max {max_wait_seconds}s, {max_attempts} attempts)")
     
     for attempt in range(max_attempts):
-        # Check if server is ready (fast check with 1 second timeout)
-        if check_server_running(url, timeout=1):
+        # Hard time limit check - fail fast if we exceed max_wait_seconds
+        elapsed = time.time() - start_time
+        if elapsed >= max_wait_seconds:
+            logger.error(f"Server not ready after {elapsed:.1f}s (hard limit: {max_wait_seconds}s) - FAILING FAST")
+            return False
+        
+        # Check if server is ready
+        # Use longer timeout (5s) for Next.js which may need to compile on first request
+        check_start = time.time()
+        is_ready = check_server_running(url, timeout=5)
+        check_elapsed = time.time() - check_start
+        
+        if is_ready:
             elapsed = time.time() - start_time
             logger.info(f"Server ready at {url} (detected in {elapsed:.2f}s after {attempt + 1} checks)")
             return True
@@ -92,8 +200,8 @@ def wait_for_server(url, max_attempts=300, initial_delay=0.2, max_delay=2.0):
         if attempt < max_attempts - 1:
             # Log progress every 5 seconds of elapsed time
             elapsed = time.time() - start_time
-            if attempt % 25 == 0 and attempt > 0:  # Every ~5 seconds (25 * 0.2s)
-                logger.debug(f"Waiting for server at {url} ({elapsed:.1f}s elapsed, attempt {attempt + 1}/{max_attempts})")
+            if attempt == 0 or attempt % 25 == 0:  # First attempt and every ~5 seconds (25 * 0.2s)
+                logger.info(f"Waiting for server at {url} ({elapsed:.1f}s/{max_wait_seconds}s elapsed, attempt {attempt + 1}/{max_attempts}, check took {check_elapsed:.2f}s)")
             
             time.sleep(delay)
             
@@ -102,7 +210,7 @@ def wait_for_server(url, max_attempts=300, initial_delay=0.2, max_delay=2.0):
             delay = min(delay * 1.1, max_delay)
     
     elapsed = time.time() - start_time
-    logger.warning(f"Server not ready after {max_attempts} attempts ({elapsed:.1f}s elapsed)")
+    logger.error(f"Server not ready after {max_attempts} attempts ({elapsed:.1f}s elapsed, limit: {max_wait_seconds}s)")
     return False
 
 
@@ -136,18 +244,37 @@ def start_servers():
     
     logger.info(f"Starting servers (Framework: {framework})...")
     
-    # Check if servers are already running
+    # Check if servers are already running (use longer timeout to be sure)
     frontend_url = get_frontend_url()
     if framework == "nextjs":
         # Next.js: only check port 3000
-        if check_server_running(frontend_url, timeout=0.5):
-            logger.info("Next.js server already running")
+        if check_server_running(frontend_url, timeout=2):
+            logger.info("Next.js server already running and responding")
+            # Update PID file if needed
+            pid_dir = os.path.join(project_root, ".pids")
+            os.makedirs(pid_dir, exist_ok=True)
+            vite_pid_file = os.path.join(pid_dir, "nextjs.pid")
+            if not os.path.exists(vite_pid_file):
+                try:
+                    result = subprocess.run(
+                        ["lsof", "-ti", ":3000"],
+                        capture_output=True,
+                        text=True,
+                        timeout=2
+                    )
+                    if result.returncode == 0:
+                        actual_pid = result.stdout.strip().split('\n')[0]
+                        with open(vite_pid_file, "w") as f:
+                            f.write(actual_pid)
+                        logger.info("Created PID file with actual PID: {}".format(actual_pid))
+                except Exception:
+                    pass
             return True
     else:
         # Vite: check both ports
         api_endpoint = get_api_endpoint()
-        if check_server_running(frontend_url, timeout=0.5) and check_server_running(api_endpoint, timeout=0.5):
-            logger.info("Servers already running")
+        if check_server_running(frontend_url, timeout=2) and check_server_running(api_endpoint, timeout=2):
+            logger.info("Servers already running and responding")
             return True
     
     # Get project root (assume we're in tests/utils/, go up 2 levels)
@@ -182,7 +309,53 @@ def start_servers():
             vite_pid_file = os.path.join(pid_dir, "nextjs.pid")
             server_log = os.path.join(log_dir, "server.log")
             
-            # Clean up port 3000 before starting
+            # First check if server is already responding (regardless of PID file)
+            if check_server_running(frontend_url, timeout=1):
+                logger.info("Next.js server already running and responding")
+                # Update PID file if it exists and is valid, or create it if missing
+                if os.path.exists(vite_pid_file):
+                    try:
+                        with open(vite_pid_file, "r") as f:
+                            pid = int(f.read().strip())
+                        # Check if process is running
+                        os.kill(pid, 0)
+                        logger.info("PID file valid (PID: {})".format(pid))
+                    except (OSError, ValueError):
+                        # PID file is stale, but server is running - find the actual PID
+                        logger.warning("PID file is stale, but server is running. Finding actual PID...")
+                        try:
+                            result = subprocess.run(
+                                ["lsof", "-ti", ":3000"],
+                                capture_output=True,
+                                text=True,
+                                timeout=2
+                            )
+                            if result.returncode == 0:
+                                actual_pid = result.stdout.strip().split('\n')[0]
+                                with open(vite_pid_file, "w") as f:
+                                    f.write(actual_pid)
+                                logger.info("Updated PID file with actual PID: {}".format(actual_pid))
+                        except Exception:
+                            pass
+                else:
+                    # No PID file, but server is running - create it
+                    try:
+                        result = subprocess.run(
+                            ["lsof", "-ti", ":3000"],
+                            capture_output=True,
+                            text=True,
+                            timeout=2
+                        )
+                        if result.returncode == 0:
+                            actual_pid = result.stdout.strip().split('\n')[0]
+                            with open(vite_pid_file, "w") as f:
+                                f.write(actual_pid)
+                            logger.info("Created PID file with actual PID: {}".format(actual_pid))
+                    except Exception:
+                        pass
+                return True
+            
+            # Server is not responding - clean up and start fresh
             logger.debug("Cleaning up port 3000...")
             _cleanup_port(3000)
             
@@ -193,25 +366,10 @@ def start_servers():
                 logger.debug("Removing Next.js lock file...")
                 os.remove(lock_file)
             
-            # Check if already running - verify both PID file and actual server response
+            # Remove stale PID file if it exists
             if os.path.exists(vite_pid_file):
-                try:
-                    with open(vite_pid_file, "r") as f:
-                        pid = int(f.read().strip())
-                    # Check if process is running
-                    os.kill(pid, 0)
-                    # Also verify server is actually responding
-                    if check_server_running(frontend_url, timeout=1):
-                        logger.info("Next.js server already running (PID: {})".format(pid))
-                        return True
-                    else:
-                        # PID exists but server not responding - stale PID file
-                        logger.warning("PID file exists but server not responding, removing stale PID file")
-                        os.remove(vite_pid_file)
-                except (OSError, ValueError):
-                    # PID file exists but process is dead - remove stale file
-                    if os.path.exists(vite_pid_file):
-                        os.remove(vite_pid_file)
+                logger.debug("Removing stale PID file...")
+                os.remove(vite_pid_file)
             
             # Start Next.js server
             nextjs_dir = os.path.join(project_root, "frameworks", "nextjs")
@@ -226,15 +384,29 @@ def start_servers():
                 f.write(str(process.pid))
             logger.info("Started Next.js server (PID: {})".format(process.pid))
             
-            # Wait for server to be ready (fast polling, exits as soon as ready)
-            server_ready = wait_for_server(frontend_url, max_attempts=300, initial_delay=0.2, max_delay=2.0)
+            # Wait for server to be ready (fast polling, exits as soon as ready, max 60s)
+            server_ready = wait_for_server(frontend_url, max_attempts=60, initial_delay=0.2, max_delay=2.0, max_wait_seconds=60)
             if server_ready:
                 logger.info("Next.js server is ready!")
                 return True
             else:
-                logger.error("Next.js server failed to start or become ready")
+                logger.error("Next.js server failed to start or become ready within 60 seconds")
                 logger.error(f"Framework mode: {framework}")
                 logger.error(f"Expected port: 3000")
+                
+                # Check if process is still running
+                try:
+                    if os.path.exists(vite_pid_file):
+                        with open(vite_pid_file, "r") as f:
+                            pid = int(f.read().strip())
+                        try:
+                            os.kill(pid, 0)  # Check if process exists
+                            logger.error(f"Server process (PID: {pid}) is still running but not responding")
+                        except (OSError, ProcessLookupError):
+                            logger.error(f"Server process (PID: {pid}) from PID file is not running")
+                except Exception as e:
+                    logger.warning(f"Could not check PID file: {e}")
+                
                 # Check port status
                 try:
                     port_check = subprocess.run(
@@ -247,21 +419,26 @@ def start_servers():
                         pids = port_check.stdout.strip().split('\n')
                         logger.error(f"Port 3000 is in use by PIDs: {', '.join(pids)}")
                     else:
-                        logger.error("Port 3000 is not in use")
+                        logger.error("Port 3000 is not in use - server may have crashed")
                 except Exception:
                     logger.error("Could not check port 3000 status")
                 
-                # Read last 20 lines of server log for diagnostics
+                # Read last 30 lines of server log for diagnostics
                 if os.path.exists(server_log):
                     try:
                         with open(server_log, "r") as f:
                             lines = f.readlines()
                             if lines:
-                                logger.error("Last 20 lines of server log:")
-                                for line in lines[-20:]:
+                                logger.error("Last 30 lines of server log:")
+                                for line in lines[-30:]:
                                     logger.error(f"  {line.rstrip()}")
+                            else:
+                                logger.error("Server log file exists but is empty - server may not have started")
                     except Exception as e:
                         logger.warning(f"Could not read server log: {e}")
+                else:
+                    logger.error(f"Server log file not found at {server_log} - server may not have started")
+                
                 return False
         else:
             # Vite mode: start both Vite and Express servers
@@ -271,10 +448,67 @@ def start_servers():
             vite_log = os.path.join(log_dir, "vite.log")
             server_log = os.path.join(log_dir, "server.log")
             
-            # Clean up ports before starting
+            # First check if servers are already responding (regardless of PID files)
+            frontend_responding = check_server_running(frontend_url, timeout=1)
+            backend_responding = check_server_running(api_endpoint, timeout=1)
+            
+            if frontend_responding and backend_responding:
+                logger.info("Vite and Express servers already running and responding")
+                # Update PID files if needed
+                if os.path.exists(vite_pid_file):
+                    try:
+                        with open(vite_pid_file, "r") as f:
+                            pid = int(f.read().strip())
+                        os.kill(pid, 0)
+                    except (OSError, ValueError):
+                        # Stale PID file, but server is running - update it
+                        try:
+                            result = subprocess.run(
+                                ["lsof", "-ti", ":5173"],
+                                capture_output=True,
+                                text=True,
+                                timeout=2
+                            )
+                            if result.returncode == 0:
+                                actual_pid = result.stdout.strip().split('\n')[0]
+                                with open(vite_pid_file, "w") as f:
+                                    f.write(actual_pid)
+                        except Exception:
+                            pass
+                if os.path.exists(server_pid_file):
+                    try:
+                        with open(server_pid_file, "r") as f:
+                            pid = int(f.read().strip())
+                        os.kill(pid, 0)
+                    except (OSError, ValueError):
+                        # Stale PID file, but server is running - update it
+                        try:
+                            result = subprocess.run(
+                                ["lsof", "-ti", ":3000"],
+                                capture_output=True,
+                                text=True,
+                                timeout=2
+                            )
+                            if result.returncode == 0:
+                                actual_pid = result.stdout.strip().split('\n')[0]
+                                with open(server_pid_file, "w") as f:
+                                    f.write(actual_pid)
+                        except Exception:
+                            pass
+                return True
+            
+            # Servers are not responding - clean up and start fresh
             logger.debug("Cleaning up ports 5173 and 3000...")
             _cleanup_port(5173)
             _cleanup_port(3000)
+            
+            # Remove stale PID files if they exist
+            if os.path.exists(vite_pid_file):
+                logger.debug("Removing stale Vite PID file...")
+                os.remove(vite_pid_file)
+            if os.path.exists(server_pid_file):
+                logger.debug("Removing stale Express PID file...")
+                os.remove(server_pid_file)
             
             # Start Vite server
             vite_dir = os.path.join(project_root, "frameworks", "vite-react")
@@ -314,10 +548,10 @@ def start_servers():
             else:
                 logger.info("Express server already running")
             
-            # Wait for both servers to be ready (fast polling, exits as soon as ready)
+            # Wait for both servers to be ready (fast polling, exits as soon as ready, max 60s each)
             api_endpoint = get_api_endpoint()
-            frontend_ready = wait_for_server(frontend_url, max_attempts=300, initial_delay=0.2, max_delay=2.0)
-            backend_ready = wait_for_server(api_endpoint, max_attempts=300, initial_delay=0.2, max_delay=2.0)
+            frontend_ready = wait_for_server(frontend_url, max_attempts=60, initial_delay=0.2, max_delay=2.0, max_wait_seconds=60)
+            backend_ready = wait_for_server(api_endpoint, max_attempts=60, initial_delay=0.2, max_delay=2.0, max_wait_seconds=60)
             
             if frontend_ready and backend_ready:
                 logger.info("Both servers are ready!")
@@ -406,12 +640,34 @@ def stop_servers():
             ["make", "stop"],
             check=True,
             capture_output=True,
-            text=True
+            text=True,
+            timeout=30  # 30 second timeout to prevent hanging
         )
         logger.info("Stopped servers with 'make stop'")
         return True
+    except subprocess.TimeoutExpired:
+        logger.warning("Timeout stopping servers with 'make stop' (30s), forcing cleanup...")
+        # Force cleanup of ports
+        _cleanup_port(3000)
+        _cleanup_port(5173)
+        return False
     except subprocess.CalledProcessError as e:
         logger.warning(f"Error stopping servers (may already be stopped): {e}")
+        # Still try to clean up ports
+        try:
+            _cleanup_port(3000)
+            _cleanup_port(5173)
+        except Exception:
+            pass
+        return False
+    except Exception as e:
+        logger.warning(f"Unexpected error stopping servers: {e}")
+        # Still try to clean up ports
+        try:
+            _cleanup_port(3000)
+            _cleanup_port(5173)
+        except Exception:
+            pass
         return False
 
 
