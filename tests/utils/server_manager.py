@@ -156,6 +156,16 @@ def _cleanup_port(port):
         pass
 
 
+def _cleanup_all_test_ports():
+    """Clean up all ports that might be used by test servers (3000-3010, 5173)."""
+    ports_to_clean = [3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010, 5173]
+    logger.info("Cleaning up all test ports: {}".format(ports_to_clean))
+    for port in ports_to_clean:
+        _cleanup_port(port)
+    # Wait a moment for ports to be released
+    time.sleep(1)
+
+
 def wait_for_server(url, max_attempts=60, initial_delay=0.2, max_delay=2.0, max_wait_seconds=60):
     """
     Wait for server to be ready with fast polling.
@@ -356,8 +366,15 @@ def start_servers():
                 return True
             
             # Server is not responding - clean up and start fresh
-            logger.debug("Cleaning up port 3000...")
-            _cleanup_port(3000)
+            logger.debug("Cleaning up all test ports to ensure port 3000 is free...")
+            _cleanup_all_test_ports()
+            
+            # Verify port 3000 is actually free
+            if check_server_running(frontend_url, timeout=1):
+                logger.warning("Port 3000 still in use after cleanup, waiting longer...")
+                time.sleep(2)
+                _cleanup_all_test_ports()
+                time.sleep(1)
             
             # Clean up Next.js lock files (prevents "Unable to acquire lock" errors)
             nextjs_dir = os.path.join(project_root, "frameworks", "nextjs")
@@ -498,9 +515,15 @@ def start_servers():
                 return True
             
             # Servers are not responding - clean up and start fresh
-            logger.debug("Cleaning up ports 5173 and 3000...")
-            _cleanup_port(5173)
-            _cleanup_port(3000)
+            logger.debug("Cleaning up all test ports to ensure ports 5173 and 3000 are free...")
+            _cleanup_all_test_ports()
+            
+            # Verify ports are actually free
+            if check_server_running(frontend_url, timeout=1) or check_server_running(api_endpoint, timeout=1):
+                logger.warning("Ports still in use after cleanup, waiting longer...")
+                time.sleep(2)
+                _cleanup_all_test_ports()
+                time.sleep(1)
             
             # Remove stale PID files if they exist
             if os.path.exists(vite_pid_file):
