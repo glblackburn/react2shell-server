@@ -233,6 +233,24 @@ def start_servers():
                 return True
             else:
                 logger.error("Next.js server failed to start or become ready")
+                logger.error(f"Framework mode: {framework}")
+                logger.error(f"Expected port: 3000")
+                # Check port status
+                try:
+                    port_check = subprocess.run(
+                        ["lsof", "-ti", ":3000"],
+                        capture_output=True,
+                        text=True,
+                        timeout=2
+                    )
+                    if port_check.returncode == 0:
+                        pids = port_check.stdout.strip().split('\n')
+                        logger.error(f"Port 3000 is in use by PIDs: {', '.join(pids)}")
+                    else:
+                        logger.error("Port 3000 is not in use")
+                except Exception:
+                    logger.error("Could not check port 3000 status")
+                
                 # Read last 20 lines of server log for diagnostics
                 if os.path.exists(server_log):
                     try:
@@ -306,6 +324,26 @@ def start_servers():
                 return True
             else:
                 logger.error("Servers failed to start or become ready")
+                logger.error(f"Framework mode: {framework}")
+                logger.error(f"Expected ports: 5173 (Vite), 3000 (Express)")
+                
+                # Check port status
+                for port in [5173, 3000]:
+                    try:
+                        port_check = subprocess.run(
+                            ["lsof", "-ti", f":{port}"],
+                            capture_output=True,
+                            text=True,
+                            timeout=2
+                        )
+                        if port_check.returncode == 0:
+                            pids = port_check.stdout.strip().split('\n')
+                            logger.error(f"Port {port} is in use by PIDs: {', '.join(pids)}")
+                        else:
+                            logger.error(f"Port {port} is not in use")
+                    except Exception:
+                        logger.error(f"Could not check port {port} status")
+                
                 if frontend_ready:
                     logger.error("Frontend ready but backend not ready")
                 elif backend_ready:
