@@ -5,6 +5,8 @@ This file now serves as the main pytest configuration file, importing
 fixtures and plugins from organized modules.
 """
 import pytest
+import logging
+from pathlib import Path
 
 # Import fixtures from organized modules
 # Pytest automatically discovers fixtures in conftest.py and subdirectories
@@ -13,6 +15,39 @@ from fixtures.webdriver import driver
 from fixtures.servers import start_servers
 from fixtures.app import app_page
 from fixtures.version import react_version
+
+logger = logging.getLogger(__name__)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def verify_framework_mode():
+    """Verify framework mode is set correctly before tests."""
+    from utils.framework_detector import get_framework_mode
+    
+    # Get project root (assume we're in tests/, go up 1 level)
+    project_root = Path(__file__).parent.parent
+    framework_mode_file = project_root / ".framework-mode"
+    
+    # Get framework mode
+    framework = get_framework_mode()
+    
+    # Log framework mode for debugging
+    logger.info(f"Framework mode: {framework}")
+    
+    # Verify framework mode file exists
+    if not framework_mode_file.exists():
+        logger.warning(".framework-mode file not found")
+    else:
+        try:
+            with open(framework_mode_file, "r") as f:
+                framework_from_file = f.read().strip() or "vite"
+            if framework_from_file != framework:
+                logger.warning(f"Framework mode mismatch: detector={framework}, file={framework_from_file}")
+            logger.info(f"Framework mode file: {framework_mode_file}, value: '{framework_from_file}'")
+        except Exception as e:
+            logger.warning(f"Could not read .framework-mode file: {e}")
+    
+    yield
 
 # Import performance plugin
 # The plugin hooks are automatically registered when the module is imported

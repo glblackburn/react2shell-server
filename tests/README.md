@@ -157,6 +157,52 @@ The performance report includes:
 
 Reports are saved to `tests/reports/performance_history_report.html` and automatically open in your browser.
 
+### Performance Test Setup
+
+**Prerequisites:**
+
+1. **Baseline Data:** Run `make test-update-baseline` first to create baseline
+   ```bash
+   make test-update-baseline
+   ```
+
+2. **Test History:** Performance tests require test execution history
+   - Run tests multiple times: `make test` or `make test-parallel`
+   - History is automatically saved to `tests/.performance_history/`
+
+3. **Server Running:** Some performance tests require servers to be running
+   - Servers are automatically started by test fixtures if needed
+
+**Running Performance Tests:**
+
+1. **Update baseline** (first time or after significant changes):
+   ```bash
+   make test-update-baseline
+   ```
+
+2. **Run tests** to collect performance data:
+   ```bash
+   make test
+   # or
+   make test-parallel
+   ```
+
+3. **Check performance** against baseline:
+   ```bash
+   make test-performance-check  # Auto-initializes baseline if missing
+   ```
+
+4. **View trends and analysis:**
+   ```bash
+   make test-performance-trends
+   make test-performance-compare
+   make test-performance-slowest
+   make test-performance-summary
+   make test-performance-report  # Comprehensive HTML report
+   ```
+
+**Note:** `test-performance-check` automatically runs `test-update-baseline` if baseline is missing, preventing failures due to missing baseline data.
+
 ## Writing New Tests
 
 ### 1. Create Test File

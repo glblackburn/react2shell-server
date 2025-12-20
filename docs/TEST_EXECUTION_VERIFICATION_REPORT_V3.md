@@ -447,6 +447,29 @@ At time of report generation, the following processes were still running:
 - pytest processes for version switch tests (PID 24128)
 - These are spawned by `test-parallel` and continue after make completes
 
+## Background Process Behavior
+
+### test-parallel Target
+
+The `test-parallel` target spawns background processes that continue after the make command completes:
+
+1. **Main Process:** `make test-parallel` completes after starting tests
+2. **Background Processes:**
+   - `run_version_tests_parallel.py` - Runs version switch tests in parallel
+   - Individual pytest processes - Run tests for each React version
+
+**Expected Behavior:**
+- Make command returns Exit=0 after ~31 minutes
+- Background processes continue for additional time
+- Total execution time may be 45-60 minutes
+
+**Verification:**
+- Check for running processes: `ps aux | grep -E "(pytest|run_version_tests)"`
+- Wait for all processes to complete before considering verification done
+- Use `scripts/run_test_target.sh` which automatically waits for background processes
+
+**Note:** The verification helper script (`scripts/run_test_target.sh`) has been updated to automatically wait for all background processes when running `test-parallel`.
+
 ---
 
 **Report Generated:** 2025-12-19 21:45  

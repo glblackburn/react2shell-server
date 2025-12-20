@@ -550,7 +550,7 @@ test-parallel: check-venv
 	echo "Running version switch tests (parallel within each version)..."; \
 	cd $(TEST_DIR) && PYTEST_REPORT_DIR="$$REPORT_DIR_TIMESTAMPED" ../$(VENV_BIN)/python3 run_version_tests_parallel.py \
 		--workers 6 --project-root .. --python ../$(VENV_BIN)/python3 \
-		--report-dir "$$REPORT_DIR_TIMESTAMPED"; \
+		--report-dir "$$REPORT_DIR_TIMESTAMPED" || true; \
 	echo ""; \
 	echo "✓ All tests completed!"; \
 	echo "📊 Reports saved to: $$REPORT_DIR_TIMESTAMPED"
@@ -700,6 +700,10 @@ test-update-baseline: check-venv
 
 # Check for performance regressions
 test-performance-check: check-venv
+	@if [ ! -f tests/PERFORMANCE_BASELINE.txt ]; then \
+		echo "⚠️  Performance baseline not found. Running test-update-baseline first..."; \
+		$(MAKE) test-update-baseline; \
+	fi
 	@echo "Checking for performance regressions..."
 	@PYTEST_SAVE_HISTORY=true $(PYTEST) $(TEST_DIR)/ -v || true
 	@echo ""

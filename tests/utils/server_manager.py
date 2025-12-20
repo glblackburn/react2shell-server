@@ -7,6 +7,7 @@ import requests
 import logging
 import json
 import os
+import signal
 from .server_constants import (
     get_frontend_url,
     get_backend_url,
@@ -25,6 +26,39 @@ def check_server_running(url, timeout=2):
         return 200 <= response.status_code < 400
     except (requests.exceptions.RequestException, requests.exceptions.Timeout):
         return False
+
+
+def _cleanup_port(port):
+    """Kill any process using the specified port."""
+    try:
+        result = subprocess.run(
+            ["lsof", "-ti", f":{port}"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            pids = result.stdout.strip().split('\n')
+            for pid in pids:
+                if pid:
+                    try:
+                        pid_int = int(pid)
+                        os.kill(pid_int, signal.SIGTERM)
+                        time.sleep(0.5)
+                        # If still running, force kill
+                        try:
+                            os.kill(pid_int, 0)  # Check if still exists
+                            os.kill(pid_int, signal.SIGKILL)
+                        except (OSError, ProcessLookupError):
+                            pass  # Process already dead
+                    except (OSError, ValueError, ProcessLookupError):
+                        pass
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        # lsof not available or timeout - continue anyway
+        pass
+    except Exception:
+        # Any other error - continue anyway
+        pass
 
 
 def wait_for_server(url, max_attempts=300, initial_delay=0.2, max_delay=2.0):
@@ -77,7 +111,29 @@ def start_servers():
     from .framework_detector import get_framework_mode
     import os
     
+    # Get project root for framework mode file verification
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    framework_mode_file = os.path.join(project_root, ".framework-mode")
+    
+    # Verify framework mode file exists and is readable
     framework = get_framework_mode()
+    if not os.path.exists(framework_mode_file):
+        logger.warning(".framework-mode file not found, defaulting to vite")
+        logger.info(f"Framework mode file: {framework_mode_file} (not found)")
+        framework = "vite"
+    else:
+        try:
+            with open(framework_mode_file, "r") as f:
+                framework_from_file = f.read().strip() or "vite"
+            if framework_from_file != framework:
+                logger.warning(f"Framework mode mismatch: detector={framework}, file={framework_from_file}")
+            framework = framework_from_file
+            logger.info(f"Framework mode file: {framework_mode_file}")
+            logger.info(f"Framework mode value: '{framework}'")
+        except Exception as e:
+            logger.warning(f"Could not read .framework-mode file: {e}, using detector result: {framework}")
+            logger.info(f"Framework mode file: {framework_mode_file} (read error)")
+    
     logger.info(f"Starting servers (Framework: {framework})...")
     
     # Check if servers are already running
@@ -126,6 +182,17 @@ def start_servers():
             vite_pid_file = os.path.join(pid_dir, "nextjs.pid")
             server_log = os.path.join(log_dir, "server.log")
             
+            # Clean up port 3000 before starting
+            logger.debug("Cleaning up port 3000...")
+            _cleanup_port(3000)
+            
+            # Clean up Next.js lock files (prevents "Unable to acquire lock" errors)
+            nextjs_dir = os.path.join(project_root, "frameworks", "nextjs")
+            lock_file = os.path.join(nextjs_dir, ".next", "dev", "lock")
+            if os.path.exists(lock_file):
+                logger.debug("Removing Next.js lock file...")
+                os.remove(lock_file)
+            
             # Check if already running - verify both PID file and actual server response
             if os.path.exists(vite_pid_file):
                 try:
@@ -166,6 +233,17 @@ def start_servers():
                 return True
             else:
                 logger.error("Next.js server failed to start or become ready")
+                # Read last 20 lines of server log for diagnostics
+                if os.path.exists(server_log):
+                    try:
+                        with open(server_log, "r") as f:
+                            lines = f.readlines()
+                            if lines:
+                                logger.error("Last 20 lines of server log:")
+                                for line in lines[-20:]:
+                                    logger.error(f"  {line.rstrip()}")
+                    except Exception as e:
+                        logger.warning(f"Could not read server log: {e}")
                 return False
         else:
             # Vite mode: start both Vite and Express servers
@@ -174,6 +252,11 @@ def start_servers():
             server_pid_file = os.path.join(pid_dir, "server.pid")
             vite_log = os.path.join(log_dir, "vite.log")
             server_log = os.path.join(log_dir, "server.log")
+            
+            # Clean up ports before starting
+            logger.debug("Cleaning up ports 5173 and 3000...")
+            _cleanup_port(5173)
+            _cleanup_port(3000)
             
             # Start Vite server
             vite_dir = os.path.join(project_root, "frameworks", "vite-react")
@@ -229,6 +312,30 @@ def start_servers():
                     logger.error("Backend ready but frontend not ready")
                 else:
                     logger.error("Neither server is ready")
+                
+                # Read server logs for diagnostics
+                if os.path.exists(vite_log):
+                    try:
+                        with open(vite_log, "r") as f:
+                            lines = f.readlines()
+                            if lines:
+                                logger.error("Last 20 lines of Vite server log:")
+                                for line in lines[-20:]:
+                                    logger.error(f"  {line.rstrip()}")
+                    except Exception as e:
+                        logger.warning(f"Could not read Vite log: {e}")
+                
+                if os.path.exists(server_log):
+                    try:
+                        with open(server_log, "r") as f:
+                            lines = f.readlines()
+                            if lines:
+                                logger.error("Last 20 lines of Express server log:")
+                                for line in lines[-20:]:
+                                    logger.error(f"  {line.rstrip()}")
+                    except Exception as e:
+                        logger.warning(f"Could not read Express server log: {e}")
+                
                 return False
             
     except Exception as e:
