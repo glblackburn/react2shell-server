@@ -135,7 +135,7 @@ class TestNextJS16Startup:
         # Wait for server to be ready (start_servers already waits, but verify)
         frontend_url = get_frontend_url()
         max_wait = 30  # Next.js typically starts in 1-2 seconds after patching
-        ready = wait_for_server(frontend_url, max_attempts=max_wait, delay=1)
+        ready = wait_for_server(frontend_url, max_attempts=max_wait, initial_delay=0.2, max_delay=2.0)
         
         if not ready:
             # Check server log for errors
@@ -185,7 +185,7 @@ class TestNextJS16Startup:
         start_servers()
         
         frontend_url = get_frontend_url()
-        ready = wait_for_server(frontend_url, max_attempts=30, delay=1)
+        ready = wait_for_server(frontend_url, max_attempts=30, initial_delay=0.2, max_delay=2.0)
         assert ready, f"Server should be ready at {frontend_url}"
         
         # Make request to homepage
@@ -210,7 +210,7 @@ class TestNextJS16Startup:
         start_servers()
         
         frontend_url = get_frontend_url()
-        ready = wait_for_server(frontend_url, max_attempts=30, delay=1)
+        ready = wait_for_server(frontend_url, max_attempts=30, initial_delay=0.2, max_delay=2.0)
         assert ready, f"Server should be ready at {frontend_url}"
         
         # Test API endpoint
@@ -235,7 +235,7 @@ class TestNextJS16Startup:
         start_servers()
         
         frontend_url = get_frontend_url()
-        ready = wait_for_server(frontend_url, max_attempts=30, delay=1)
+        ready = wait_for_server(frontend_url, max_attempts=30, initial_delay=0.2, max_delay=2.0)
         assert ready, f"Server should be ready at {frontend_url}"
         
         # Test version API

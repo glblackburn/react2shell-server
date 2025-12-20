@@ -27,16 +27,48 @@ def check_server_running(url, timeout=2):
         return False
 
 
-def wait_for_server(url, max_attempts=30, delay=1):
-    """Wait for server to be ready."""
+def wait_for_server(url, max_attempts=300, initial_delay=0.2, max_delay=2.0):
+    """
+    Wait for server to be ready with fast polling.
+    
+    Uses short initial delay (0.2s) to detect readiness quickly, with exponential
+    backoff up to max_delay (2.0s) to reduce CPU usage for long waits.
+    Exits immediately when server is ready (no unnecessary waiting).
+    
+    Args:
+        url: Server URL to check
+        max_attempts: Maximum number of checks (default 300 = ~60 seconds worst case)
+        initial_delay: Initial delay between checks in seconds (default 0.2)
+        max_delay: Maximum delay between checks in seconds (default 2.0)
+    
+    Returns:
+        True if server is ready, False if timeout reached
+    """
+    delay = initial_delay
+    start_time = time.time()
+    
     for attempt in range(max_attempts):
-        if check_server_running(url, timeout=2):  # Increased timeout for Next.js
-            logger.info(f"Server ready at {url}")
+        # Check if server is ready (fast check with 1 second timeout)
+        if check_server_running(url, timeout=1):
+            elapsed = time.time() - start_time
+            logger.info(f"Server ready at {url} (detected in {elapsed:.2f}s after {attempt + 1} checks)")
             return True
-        if attempt < max_attempts - 1:  # Don't sleep on last attempt
-            logger.debug(f"Waiting for server at {url} (attempt {attempt + 1}/{max_attempts})")
+        
+        # Don't sleep on last attempt
+        if attempt < max_attempts - 1:
+            # Log progress every 5 seconds of elapsed time
+            elapsed = time.time() - start_time
+            if attempt % 25 == 0 and attempt > 0:  # Every ~5 seconds (25 * 0.2s)
+                logger.debug(f"Waiting for server at {url} ({elapsed:.1f}s elapsed, attempt {attempt + 1}/{max_attempts})")
+            
             time.sleep(delay)
-    logger.warning(f"Server not ready after {max_attempts} attempts")
+            
+            # Exponential backoff: increase delay gradually, but cap at max_delay
+            # This reduces CPU usage for long waits while still checking frequently initially
+            delay = min(delay * 1.1, max_delay)
+    
+    elapsed = time.time() - start_time
+    logger.warning(f"Server not ready after {max_attempts} attempts ({elapsed:.1f}s elapsed)")
     return False
 
 
@@ -127,8 +159,8 @@ def start_servers():
                 f.write(str(process.pid))
             logger.info("Started Next.js server (PID: {})".format(process.pid))
             
-            # Wait for server to be ready
-            server_ready = wait_for_server(frontend_url, max_attempts=60, delay=1)
+            # Wait for server to be ready (fast polling, exits as soon as ready)
+            server_ready = wait_for_server(frontend_url, max_attempts=300, initial_delay=0.2, max_delay=2.0)
             if server_ready:
                 logger.info("Next.js server is ready!")
                 return True
@@ -181,10 +213,10 @@ def start_servers():
             else:
                 logger.info("Express server already running")
             
-            # Wait for both servers to be ready
+            # Wait for both servers to be ready (fast polling, exits as soon as ready)
             api_endpoint = get_api_endpoint()
-            frontend_ready = wait_for_server(frontend_url, max_attempts=60, delay=1)
-            backend_ready = wait_for_server(api_endpoint, max_attempts=60, delay=1)
+            frontend_ready = wait_for_server(frontend_url, max_attempts=300, initial_delay=0.2, max_delay=2.0)
+            backend_ready = wait_for_server(api_endpoint, max_attempts=300, initial_delay=0.2, max_delay=2.0)
             
             if frontend_ready and backend_ready:
                 logger.info("Both servers are ready!")
