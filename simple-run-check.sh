@@ -11,7 +11,11 @@ check that the server is not running
 EOF
 make stop
 
-make | grep nextjs- | grep Switch | awk '{print $2}' | while read version ; do
+make | grep nextjs- |
+    grep Switch |
+    awk '{print $2}' |
+    grep -v nextjs-16.0.6 |
+    while read version ; do
     cat<<EOF
 ================================================================================
 version=[${version}]: switch
