@@ -1,0 +1,740 @@
+================================================================================
+check that the server is not running
+================================================================================
+Stopping servers (Framework: nextjs)...
+⚠️  No Next.js PID file found
+✓ Killed process on port 3000
+✓ Server stopped
+================================================================================
+version=[nextjs-14.0.0]: switch
+================================================================================
+⚠️  Node.js version mismatch detected
+   Current: 18.20.8
+   Required: >= 24.12.0
+   Switching to Node.js 24.12.0 using nvm...
+Now using node v24.12.0 (npm v11.6.2)
+Now using node v24.12.0 (npm v11.6.2)
+✓ Switched to Node.js 24.12.0
+Switching to Next.js 14.0.0 (VULNERABLE - for security testing)...
+Note: Next.js 14.x requires React 18, using React 18.3.0 (compatible) for testing...
+Cleaning npm temporary directories...
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+
+added 7 packages, removed 6 packages, changed 8 packages, and audited 28 packages in 7s
+
+3 packages are looking for funding
+  run `npm fund` for details
+
+1 critical severity vulnerability
+
+To address all issues, run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+✓ Switched to Next.js 14.0.0 (VULNERABLE)
+================================================================================
+version=[nextjs-14.0.0]: start
+================================================================================
+Starting servers (Framework: nextjs)...
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+✓ Started Next.js server (PID: 91109)
+
+==========================================
+🚀 Next.js server is starting up...
+==========================================
+
+Application: http://localhost:3000
+API Endpoint: http://localhost:3000/api/hello
+Version API:  http://localhost:3000/api/version
+
+Log file: .logs/server.log
+
+Check status:  make status
+Stop server:   make stop
+
+Waiting for server to be ready...
+✓ Next.js server is ready!
+================================================================================
+version=[nextjs-14.0.0]: curl
+================================================================================
+{
+  "react": "18.3.0",
+  "reactDom": "18.3.0",
+  "nextjs": "14.0.0",
+  "node": "v24.12.0",
+  "vulnerable": false,
+  "status": "FIXED"
+}
+================================================================================
+version=[nextjs-14.0.0]: stop
+================================================================================
+Stopping servers (Framework: nextjs)...
+⚠️  No Next.js PID file found
+✓ Killed process on port 3000
+✓ Server stopped
+================================================================================
+version=[nextjs-14.1.0]: switch
+================================================================================
+⚠️  Node.js version mismatch detected
+   Current: 18.20.8
+   Required: >= 24.12.0
+   Switching to Node.js 24.12.0 using nvm...
+Now using node v24.12.0 (npm v11.6.2)
+Now using node v24.12.0 (npm v11.6.2)
+✓ Switched to Node.js 24.12.0
+Switching to Next.js 14.1.0 (VULNERABLE - for security testing)...
+Note: Next.js 14.x requires React 18, using React 18.2.0 (compatible) for testing...
+Cleaning npm temporary directories...
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+
+removed 2 packages, changed 5 packages, and audited 26 packages in 7s
+
+3 packages are looking for funding
+  run `npm fund` for details
+
+1 critical severity vulnerability
+
+To address all issues, run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+✓ Switched to Next.js 14.1.0 (VULNERABLE)
+================================================================================
+version=[nextjs-14.1.0]: start
+================================================================================
+Starting servers (Framework: nextjs)...
+✓ Started Next.js server (PID: 92182)
+
+==========================================
+🚀 Next.js server is starting up...
+==========================================
+
+Application: http://localhost:3000
+API Endpoint: http://localhost:3000/api/hello
+Version API:  http://localhost:3000/api/version
+
+Log file: .logs/server.log
+
+Check status:  make status
+Stop server:   make stop
+
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+Waiting for server to be ready...
+✓ Next.js server is ready!
+================================================================================
+version=[nextjs-14.1.0]: curl
+================================================================================
+{
+  "react": "18.2.0",
+  "reactDom": "18.2.0",
+  "nextjs": "14.1.0",
+  "node": "v24.12.0",
+  "vulnerable": false,
+  "status": "FIXED"
+}
+================================================================================
+version=[nextjs-14.1.0]: stop
+================================================================================
+Stopping servers (Framework: nextjs)...
+⚠️  No Next.js PID file found
+✓ Killed process on port 3000
+✓ Server stopped
+================================================================================
+version=[nextjs-15.0.4]: switch
+================================================================================
+⚠️  Node.js version mismatch detected
+   Current: 18.20.8
+   Required: >= 24.12.0
+   Switching to Node.js 24.12.0 using nvm...
+Now using node v24.12.0 (npm v11.6.2)
+Now using node v24.12.0 (npm v11.6.2)
+✓ Switched to Node.js 24.12.0
+Switching to Next.js 15.0.4 (VULNERABLE - for security testing)...
+Cleaning npm temporary directories...
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+
+added 12 packages, removed 3 packages, changed 8 packages, and audited 35 packages in 11s
+
+6 packages are looking for funding
+  run `npm fund` for details
+
+1 critical severity vulnerability
+
+To address all issues, run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+✓ Switched to Next.js 15.0.4 (VULNERABLE)
+================================================================================
+version=[nextjs-15.0.4]: start
+================================================================================
+Starting servers (Framework: nextjs)...
+✓ Started Next.js server (PID: 93567)
+
+==========================================
+🚀 Next.js server is starting up...
+==========================================
+
+Application: http://localhost:3000
+API Endpoint: http://localhost:3000/api/hello
+Version API:  http://localhost:3000/api/version
+
+Log file: .logs/server.log
+
+Check status:  make status
+Stop server:   make stop
+
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+Waiting for server to be ready...
+✓ Next.js server is ready!
+================================================================================
+version=[nextjs-15.0.4]: curl
+================================================================================
+{
+  "react": "19.2.0",
+  "reactDom": "19.2.0",
+  "nextjs": "15.0.4",
+  "node": "v24.12.0",
+  "vulnerable": true,
+  "status": "VULNERABLE"
+}
+================================================================================
+version=[nextjs-15.0.4]: stop
+================================================================================
+Stopping servers (Framework: nextjs)...
+⚠️  No Next.js PID file found
+✓ Killed process on port 3000
+✓ Server stopped
+================================================================================
+version=[nextjs-15.1.8]: switch
+================================================================================
+⚠️  Node.js version mismatch detected
+   Current: 18.20.8
+   Required: >= 24.12.0
+   Switching to Node.js 24.12.0 using nvm...
+Now using node v24.12.0 (npm v11.6.2)
+Now using node v24.12.0 (npm v11.6.2)
+✓ Switched to Node.js 24.12.0
+Switching to Next.js 15.1.8 (VULNERABLE - for security testing)...
+Cleaning npm temporary directories...
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+
+changed 4 packages, and audited 35 packages in 8s
+
+6 packages are looking for funding
+  run `npm fund` for details
+
+1 critical severity vulnerability
+
+To address all issues, run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+✓ Switched to Next.js 15.1.8 (VULNERABLE)
+================================================================================
+version=[nextjs-15.1.8]: start
+================================================================================
+Starting servers (Framework: nextjs)...
+✓ Started Next.js server (PID: 94662)
+
+==========================================
+🚀 Next.js server is starting up...
+==========================================
+
+Application: http://localhost:3000
+API Endpoint: http://localhost:3000/api/hello
+Version API:  http://localhost:3000/api/version
+
+Log file: .logs/server.log
+
+Check status:  make status
+Stop server:   make stop
+
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+Waiting for server to be ready...
+✓ Next.js server is ready!
+================================================================================
+version=[nextjs-15.1.8]: curl
+================================================================================
+{
+  "react": "19.2.0",
+  "reactDom": "19.2.0",
+  "nextjs": "15.1.8",
+  "node": "v24.12.0",
+  "vulnerable": true,
+  "status": "VULNERABLE"
+}
+================================================================================
+version=[nextjs-15.1.8]: stop
+================================================================================
+Stopping servers (Framework: nextjs)...
+⚠️  No Next.js PID file found
+✓ Killed process on port 3000
+✓ Server stopped
+================================================================================
+version=[nextjs-15.2.5]: switch
+================================================================================
+⚠️  Node.js version mismatch detected
+   Current: 18.20.8
+   Required: >= 24.12.0
+   Switching to Node.js 24.12.0 using nvm...
+Now using node v24.12.0 (npm v11.6.2)
+Now using node v24.12.0 (npm v11.6.2)
+✓ Switched to Node.js 24.12.0
+Switching to Next.js 15.2.5 (VULNERABLE - for security testing)...
+Cleaning npm temporary directories...
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+
+changed 3 packages, and audited 35 packages in 8s
+
+6 packages are looking for funding
+  run `npm fund` for details
+
+1 critical severity vulnerability
+
+To address all issues, run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+✓ Switched to Next.js 15.2.5 (VULNERABLE)
+================================================================================
+version=[nextjs-15.2.5]: start
+================================================================================
+Starting servers (Framework: nextjs)...
+✓ Started Next.js server (PID: 95734)
+
+==========================================
+🚀 Next.js server is starting up...
+==========================================
+
+Application: http://localhost:3000
+API Endpoint: http://localhost:3000/api/hello
+Version API:  http://localhost:3000/api/version
+
+Log file: .logs/server.log
+
+Check status:  make status
+Stop server:   make stop
+
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+Waiting for server to be ready...
+✓ Next.js server is ready!
+================================================================================
+version=[nextjs-15.2.5]: curl
+================================================================================
+{
+  "react": "19.2.0",
+  "reactDom": "19.2.0",
+  "nextjs": "15.2.5",
+  "node": "v24.12.0",
+  "vulnerable": true,
+  "status": "VULNERABLE"
+}
+================================================================================
+version=[nextjs-15.2.5]: stop
+================================================================================
+Stopping servers (Framework: nextjs)...
+⚠️  No Next.js PID file found
+✓ Killed process on port 3000
+✓ Server stopped
+================================================================================
+version=[nextjs-15.3.5]: switch
+================================================================================
+⚠️  Node.js version mismatch detected
+   Current: 18.20.8
+   Required: >= 24.12.0
+   Switching to Node.js 24.12.0 using nvm...
+Now using node v24.12.0 (npm v11.6.2)
+Now using node v24.12.0 (npm v11.6.2)
+✓ Switched to Node.js 24.12.0
+Switching to Next.js 15.3.5 (VULNERABLE - for security testing)...
+Cleaning npm temporary directories...
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+
+added 1 package, removed 6 packages, changed 6 packages, and audited 30 packages in 11s
+
+6 packages are looking for funding
+  run `npm fund` for details
+
+1 critical severity vulnerability
+
+To address all issues, run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+✓ Switched to Next.js 15.3.5 (VULNERABLE)
+================================================================================
+version=[nextjs-15.3.5]: start
+================================================================================
+Starting servers (Framework: nextjs)...
+✓ Started Next.js server (PID: 97143)
+
+==========================================
+🚀 Next.js server is starting up...
+==========================================
+
+Application: http://localhost:3000
+API Endpoint: http://localhost:3000/api/hello
+Version API:  http://localhost:3000/api/version
+
+Log file: .logs/server.log
+
+Check status:  make status
+Stop server:   make stop
+
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+Waiting for server to be ready...
+✓ Next.js server is ready!
+================================================================================
+version=[nextjs-15.3.5]: curl
+================================================================================
+{
+  "react": "19.2.0",
+  "reactDom": "19.2.0",
+  "nextjs": "15.3.5",
+  "node": "v24.12.0",
+  "vulnerable": true,
+  "status": "VULNERABLE"
+}
+================================================================================
+version=[nextjs-15.3.5]: stop
+================================================================================
+Stopping servers (Framework: nextjs)...
+⚠️  No Next.js PID file found
+✓ Killed process on port 3000
+✓ Server stopped
+================================================================================
+version=[nextjs-15.4.7]: switch
+================================================================================
+⚠️  Node.js version mismatch detected
+   Current: 18.20.8
+   Required: >= 24.12.0
+   Switching to Node.js 24.12.0 using nvm...
+Now using node v24.12.0 (npm v11.6.2)
+Now using node v24.12.0 (npm v11.6.2)
+✓ Switched to Node.js 24.12.0
+Switching to Next.js 15.4.7 (VULNERABLE - for security testing)...
+Cleaning npm temporary directories...
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+
+removed 3 packages, changed 3 packages, and audited 27 packages in 8s
+
+6 packages are looking for funding
+  run `npm fund` for details
+
+1 critical severity vulnerability
+
+To address all issues, run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+✓ Switched to Next.js 15.4.7 (VULNERABLE)
+================================================================================
+version=[nextjs-15.4.7]: start
+================================================================================
+Starting servers (Framework: nextjs)...
+✓ Started Next.js server (PID: 98224)
+
+==========================================
+🚀 Next.js server is starting up...
+==========================================
+
+Application: http://localhost:3000
+API Endpoint: http://localhost:3000/api/hello
+Version API:  http://localhost:3000/api/version
+
+Log file: .logs/server.log
+
+Check status:  make status
+Stop server:   make stop
+
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+Waiting for server to be ready...
+✓ Next.js server is ready!
+================================================================================
+version=[nextjs-15.4.7]: curl
+================================================================================
+{
+  "react": "19.2.0",
+  "reactDom": "19.2.0",
+  "nextjs": "15.4.7",
+  "node": "v24.12.0",
+  "vulnerable": true,
+  "status": "VULNERABLE"
+}
+================================================================================
+version=[nextjs-15.4.7]: stop
+================================================================================
+Stopping servers (Framework: nextjs)...
+⚠️  No Next.js PID file found
+✓ Killed process on port 3000
+✓ Server stopped
+================================================================================
+version=[nextjs-15.5.6]: switch
+================================================================================
+⚠️  Node.js version mismatch detected
+   Current: 18.20.8
+   Required: >= 24.12.0
+   Switching to Node.js 24.12.0 using nvm...
+Now using node v24.12.0 (npm v11.6.2)
+Now using node v24.12.0 (npm v11.6.2)
+✓ Switched to Node.js 24.12.0
+Switching to Next.js 15.5.6 (VULNERABLE - for security testing)...
+Cleaning npm temporary directories...
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+
+changed 3 packages, and audited 27 packages in 8s
+
+6 packages are looking for funding
+  run `npm fund` for details
+
+1 critical severity vulnerability
+
+To address all issues, run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+✓ Switched to Next.js 15.5.6 (VULNERABLE)
+================================================================================
+version=[nextjs-15.5.6]: start
+================================================================================
+Starting servers (Framework: nextjs)...
+✓ Started Next.js server (PID: 99296)
+
+==========================================
+🚀 Next.js server is starting up...
+==========================================
+
+Application: http://localhost:3000
+API Endpoint: http://localhost:3000/api/hello
+Version API:  http://localhost:3000/api/version
+
+Log file: .logs/server.log
+
+Check status:  make status
+Stop server:   make stop
+
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+Waiting for server to be ready...
+✓ Next.js server is ready!
+================================================================================
+version=[nextjs-15.5.6]: curl
+================================================================================
+{
+  "react": "19.2.0",
+  "reactDom": "19.2.0",
+  "nextjs": "15.5.6",
+  "node": "v24.12.0",
+  "vulnerable": true,
+  "status": "VULNERABLE"
+}
+================================================================================
+version=[nextjs-15.5.6]: stop
+================================================================================
+Stopping servers (Framework: nextjs)...
+⚠️  No Next.js PID file found
+✓ Killed process on port 3000
+✓ Server stopped
+================================================================================
+version=[nextjs-16.0.6]: switch
+================================================================================
+⚠️  Node.js version mismatch detected
+   Current: 18.20.8
+   Required: >= 24.12.0
+   Switching to Node.js 24.12.0 using nvm...
+Now using node v24.12.0 (npm v11.6.2)
+Now using node v24.12.0 (npm v11.6.2)
+✓ Switched to Node.js 24.12.0
+Switching to Next.js 16.0.6 (VULNERABLE - for security testing)...
+Cleaning npm temporary directories...
+Now using node v24.12.0 (npm v11.6.2)
+Now using node v24.12.0 (npm v11.6.2)
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+Now using node v24.12.0 (npm v11.6.2)
+
+changed 3 packages, and audited 27 packages in 6s
+
+6 packages are looking for funding
+  run `npm fund` for details
+
+1 critical severity vulnerability
+
+To address all issues, run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+✓ Switched to Next.js 16.0.6 (VULNERABLE)
+================================================================================
+version=[nextjs-16.0.6]: start
+================================================================================
+Starting servers (Framework: nextjs)...
+✓ Started Next.js server (PID: 1559)
+
+==========================================
+🚀 Next.js server is starting up...
+==========================================
+
+Application: http://localhost:3000
+API Endpoint: http://localhost:3000/api/hello
+Version API:  http://localhost:3000/api/version
+
+Log file: .logs/server.log
+
+Check status:  make status
+Stop server:   make stop
+
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+Waiting for server to be ready...
+✓ Next.js server is ready!
+================================================================================
+version=[nextjs-16.0.6]: curl
+================================================================================
+{
+  "react": "19.2.0",
+  "reactDom": "19.2.0",
+  "nextjs": "16.0.6",
+  "node": "v24.12.0",
+  "vulnerable": true,
+  "status": "VULNERABLE"
+}
+================================================================================
+version=[nextjs-16.0.6]: stop
+================================================================================
+Stopping servers (Framework: nextjs)...
+⚠️  No Next.js PID file found
+✓ Killed process on port 3000
+✓ Server stopped
+================================================================================
+version=[nextjs-14.0.1]: switch
+================================================================================
+⚠️  Node.js version mismatch detected
+   Current: 18.20.8
+   Required: >= 24.12.0
+   Switching to Node.js 24.12.0 using nvm...
+Now using node v24.12.0 (npm v11.6.2)
+Now using node v24.12.0 (npm v11.6.2)
+✓ Switched to Node.js 24.12.0
+Switching to Next.js 14.0.1 (FIXED - for security testing)...
+Note: Next.js 14.x requires React 18, using React 18.2.0 (compatible) for testing...
+Cleaning npm temporary directories...
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+
+added 7 packages, removed 6 packages, changed 8 packages, and audited 28 packages in 8s
+
+3 packages are looking for funding
+  run `npm fund` for details
+
+1 critical severity vulnerability
+
+To address all issues, run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+✓ Switched to Next.js 14.0.1 (FIXED)
+================================================================================
+version=[nextjs-14.0.1]: start
+================================================================================
+Starting servers (Framework: nextjs)...
+✓ Started Next.js server (PID: 2708)
+
+==========================================
+🚀 Next.js server is starting up...
+==========================================
+
+Application: http://localhost:3000
+API Endpoint: http://localhost:3000/api/hello
+Version API:  http://localhost:3000/api/version
+
+Log file: .logs/server.log
+
+Check status:  make status
+Stop server:   make stop
+
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+Waiting for server to be ready...
+✓ Next.js server is ready!
+================================================================================
+version=[nextjs-14.0.1]: curl
+================================================================================
+{
+  "react": "18.2.0",
+  "reactDom": "18.2.0",
+  "nextjs": "14.0.1",
+  "node": "v24.12.0",
+  "vulnerable": false,
+  "status": "FIXED"
+}
+================================================================================
+version=[nextjs-14.0.1]: stop
+================================================================================
+Stopping servers (Framework: nextjs)...
+⚠️  No Next.js PID file found
+✓ Killed process on port 3000
+✓ Server stopped
+================================================================================
+version=[nextjs-14.1.1]: switch
+================================================================================
+⚠️  Node.js version mismatch detected
+   Current: 18.20.8
+   Required: >= 24.12.0
+   Switching to Node.js 24.12.0 using nvm...
+Now using node v24.12.0 (npm v11.6.2)
+Now using node v24.12.0 (npm v11.6.2)
+✓ Switched to Node.js 24.12.0
+Switching to Next.js 14.1.1 (FIXED - for security testing)...
+Note: Next.js 14.x requires React 18, using React 18.2.0 (compatible) for testing...
+Cleaning npm temporary directories...
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+
+removed 2 packages, changed 3 packages, and audited 26 packages in 7s
+
+3 packages are looking for funding
+  run `npm fund` for details
+
+1 critical severity vulnerability
+
+To address all issues, run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+✓ Switched to Next.js 14.1.1 (FIXED)
+================================================================================
+version=[nextjs-14.1.1]: start
+================================================================================
+Starting servers (Framework: nextjs)...
+✓ Started Next.js server (PID: 3792)
+
+==========================================
+🚀 Next.js server is starting up...
+==========================================
+
+Application: http://localhost:3000
+API Endpoint: http://localhost:3000/api/hello
+Version API:  http://localhost:3000/api/version
+
+Log file: .logs/server.log
+
+Check status:  make status
+Stop server:   make stop
+
+/Users/lblackb/data/lblackb/git/react2shell-server/frameworks/nextjs
+Waiting for server to be ready...
+✓ Next.js server is ready!
+================================================================================
+version=[nextjs-14.1.1]: curl
+================================================================================
+{
+  "react": "18.2.0",
+  "reactDom": "18.2.0",
+  "nextjs": "14.1.1",
+  "node": "v24.12.0",
+  "vulnerable": false,
+  "status": "FIXED"
+}
+================================================================================
+version=[nextjs-14.1.1]: stop
+================================================================================
+Stopping servers (Framework: nextjs)...
+⚠️  No Next.js PID file found
+✓ Killed process on port 3000
+✓ Server stopped
