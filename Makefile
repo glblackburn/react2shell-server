@@ -207,7 +207,7 @@ $(foreach version,$(FIXED_VERSIONS),$(eval react-$(version):;$(call switch_react
 $(foreach version,$(NEXTJS_VULNERABLE_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 $(foreach version,$(NEXTJS_FIXED_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 
-.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.4 nextjs-15.1.8 nextjs-15.2.5 nextjs-15.3.5 nextjs-15.4.7 nextjs-15.5.6 nextjs-16.0.6 nextjs-14.0.1 nextjs-14.1.1 setup install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch check-nextjs-16 test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
+.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.4 nextjs-15.1.8 nextjs-15.2.5 nextjs-15.3.5 nextjs-15.4.7 nextjs-15.5.6 nextjs-16.0.6 nextjs-14.0.1 nextjs-14.1.1 setup install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-nextjs-startup check-nextjs-16 test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
 
 # Set help as the default target when make is run without arguments
 .DEFAULT_GOAL := help
@@ -273,6 +273,7 @@ help:
 	@echo "  make test-version    - Run version information tests"
 	@echo "  make test-security   - Run security status tests"
 	@echo "  make test-version-switch - Run version switch tests (tests all React versions, slower)"
+	@echo "  make test-nextjs-startup - Test Next.js startup for all versions (simple startup verification)"
 	@echo "  make check-nextjs-16 - Quick spot check: verify Next.js 16.0.6 starts and responds"
 	@echo "  make test-scanner   - Run scanner verification tests (requires external scanner)"
 	@echo "  make test-scanner-script - Run scanner verification script (standalone)"
@@ -747,6 +748,22 @@ test-version-switch: check-venv
 	@echo ""
 	@echo "✓ Version switch tests completed!"
 	@echo "  Note: React version is now set to the last tested version"
+
+# Test Next.js startup for all versions (simple startup verification)
+# This verifies that all Next.js versions can switch, start, and respond to API
+test-nextjs-startup:
+	@echo "Testing Next.js startup for all versions..."
+	@echo "This will verify that all Next.js versions can switch, start, and respond to API"
+	@echo "⚠️  Note: This test takes ~5-10 minutes as it tests all 11 versions"
+	@echo ""
+	@if [ ! -f tests/test_nextjs_startup.sh ]; then \
+		echo "❌ Error: tests/test_nextjs_startup.sh not found"; \
+		exit 1; \
+	fi
+	@mkdir -p tests/reports
+	@bash tests/test_nextjs_startup.sh
+	@echo ""
+	@echo "✓ Next.js startup test completed!"
 
 # Quick spot check: verify Next.js 16.0.6 starts and responds
 check-nextjs-16:

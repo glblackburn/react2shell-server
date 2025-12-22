@@ -6,6 +6,23 @@ This project provides a React application with easily switchable React versions,
 
 A React application with a backend server that displays a big red button. When clicked, the button sends a request to the server, which responds with "Hello World!". This simple application serves as a testbed for security scanners to identify vulnerable React versions.
 
+## TLDR - Quick Start
+
+After cloning the repository, verify the project is functional:
+
+```bash
+# Run smoke test to verify all Next.js versions can start and respond
+make test-nextjs-startup
+```
+
+This test verifies that:
+- All 11 Next.js versions can switch correctly
+- Each version starts successfully
+- Version API responds correctly
+- Takes ~5-10 minutes to complete
+
+**Note:** Requires `make`, `curl`, `jq`, and `nvm` (Node Version Manager) to be installed. See [Setup](#setup) for detailed installation instructions.
+
 ## Table of Contents
 
 - [Purpose](#purpose)

@@ -55,13 +55,14 @@ For comprehensive test execution and verification, see the utility scripts:
 ### Using Makefile (Recommended)
 
 ```bash
-make test          # Run all tests
-make test-quick    # Quick run (headless)
-make test-report   # Generate HTML report
-make test-smoke    # Run smoke tests only
-make test-hello    # Run hello world tests
-make test-version  # Run version info tests
-make test-security # Run security status tests
+make test                # Run all tests
+make test-quick          # Quick run (headless)
+make test-report         # Generate HTML report
+make test-smoke          # Run smoke tests only
+make test-hello          # Run hello world tests
+make test-version        # Run version info tests
+make test-security       # Run security status tests
+make test-nextjs-startup # Test Next.js startup for all versions (simple startup verification)
 ```
 
 See main [README.md](../README.md#testing) for all Makefile test commands.
@@ -131,6 +132,37 @@ Test time limits are automatically enforced to prevent tests from running too lo
 - Individual limits are shown in the performance report (highlighted in blue/bold)
 - Run `make test-performance-report` to see all limits
 - Limits are calculated with 10% buffer above max observed time
+
+## Shell Script Tests
+
+### Next.js Startup Test
+
+The `test_nextjs_startup.sh` script verifies that all Next.js versions can switch, start, and respond to the API. This is a simple startup verification test (not comprehensive UI testing).
+
+**Usage:**
+```bash
+make test-nextjs-startup
+# or directly:
+./tests/test_nextjs_startup.sh
+```
+
+**What it tests:**
+- All 11 Next.js versions can switch correctly
+- Each version can start successfully
+- Version API responds correctly for each version
+- API returns correct version number
+- Servers stop cleanly between versions
+
+**Output:**
+- Console output with colored status messages
+- Summary showing passed/failed versions
+- Full output saved to `tests/reports/test_nextjs_startup_YYYY-MM-DD_HHMMSS.txt`
+
+**Differences from `make test-smoke`:**
+- `test-nextjs-startup`: Tests all 11 versions, simple startup verification (no browser)
+- `test-smoke`: Tests current version, comprehensive UI/API testing (with browser)
+
+See [TEST_SMOKE_VS_SIMPLE_RUN_CHECK_COMPARISON.md](../docs/TEST_SMOKE_VS_SIMPLE_RUN_CHECK_COMPARISON.md) for detailed comparison.
 
 **Setting Limits:**
 - Edit `tests/performance_config.yaml` to manually set limits
