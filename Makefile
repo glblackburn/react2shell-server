@@ -552,7 +552,24 @@ install-nextjs-deps-internal: use-nextjs install-node ## install initial Next.js
 			echo "✓ Next.js dependencies already installed, skipping"; \
 		else \
 			echo "Installing initial Next.js dependencies..."; \
-			cd frameworks/nextjs && npm install --legacy-peer-deps && echo "✓ Next.js dependencies installed"; \
+			NVM_LOADED=0; \
+			if [ -s "$$HOME/.nvm/nvm.sh" ]; then \
+				. "$$HOME/.nvm/nvm.sh" && NVM_LOADED=1; \
+			elif [ -s "$$HOME/.config/nvm/nvm.sh" ]; then \
+				. "$$HOME/.config/nvm/nvm.sh" && NVM_LOADED=1; \
+			fi; \
+			if [ $$NVM_LOADED -eq 1 ]; then \
+				nvm use $(NODE_VERSION_DEFAULT) > /dev/null 2>&1 || true; \
+				cd frameworks/nextjs && npm install --legacy-peer-deps && echo "✓ Next.js dependencies installed"; \
+			else \
+				if command -v npm >/dev/null 2>&1; then \
+					cd frameworks/nextjs && npm install --legacy-peer-deps && echo "✓ Next.js dependencies installed"; \
+				else \
+					echo "❌ Error: npm not found. Please ensure Node.js is installed and nvm is loaded."; \
+					echo "   Try: source $$HOME/.nvm/nvm.sh && nvm use $(NODE_VERSION_DEFAULT)"; \
+					exit 1; \
+				fi; \
+			fi; \
 		fi; \
 	else \
 		echo "⚠️  frameworks/nextjs/package.json not found, skipping"; \
