@@ -75,9 +75,7 @@ endef
 # Auto-installs Node.js version if not already installed
 # This function ensures node and nvm are available before checking versions
 define ensure_node_version
-	@# First ensure node is installed (which ensures nvm is installed)
 	@$(MAKE) -s install-node > /dev/null 2>&1 || true; \
-	@# Ensure Next.js dependencies are installed (needed for semver check)
 	@$(MAKE) -s install-nextjs-deps-internal > /dev/null 2>&1 || true; \
 	CURRENT_NODE=$$$$(node -v 2>/dev/null | sed 's/v//' || echo "unknown"); \
 	REQUIRED="$(1)"; \
