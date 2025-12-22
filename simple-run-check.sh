@@ -14,7 +14,7 @@ make stop
 make | grep nextjs- |
     grep Switch |
     awk '{print $2}' |
-    grep -v nextjs-16.0.6 |
+#    grep -v nextjs-16.0.6 |
     while read version ; do
     cat<<EOF
 ================================================================================

@@ -35,6 +35,68 @@ NEXTJS_FIXED_VERSIONS := 14.0.1 14.1.1
 # All Next.js versions
 ALL_NEXTJS_VERSIONS := $(NEXTJS_VULNERABLE_VERSIONS) $(NEXTJS_FIXED_VERSIONS)
 
+# ============================================================================
+# Node.js Version Configuration
+# ============================================================================
+
+# Node.js version requirements for Next.js versions
+# Using latest Node.js LTS (24.12.0) that satisfies all Next.js engine requirements
+# All Next.js versions support Node.js 24.12.0 (current LTS)
+NEXTJS_14.0.0_NODE := 24.12.0
+NEXTJS_14.0.1_NODE := 24.12.0
+NEXTJS_14.1.0_NODE := 24.12.0
+NEXTJS_14.1.1_NODE := 24.12.0
+NEXTJS_15.0.4_NODE := 24.12.0
+NEXTJS_15.1.8_NODE := 24.12.0
+NEXTJS_15.2.5_NODE := 24.12.0
+NEXTJS_15.3.5_NODE := 24.12.0
+NEXTJS_15.4.7_NODE := 24.12.0
+NEXTJS_15.5.6_NODE := 24.12.0
+NEXTJS_16.0.6_NODE := 24.12.0
+
+# Default Node.js version (fallback)
+NODE_VERSION_DEFAULT := 24.12.0
+
+# Function to get required Node.js version for a Next.js version
+# Usage: $(call get_node_version,nextjs_version)
+get_node_version = $(if $(filter $(NEXTJS_$(1)_NODE),$(NEXTJS_$(1)_NODE)),$(NEXTJS_$(1)_NODE),$(NODE_VERSION_DEFAULT))
+
+# Function to clean npm temporary directories
+# Removes all npm temporary directories that can cause ENOTEMPTY errors
+# Includes: .next-*, .react-*, .scheduler-*, @next/.env-*, @next/.next-*, etc.
+define cleanup_npm_temp_files
+	echo "Cleaning npm temporary directories..."; \
+	find frameworks/nextjs/node_modules -maxdepth 2 -type d \( -name '.next-*' -o -name '.react-*' -o -name '.scheduler-*' -o -name '.watchpack-*' -o -name '.glob-to-regexp-*' -o -path '*/@next/.env-*' -o -path '*/@next/.next-*' -o -path '*/@next/.swc-*' \) -exec rm -rf {} + 2>/dev/null || true; \
+	find frameworks/nextjs/node_modules/@next -maxdepth 1 -type d -name '.*' -exec rm -rf {} + 2>/dev/null || true
+endef
+
+# Function to check and switch Node.js version using nvm
+# Usage: $(call ensure_node_version,required_version)
+# Auto-installs Node.js version if not already installed
+define ensure_node_version
+	@CURRENT_NODE=$$$$(node -v | sed 's/v//'); \
+	REQUIRED="$(1)"; \
+	CHECK_RESULT=$$$$(cd frameworks/nextjs && node -e "const semver=require('semver');process.exit(semver.satisfies(process.version, '>=$$$$REQUIRED') ? 0 : 1)" 2>&1); \
+	CHECK_EXIT=$$$$?; \
+	if [ $$$$CHECK_EXIT -ne 0 ]; then \
+		echo "⚠️  Node.js version mismatch detected"; \
+		echo "   Current: $$$$CURRENT_NODE"; \
+		echo "   Required: >= $(1)"; \
+		if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
+			echo "   Switching to Node.js $(1) using nvm..."; \
+			. "$$$$HOME/.nvm/nvm.sh" && nvm install $(1) && nvm use $(1); \
+			echo "✓ Switched to Node.js $(1)"; \
+		else \
+			echo "❌ Error: nvm (Node Version Manager) not found"; \
+			echo "   Please run 'make setup' to install nvm"; \
+			echo "   Or install manually: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "✓ Node.js version OK ($$$$CURRENT_NODE >= $(1))"; \
+	fi
+endef
+
 # Next.js version status mapping (for display messages)
 NEXTJS_VERSION_14.0.0_STATUS := VULNERABLE
 NEXTJS_VERSION_14.1.0_STATUS := VULNERABLE
@@ -74,28 +136,66 @@ define switch_nextjs_version
 		echo "   Run 'make use-nextjs' first to switch to Next.js mode"; \
 		exit 1; \
 	fi
+	@# Get required Node.js version and ensure it's active
+	@$(call ensure_node_version,$(call get_node_version,$(1)))
 	@case "$(1)" in \
 		14.0.0) \
 			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
 			echo "Note: Next.js 14.x requires React 18, using React 18.3.0 (compatible) for testing..."; \
+			$(call cleanup_npm_temp_files); \
+			sleep 3; \
+			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
+				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
+			fi; \
 			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.3.0';pkg.dependencies['react-dom']='18.3.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
 			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
 		14.1.0) \
 			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
 			echo "Note: Next.js 14.x requires React 18, using React 18.2.0 (compatible) for testing..."; \
+			$(call cleanup_npm_temp_files); \
+			sleep 3; \
+			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
+				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
+			fi; \
 			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.2.0';pkg.dependencies['react-dom']='18.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
 			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
-		15.0.4|15.1.8|15.2.5|15.3.5|15.4.7|15.5.6|16.0.6) \
+		15.0.4|15.1.8|15.2.5|15.3.5|15.4.7|15.5.6) \
 			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
+			$(call cleanup_npm_temp_files); \
+			sleep 3; \
+			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
+				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
+			fi; \
 			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.0';pkg.dependencies['react-dom']='19.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
+			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
+		16.0.6) \
+			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
+			$(call cleanup_npm_temp_files); \
+			sleep 3; \
+			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
+				. "$$$$HOME/.nvm/nvm.sh" && nvm install 24.12.0 && nvm use 24.12.0; \
+				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
+			fi; \
+			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.0';pkg.dependencies['react-dom']='19.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && \
+			(. "$$$$HOME/.nvm/nvm.sh" 2>/dev/null && nvm use 24.12.0 || true) && npm install --legacy-peer-deps && \
 			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
 		14.0.1|14.1.1) \
 			echo "Switching to Next.js $(1) (FIXED - for security testing)..."; \
 			echo "Note: Next.js 14.x requires React 18, using React 18.2.0 (compatible) for testing..."; \
+			$(call cleanup_npm_temp_files); \
+			sleep 3; \
+			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
+				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
+			fi; \
 			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.2.0';pkg.dependencies['react-dom']='18.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
 			echo "✓ Switched to Next.js $(1) (FIXED)" ;; \
 		*) \
 			echo "Switching to Next.js $(1) (FIXED - for security testing)..."; \
+			$(call cleanup_npm_temp_files); \
+			sleep 3; \
+			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
+				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
+			fi; \
 			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.1';pkg.dependencies['react-dom']='19.2.1';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
 			echo "✓ Switched to Next.js $(1) (FIXED)" ;; \
 	esac
@@ -107,7 +207,7 @@ $(foreach version,$(FIXED_VERSIONS),$(eval react-$(version):;$(call switch_react
 $(foreach version,$(NEXTJS_VULNERABLE_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 $(foreach version,$(NEXTJS_FIXED_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 
-.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.4 nextjs-15.1.8 nextjs-15.2.5 nextjs-15.3.5 nextjs-15.4.7 nextjs-15.5.6 nextjs-16.0.6 nextjs-14.0.1 nextjs-14.1.1 install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch check-nextjs-16 test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
+.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.4 nextjs-15.1.8 nextjs-15.2.5 nextjs-15.3.5 nextjs-15.4.7 nextjs-15.5.6 nextjs-16.0.6 nextjs-14.0.1 nextjs-14.1.1 setup install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch check-nextjs-16 test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
 
 # Set help as the default target when make is run without arguments
 .DEFAULT_GOAL := help
@@ -153,6 +253,7 @@ help:
 	@echo ""
 	@echo "Other commands:"
 	@echo "  make current-version - Show currently installed React version"
+	@echo "  make setup           - Set up development environment (check/install nvm)"
 	@echo "  make install         - Install dependencies for current version"
 	@echo "  make clean           - Remove node_modules and package-lock.json"
 	@echo ""
@@ -226,6 +327,23 @@ current-version:
 		cd frameworks/vite-react && node -e "const pkg=require('./package.json');console.log('Framework: Vite + React');console.log('React:',pkg.dependencies.react||'not set');console.log('React-DOM:',pkg.dependencies['react-dom']||'not set');"; \
 	fi
 
+# Setup: Install nvm if not already installed
+setup:
+	@echo "Setting up development environment..."
+	@if [ -s "$$HOME/.nvm/nvm.sh" ]; then \
+		echo "✓ nvm already installed"; \
+		. "$$HOME/.nvm/nvm.sh" && nvm --version; \
+	else \
+		echo "Installing nvm (Node Version Manager)..."; \
+		echo "Run this command to install nvm:"; \
+		echo "  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"; \
+		echo ""; \
+		echo "After installation, restart your terminal or run:"; \
+		echo "  source $$HOME/.nvm/nvm.sh"; \
+		exit 1; \
+	fi
+	@echo "✓ Setup complete!"
+
 # Install dependencies
 install:
 	@npm install
@@ -259,7 +377,7 @@ start: $(PID_DIR) $(LOG_DIR)
 		if [ -f $(SERVER_PID) ] && kill -0 `cat $(SERVER_PID)` 2>/dev/null; then \
 			echo "⚠️  Next.js server is already running (PID: $$(cat $(SERVER_PID)))"; \
 		else \
-			cd frameworks/nextjs && nohup npm run dev > ../../$(SERVER_LOG) 2>&1 & \
+			cd frameworks/nextjs && nohup ./start-with-nvm.sh > ../../$(SERVER_LOG) 2>&1 & \
 			PID=$$!; \
 			echo $$PID > ../../$(SERVER_PID); \
 			echo "✓ Started Next.js server (PID: $$PID)"; \
