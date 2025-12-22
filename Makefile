@@ -186,6 +186,11 @@ define switch_nextjs_version
 			fi; \
 			DEBUG_LOG=".logs/switch-debug-$(1).log"; \
 			echo "DEBUG: Updating package.json..." >> "$$$$DEBUG_LOG" 2>&1; \
+			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
+				. "$$$$HOME/.nvm/nvm.sh" && nvm use $(NODE_VERSION_DEFAULT) > /dev/null 2>&1 || true; \
+			elif [ -s "$$$$HOME/.config/nvm/nvm.sh" ]; then \
+				. "$$$$HOME/.config/nvm/nvm.sh" && nvm use $(NODE_VERSION_DEFAULT) > /dev/null 2>&1 || true; \
+			fi; \
 			cd frameworks/nextjs && (node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.3.0';pkg.dependencies['react-dom']='18.3.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" >> "../../$$$$DEBUG_LOG" 2>&1 || { \
 				echo "ERROR: Failed to update package.json" >> "../../$$$$DEBUG_LOG" 2>&1; \
 				echo "ERROR: Failed to update package.json - see $$$$DEBUG_LOG" >&2; \
@@ -207,6 +212,11 @@ define switch_nextjs_version
 				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
 			fi; \
 			echo "DEBUG: Updating package.json..." >> "$$$$DEBUG_LOG" 2>&1; \
+			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
+				. "$$$$HOME/.nvm/nvm.sh" && nvm use $(NODE_VERSION_DEFAULT) > /dev/null 2>&1 || true; \
+			elif [ -s "$$$$HOME/.config/nvm/nvm.sh" ]; then \
+				. "$$$$HOME/.config/nvm/nvm.sh" && nvm use $(NODE_VERSION_DEFAULT) > /dev/null 2>&1 || true; \
+			fi; \
 			cd frameworks/nextjs && (node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.2.0';pkg.dependencies['react-dom']='18.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" >> "../../$$$$DEBUG_LOG" 2>&1 || { \
 				echo "ERROR: Failed to update package.json" >> "../../$$$$DEBUG_LOG" 2>&1; \
 				echo "ERROR: Failed to update package.json - see $$$$DEBUG_LOG" >&2; \
@@ -227,6 +237,11 @@ define switch_nextjs_version
 				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
 			fi; \
 			echo "DEBUG: Updating package.json..." >> "$$$$DEBUG_LOG" 2>&1; \
+			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
+				. "$$$$HOME/.nvm/nvm.sh" && nvm use $(NODE_VERSION_DEFAULT) > /dev/null 2>&1 || true; \
+			elif [ -s "$$$$HOME/.config/nvm/nvm.sh" ]; then \
+				. "$$$$HOME/.config/nvm/nvm.sh" && nvm use $(NODE_VERSION_DEFAULT) > /dev/null 2>&1 || true; \
+			fi; \
 			cd frameworks/nextjs && (node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.0';pkg.dependencies['react-dom']='19.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" >> "../../$$$$DEBUG_LOG" 2>&1 || { \
 				echo "ERROR: Failed to update package.json" >> "../../$$$$DEBUG_LOG" 2>&1; \
 				echo "ERROR: Failed to update package.json - see $$$$DEBUG_LOG" >&2; \
@@ -248,11 +263,16 @@ define switch_nextjs_version
 				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
 			fi; \
 			echo "DEBUG: Updating package.json..." >> "$$$$DEBUG_LOG" 2>&1; \
+			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
+				. "$$$$HOME/.nvm/nvm.sh" && nvm use $(NODE_VERSION_DEFAULT) > /dev/null 2>&1 || true; \
+			elif [ -s "$$$$HOME/.config/nvm/nvm.sh" ]; then \
+				. "$$$$HOME/.config/nvm/nvm.sh" && nvm use $(NODE_VERSION_DEFAULT) > /dev/null 2>&1 || true; \
+			fi; \
 			cd frameworks/nextjs && (node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.0';pkg.dependencies['react-dom']='19.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" >> "../../$$$$DEBUG_LOG" 2>&1 || { \
 				echo "ERROR: Failed to update package.json" >> "../../$$$$DEBUG_LOG" 2>&1; \
 				echo "ERROR: Failed to update package.json - see $$$$DEBUG_LOG" >&2; \
 				exit 1; \
-			}) && (. "$$$$HOME/.nvm/nvm.sh" 2>/dev/null && nvm use 24.12.0 || true) && (npm install --legacy-peer-deps >> "../../$$$$DEBUG_LOG" 2>&1 || { \
+			}) && (npm install --legacy-peer-deps >> "../../$$$$DEBUG_LOG" 2>&1 || { \
 				echo "ERROR: npm install failed" >> "../../$$$$DEBUG_LOG" 2>&1; \
 				echo "ERROR: npm install failed - see $$$$DEBUG_LOG" >&2; \
 				exit 1; \
@@ -269,6 +289,11 @@ define switch_nextjs_version
 				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
 			fi; \
 			echo "DEBUG: Updating package.json..." >> "$$$$DEBUG_LOG" 2>&1; \
+			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
+				. "$$$$HOME/.nvm/nvm.sh" && nvm use $(NODE_VERSION_DEFAULT) > /dev/null 2>&1 || true; \
+			elif [ -s "$$$$HOME/.config/nvm/nvm.sh" ]; then \
+				. "$$$$HOME/.config/nvm/nvm.sh" && nvm use $(NODE_VERSION_DEFAULT) > /dev/null 2>&1 || true; \
+			fi; \
 			cd frameworks/nextjs && (node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.2.0';pkg.dependencies['react-dom']='18.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" >> "../../$$$$DEBUG_LOG" 2>&1 || { \
 				echo "ERROR: Failed to update package.json" >> "../../$$$$DEBUG_LOG" 2>&1; \
 				echo "ERROR: Failed to update package.json - see $$$$DEBUG_LOG" >&2; \
@@ -289,6 +314,11 @@ define switch_nextjs_version
 				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
 			fi; \
 			echo "DEBUG: Updating package.json..." >> "$$$$DEBUG_LOG" 2>&1; \
+			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
+				. "$$$$HOME/.nvm/nvm.sh" && nvm use $(NODE_VERSION_DEFAULT) > /dev/null 2>&1 || true; \
+			elif [ -s "$$$$HOME/.config/nvm/nvm.sh" ]; then \
+				. "$$$$HOME/.config/nvm/nvm.sh" && nvm use $(NODE_VERSION_DEFAULT) > /dev/null 2>&1 || true; \
+			fi; \
 			cd frameworks/nextjs && (node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.1';pkg.dependencies['react-dom']='19.2.1';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" >> "../../$$$$DEBUG_LOG" 2>&1 || { \
 				echo "ERROR: Failed to update package.json" >> "../../$$$$DEBUG_LOG" 2>&1; \
 				echo "ERROR: Failed to update package.json - see $$$$DEBUG_LOG" >&2; \
