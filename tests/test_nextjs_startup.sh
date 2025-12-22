@@ -52,7 +52,21 @@ check_dependencies() {
         missing_deps+=("curl")
     fi
     
-    if ! command -v jq >/dev/null 2>&1; then
+    # Check for jq in PATH or standard locations
+    local jq_found=0
+    if command -v jq >/dev/null 2>&1; then
+        jq_found=1
+    elif [ -f "/opt/homebrew/bin/jq" ] || [ -f "/usr/local/bin/jq" ]; then
+        # Add jq to PATH if found in standard locations
+        if [ -f "/opt/homebrew/bin/jq" ]; then
+            export PATH="/opt/homebrew/bin:$PATH"
+        elif [ -f "/usr/local/bin/jq" ]; then
+            export PATH="/usr/local/bin:$PATH"
+        fi
+        jq_found=1
+    fi
+    
+    if [ $jq_found -eq 0 ]; then
         missing_deps+=("jq")
     fi
     
