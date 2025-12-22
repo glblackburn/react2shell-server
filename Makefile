@@ -145,76 +145,161 @@ endef
 # Usage: $(call switch_nextjs_version,version)
 # Note: Next.js 14.x requires React 18, Next.js 15.x requires React 19
 define switch_nextjs_version
-	@if ! grep -q '^nextjs' .framework-mode 2>/dev/null; then \
-		echo "⚠️  Error: Next.js version switching only available in Next.js mode"; \
-		echo "   Run 'make use-nextjs' first to switch to Next.js mode"; \
+	@mkdir -p .logs; \
+	DEBUG_LOG=".logs/switch-debug-$(1).log"; \
+	echo "=== DEBUG: Starting switch to Next.js $(1) ===" > "$$$$DEBUG_LOG" 2>&1; \
+	echo "Timestamp: $$$$(date)" >> "$$$$DEBUG_LOG" 2>&1; \
+	if ! grep -q '^nextjs' .framework-mode 2>/dev/null; then \
+		echo "⚠️  Error: Next.js version switching only available in Next.js mode" | tee -a "$$$$DEBUG_LOG"; \
+		echo "   Run 'make use-nextjs' first to switch to Next.js mode" | tee -a "$$$$DEBUG_LOG"; \
+		echo "ERROR: Framework mode check failed" >> "$$$$DEBUG_LOG" 2>&1; \
+		echo "ERROR: Framework mode check failed - see $$$$DEBUG_LOG" >&2; \
 		exit 1; \
-	fi
-	@# Ensure node is installed (which ensures nvm is installed)
-	@$(MAKE) -s install-node > /dev/null 2>&1 || true
-	@# Ensure initial Next.js dependencies are installed (needed for semver check)
-	@$(MAKE) -s install-nextjs-deps-internal > /dev/null 2>&1 || true
-	@# Get required Node.js version and ensure it's active
-	@$(call ensure_node_version,$(call get_node_version,$(1)))
+	fi; \
+	echo "DEBUG: Framework mode OK" >> "$$$$DEBUG_LOG" 2>&1; \
+	echo "DEBUG: Ensuring node is installed..." >> "$$$$DEBUG_LOG" 2>&1; \
+	$(MAKE) -s install-node >> "$$$$DEBUG_LOG" 2>&1 || { \
+		echo "ERROR: install-node failed" >> "$$$$DEBUG_LOG" 2>&1; \
+		echo "ERROR: install-node failed - see $$$$DEBUG_LOG" >&2; \
+		exit 1; \
+	}; \
+	echo "DEBUG: Ensuring Next.js dependencies are installed..." >> "$$$$DEBUG_LOG" 2>&1; \
+	$(MAKE) -s install-nextjs-deps-internal >> "$$$$DEBUG_LOG" 2>&1 || { \
+		echo "ERROR: install-nextjs-deps-internal failed" >> "$$$$DEBUG_LOG" 2>&1; \
+		echo "ERROR: install-nextjs-deps-internal failed - see $$$$DEBUG_LOG" >&2; \
+		exit 1; \
+	}; \
+	echo "DEBUG: Ensuring Node.js version..." >> "$$$$DEBUG_LOG" 2>&1; \
+	$(call ensure_node_version,$(call get_node_version,$(1))) >> "$$$$DEBUG_LOG" 2>&1 || { \
+		echo "ERROR: ensure_node_version failed" >> "$$$$DEBUG_LOG" 2>&1; \
+		echo "ERROR: ensure_node_version failed - see $$$$DEBUG_LOG" >&2; \
+		exit 1; \
+	}; \
+	echo "DEBUG: Node.js version check OK" >> "$$$$DEBUG_LOG" 2>&1;
 	@case "$(1)" in \
 		14.0.0) \
 			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
 			echo "Note: Next.js 14.x requires React 18, using React 18.3.0 (compatible) for testing..."; \
+			echo "DEBUG: Starting 14.0.0 switch process..." >> .logs/switch-debug-$(1).log 2>&1; \
 			$(call cleanup_npm_temp_files); \
 			sleep 3; \
 			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
 				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
 			fi; \
-			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.3.0';pkg.dependencies['react-dom']='18.3.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
+			DEBUG_LOG=".logs/switch-debug-$(1).log"; \
+			echo "DEBUG: Updating package.json..." >> "$$$$DEBUG_LOG" 2>&1; \
+			cd frameworks/nextjs && (node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.3.0';pkg.dependencies['react-dom']='18.3.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" >> "../../$$$$DEBUG_LOG" 2>&1 || { \
+				echo "ERROR: Failed to update package.json" >> "../../$$$$DEBUG_LOG" 2>&1; \
+				echo "ERROR: Failed to update package.json - see $$$$DEBUG_LOG" >&2; \
+				exit 1; \
+			}) && (npm install --legacy-peer-deps >> "../../$$$$DEBUG_LOG" 2>&1 || { \
+				echo "ERROR: npm install failed" >> "../../$$$$DEBUG_LOG" 2>&1; \
+				echo "ERROR: npm install failed - see $$$$DEBUG_LOG" >&2; \
+				exit 1; \
+			}) && \
 			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
 		14.1.0) \
 			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
 			echo "Note: Next.js 14.x requires React 18, using React 18.2.0 (compatible) for testing..."; \
+			DEBUG_LOG=".logs/switch-debug-$(1).log"; \
+			echo "DEBUG: Starting 14.1.0 switch process..." >> "$$$$DEBUG_LOG" 2>&1; \
 			$(call cleanup_npm_temp_files); \
 			sleep 3; \
 			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
 				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
 			fi; \
-			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.2.0';pkg.dependencies['react-dom']='18.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
+			echo "DEBUG: Updating package.json..." >> "$$$$DEBUG_LOG" 2>&1; \
+			cd frameworks/nextjs && (node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.2.0';pkg.dependencies['react-dom']='18.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" >> "../../$$$$DEBUG_LOG" 2>&1 || { \
+				echo "ERROR: Failed to update package.json" >> "../../$$$$DEBUG_LOG" 2>&1; \
+				echo "ERROR: Failed to update package.json - see $$$$DEBUG_LOG" >&2; \
+				exit 1; \
+			}) && (npm install --legacy-peer-deps >> "../../$$$$DEBUG_LOG" 2>&1 || { \
+				echo "ERROR: npm install failed" >> "../../$$$$DEBUG_LOG" 2>&1; \
+				echo "ERROR: npm install failed - see $$$$DEBUG_LOG" >&2; \
+				exit 1; \
+			}) && \
 			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
 		15.0.4|15.1.8|15.2.5|15.3.5|15.4.7|15.5.6) \
 			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
+			DEBUG_LOG=".logs/switch-debug-$(1).log"; \
+			echo "DEBUG: Starting $(1) switch process..." >> "$$$$DEBUG_LOG" 2>&1; \
 			$(call cleanup_npm_temp_files); \
 			sleep 3; \
 			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
 				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
 			fi; \
-			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.0';pkg.dependencies['react-dom']='19.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
+			echo "DEBUG: Updating package.json..." >> "$$$$DEBUG_LOG" 2>&1; \
+			cd frameworks/nextjs && (node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.0';pkg.dependencies['react-dom']='19.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" >> "../../$$$$DEBUG_LOG" 2>&1 || { \
+				echo "ERROR: Failed to update package.json" >> "../../$$$$DEBUG_LOG" 2>&1; \
+				echo "ERROR: Failed to update package.json - see $$$$DEBUG_LOG" >&2; \
+				exit 1; \
+			}) && (npm install --legacy-peer-deps >> "../../$$$$DEBUG_LOG" 2>&1 || { \
+				echo "ERROR: npm install failed" >> "../../$$$$DEBUG_LOG" 2>&1; \
+				echo "ERROR: npm install failed - see $$$$DEBUG_LOG" >&2; \
+				exit 1; \
+			}) && \
 			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
 		16.0.6) \
 			echo "Switching to Next.js $(1) (VULNERABLE - for security testing)..."; \
+			DEBUG_LOG=".logs/switch-debug-$(1).log"; \
+			echo "DEBUG: Starting 16.0.6 switch process..." >> "$$$$DEBUG_LOG" 2>&1; \
 			$(call cleanup_npm_temp_files); \
 			sleep 3; \
 			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
 				. "$$$$HOME/.nvm/nvm.sh" && nvm install 24.12.0 && nvm use 24.12.0; \
 				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
 			fi; \
-			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.0';pkg.dependencies['react-dom']='19.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && \
-			(. "$$$$HOME/.nvm/nvm.sh" 2>/dev/null && nvm use 24.12.0 || true) && npm install --legacy-peer-deps && \
+			echo "DEBUG: Updating package.json..." >> "$$$$DEBUG_LOG" 2>&1; \
+			cd frameworks/nextjs && (node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.0';pkg.dependencies['react-dom']='19.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" >> "../../$$$$DEBUG_LOG" 2>&1 || { \
+				echo "ERROR: Failed to update package.json" >> "../../$$$$DEBUG_LOG" 2>&1; \
+				echo "ERROR: Failed to update package.json - see $$$$DEBUG_LOG" >&2; \
+				exit 1; \
+			}) && (. "$$$$HOME/.nvm/nvm.sh" 2>/dev/null && nvm use 24.12.0 || true) && (npm install --legacy-peer-deps >> "../../$$$$DEBUG_LOG" 2>&1 || { \
+				echo "ERROR: npm install failed" >> "../../$$$$DEBUG_LOG" 2>&1; \
+				echo "ERROR: npm install failed - see $$$$DEBUG_LOG" >&2; \
+				exit 1; \
+			}) && \
 			echo "✓ Switched to Next.js $(1) (VULNERABLE)" ;; \
 		14.0.1|14.1.1) \
 			echo "Switching to Next.js $(1) (FIXED - for security testing)..."; \
 			echo "Note: Next.js 14.x requires React 18, using React 18.2.0 (compatible) for testing..."; \
+			DEBUG_LOG=".logs/switch-debug-$(1).log"; \
+			echo "DEBUG: Starting $(1) switch process..." >> "$$$$DEBUG_LOG" 2>&1; \
 			$(call cleanup_npm_temp_files); \
 			sleep 3; \
 			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
 				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
 			fi; \
-			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.2.0';pkg.dependencies['react-dom']='18.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
+			echo "DEBUG: Updating package.json..." >> "$$$$DEBUG_LOG" 2>&1; \
+			cd frameworks/nextjs && (node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='18.2.0';pkg.dependencies['react-dom']='18.2.0';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" >> "../../$$$$DEBUG_LOG" 2>&1 || { \
+				echo "ERROR: Failed to update package.json" >> "../../$$$$DEBUG_LOG" 2>&1; \
+				echo "ERROR: Failed to update package.json - see $$$$DEBUG_LOG" >&2; \
+				exit 1; \
+			}) && (npm install --legacy-peer-deps >> "../../$$$$DEBUG_LOG" 2>&1 || { \
+				echo "ERROR: npm install failed" >> "../../$$$$DEBUG_LOG" 2>&1; \
+				echo "ERROR: npm install failed - see $$$$DEBUG_LOG" >&2; \
+				exit 1; \
+			}) && \
 			echo "✓ Switched to Next.js $(1) (FIXED)" ;; \
 		*) \
 			echo "Switching to Next.js $(1) (FIXED - for security testing)..."; \
+			DEBUG_LOG=".logs/switch-debug-$(1).log"; \
+			echo "DEBUG: Starting $(1) switch process (default case)..." >> "$$$$DEBUG_LOG" 2>&1; \
 			$(call cleanup_npm_temp_files); \
 			sleep 3; \
 			if [ -s "$$$$HOME/.nvm/nvm.sh" ]; then \
 				echo "24.12.0" > frameworks/nextjs/.nvmrc; \
 			fi; \
-			cd frameworks/nextjs && node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.1';pkg.dependencies['react-dom']='19.2.1';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" && npm install --legacy-peer-deps && \
+			echo "DEBUG: Updating package.json..." >> "$$$$DEBUG_LOG" 2>&1; \
+			cd frameworks/nextjs && (node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json'));pkg.dependencies.next='$(1)';pkg.dependencies.react='19.2.1';pkg.dependencies['react-dom']='19.2.1';fs.writeFileSync('package.json',JSON.stringify(pkg,null,2));" >> "../../$$$$DEBUG_LOG" 2>&1 || { \
+				echo "ERROR: Failed to update package.json" >> "../../$$$$DEBUG_LOG" 2>&1; \
+				echo "ERROR: Failed to update package.json - see $$$$DEBUG_LOG" >&2; \
+				exit 1; \
+			}) && (npm install --legacy-peer-deps >> "../../$$$$DEBUG_LOG" 2>&1 || { \
+				echo "ERROR: npm install failed" >> "../../$$$$DEBUG_LOG" 2>&1; \
+				echo "ERROR: npm install failed - see $$$$DEBUG_LOG" >&2; \
+				exit 1; \
+			}) && \
 			echo "✓ Switched to Next.js $(1) (FIXED)" ;; \
 	esac
 endef
