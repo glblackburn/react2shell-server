@@ -207,7 +207,7 @@ $(foreach version,$(FIXED_VERSIONS),$(eval react-$(version):;$(call switch_react
 $(foreach version,$(NEXTJS_VULNERABLE_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 $(foreach version,$(NEXTJS_FIXED_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 
-.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.4 nextjs-15.1.8 nextjs-15.2.5 nextjs-15.3.5 nextjs-15.4.7 nextjs-15.5.6 nextjs-16.0.6 nextjs-14.0.1 nextjs-14.1.1 setup install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-nextjs-startup check-nextjs-16 test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
+.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.4 nextjs-15.1.8 nextjs-15.2.5 nextjs-15.3.5 nextjs-15.4.7 nextjs-15.5.6 nextjs-16.0.6 nextjs-14.0.1 nextjs-14.1.1 jq setup install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-nextjs-startup check-nextjs-16 test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
 
 # Set help as the default target when make is run without arguments
 .DEFAULT_GOAL := help
@@ -253,6 +253,7 @@ help:
 	@echo ""
 	@echo "Other commands:"
 	@echo "  make current-version - Show currently installed React version"
+	@echo "  make jq              - Check and install jq (JSON processor)"
 	@echo "  make setup           - Set up development environment (check/install nvm)"
 	@echo "  make install         - Install dependencies for current version"
 	@echo "  make clean           - Remove node_modules and package-lock.json"
@@ -326,6 +327,34 @@ current-version:
 		cd frameworks/nextjs && node -e "const pkg=require('./package.json');console.log('Framework: Next.js');console.log('React:',pkg.dependencies.react||'not set');console.log('React-DOM:',pkg.dependencies['react-dom']||'not set');console.log('Next.js:',pkg.dependencies.next||'not set');"; \
 	else \
 		cd frameworks/vite-react && node -e "const pkg=require('./package.json');console.log('Framework: Vite + React');console.log('React:',pkg.dependencies.react||'not set');console.log('React-DOM:',pkg.dependencies['react-dom']||'not set');"; \
+	fi
+
+# Check and install jq if not available
+jq:
+	@if command -v jq >/dev/null 2>&1; then \
+		echo "✓ jq already installed"; \
+		jq --version; \
+	else \
+		echo "Installing jq..."; \
+		if command -v brew >/dev/null 2>&1; then \
+			echo "Using Homebrew to install jq..."; \
+			brew install jq; \
+		elif command -v apt-get >/dev/null 2>&1; then \
+			echo "Using apt-get to install jq..."; \
+			sudo apt-get update && sudo apt-get install -y jq; \
+		elif command -v yum >/dev/null 2>&1; then \
+			echo "Using yum to install jq..."; \
+			sudo yum install -y jq; \
+		else \
+			echo "❌ Error: Could not detect package manager to install jq"; \
+			echo "   Please install jq manually:"; \
+			echo "   - macOS: brew install jq"; \
+			echo "   - Ubuntu/Debian: sudo apt-get install jq"; \
+			echo "   - RHEL/CentOS: sudo yum install jq"; \
+			echo "   - Or download from: https://stedolan.github.io/jq/download/"; \
+			exit 1; \
+		fi; \
+		echo "✓ jq installed successfully"; \
 	fi
 
 # Setup: Install nvm if not already installed
@@ -751,7 +780,7 @@ test-version-switch: check-venv
 
 # Test Next.js startup for all versions (simple startup verification)
 # This verifies that all Next.js versions can switch, start, and respond to API
-test-nextjs-startup:
+test-nextjs-startup: jq
 	@echo "Testing Next.js startup for all versions..."
 	@echo "This will verify that all Next.js versions can switch, start, and respond to API"
 	@echo "⚠️  Note: This test takes ~5-10 minutes as it tests all 11 versions"
