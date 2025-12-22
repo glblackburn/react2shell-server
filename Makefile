@@ -476,15 +476,36 @@ install-jq: ## install jq to query json files
 		jq --version; \
 	else \
 		echo "Installing jq..."; \
-		if command -v brew >/dev/null 2>&1; then \
+		BREW_PATH=""; \
+		if [ -f "/opt/homebrew/bin/brew" ]; then \
+			BREW_PATH="/opt/homebrew/bin/brew"; \
+		elif [ -f "/usr/local/bin/brew" ]; then \
+			BREW_PATH="/usr/local/bin/brew"; \
+		fi; \
+		if [ -n "$$BREW_PATH" ]; then \
+			echo "Using Homebrew ($$BREW_PATH) to install jq..."; \
+			$$BREW_PATH install jq || { \
+				echo "❌ Failed to install jq via brew"; \
+				exit 1; \
+			}; \
+		elif command -v brew >/dev/null 2>&1; then \
 			echo "Using Homebrew to install jq..."; \
-			brew install jq; \
+			brew install jq || { \
+				echo "❌ Failed to install jq via brew"; \
+				exit 1; \
+			}; \
 		elif command -v apt-get >/dev/null 2>&1; then \
 			echo "Using apt-get to install jq..."; \
-			sudo apt-get update && sudo apt-get install -y jq; \
+			sudo apt-get update && sudo apt-get install -y jq || { \
+				echo "❌ Failed to install jq via apt-get"; \
+				exit 1; \
+			}; \
 		elif command -v yum >/dev/null 2>&1; then \
 			echo "Using yum to install jq..."; \
-			sudo yum install -y jq; \
+			sudo yum install -y jq || { \
+				echo "❌ Failed to install jq via yum"; \
+				exit 1; \
+			}; \
 		else \
 			echo "❌ Error: Could not detect package manager to install jq"; \
 			echo "   Please install jq manually:"; \
