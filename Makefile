@@ -217,6 +217,9 @@ help:
 	@echo "React Version Switcher"
 	@echo "======================"
 	@echo ""
+	@echo "🚀 FIRST TIME SETUP (run this after git clone):"
+	@echo "  make setup           - Set up the entire project (installs nvm, Node.js, dependencies)"
+	@echo ""
 	@echo "VULNERABLE VERSIONS (for security testing):"
 	@echo "  make react-19.0      - Switch to React 19.0 (VULNERABLE)"
 	@echo "  make react-19.1.0    - Switch to React 19.1.0 (VULNERABLE)"
@@ -254,8 +257,8 @@ help:
 	@echo "Other commands:"
 	@echo "  make current-version - Show currently installed React version"
 	@echo "  make jq              - Check and install jq (JSON processor)"
-	@echo "  make setup           - Set up development environment (check/install nvm)"
-	@echo "  make install         - Install dependencies for current version"
+	@echo "  make setup           - Complete project setup (installs nvm, Node.js, all dependencies)"
+	@echo "  make install         - Install dependencies (runs setup if needed)"
 	@echo "  make clean           - Remove node_modules and package-lock.json"
 	@echo ""
 	@echo "Framework Switching:"
@@ -357,26 +360,138 @@ jq:
 		echo "✓ jq installed successfully"; \
 	fi
 
-# Setup: Install nvm if not already installed
-setup:
+# Setup: Complete project setup for out-of-the-box usage
+setup: jq
+	@echo "=========================================="
 	@echo "Setting up development environment..."
+	@echo "=========================================="
+	@echo ""
+	@# Check for nvm and load it
 	@if [ -s "$$HOME/.nvm/nvm.sh" ]; then \
 		echo "✓ nvm already installed"; \
-		. "$$HOME/.nvm/nvm.sh" && nvm --version; \
+		. "$$HOME/.nvm/nvm.sh" && nvm --version > /dev/null 2>&1 && echo "  Version: $$(nvm --version)"; \
+	elif [ -s "$$HOME/.config/nvm/nvm.sh" ]; then \
+		echo "✓ nvm found in alternative location"; \
+		. "$$HOME/.config/nvm/nvm.sh" && nvm --version > /dev/null 2>&1 && echo "  Version: $$(nvm --version)"; \
 	else \
-		echo "Installing nvm (Node Version Manager)..."; \
-		echo "Run this command to install nvm:"; \
-		echo "  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"; \
+		echo "⚠️  nvm (Node Version Manager) not found"; \
 		echo ""; \
-		echo "After installation, restart your terminal or run:"; \
-		echo "  source $$HOME/.nvm/nvm.sh"; \
-		exit 1; \
+		echo "Installing nvm..."; \
+		if command -v curl >/dev/null 2>&1; then \
+			curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash || { \
+				echo "❌ Failed to install nvm automatically"; \
+				echo ""; \
+				echo "Please install nvm manually:"; \
+				echo "  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"; \
+				echo ""; \
+				echo "Then restart your terminal or run:"; \
+				echo "  source $$HOME/.nvm/nvm.sh"; \
+				echo ""; \
+				echo "After that, run 'make setup' again."; \
+				exit 1; \
+			}; \
+			echo ""; \
+			echo "✓ nvm installed. Loading nvm..."; \
+			if [ -s "$$HOME/.nvm/nvm.sh" ]; then \
+				. "$$HOME/.nvm/nvm.sh" && nvm --version; \
+			fi; \
+		else \
+			echo "❌ curl not found. Please install curl first, or install nvm manually:"; \
+			echo "  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"; \
+			exit 1; \
+		fi; \
 	fi
+	@echo ""
+	@# Load nvm and install Node.js
+	@NVM_LOADED=0; \
+	if [ -s "$$HOME/.nvm/nvm.sh" ]; then \
+		. "$$HOME/.nvm/nvm.sh" && NVM_LOADED=1; \
+	elif [ -s "$$HOME/.config/nvm/nvm.sh" ]; then \
+		. "$$HOME/.config/nvm/nvm.sh" && NVM_LOADED=1; \
+	fi; \
+	if [ $$NVM_LOADED -eq 1 ]; then \
+		echo "Installing Node.js $(NODE_VERSION_DEFAULT)..."; \
+		if nvm list $(NODE_VERSION_DEFAULT) 2>/dev/null | grep -q "$(NODE_VERSION_DEFAULT)"; then \
+			echo "✓ Node.js $(NODE_VERSION_DEFAULT) already installed"; \
+		else \
+			nvm install $(NODE_VERSION_DEFAULT) || { \
+				echo "⚠️  Node.js $(NODE_VERSION_DEFAULT) installation had issues, but continuing..."; \
+			}; \
+		fi; \
+		nvm use $(NODE_VERSION_DEFAULT) > /dev/null 2>&1 || { \
+			echo "⚠️  Could not switch to Node.js $(NODE_VERSION_DEFAULT), but continuing..."; \
+		}; \
+		if command -v node >/dev/null 2>&1; then \
+			echo "✓ Node.js version: $$(node -v)"; \
+		else \
+			echo "⚠️  Node.js not found in PATH, but nvm is installed"; \
+		fi; \
+	else \
+		echo "⚠️  Could not load nvm, but continuing with setup..."; \
+		if command -v node >/dev/null 2>&1; then \
+			echo "✓ Node.js found in PATH: $$(node -v)"; \
+		else \
+			echo "❌ Node.js not found. Please install Node.js or set up nvm."; \
+			exit 1; \
+		fi; \
+	fi
+	@echo ""
+	@# Install dependencies for server
+	@echo "Installing server dependencies..."
+	@if [ -f server/package.json ]; then \
+		if [ -d server/node_modules ]; then \
+			echo "✓ Server dependencies already installed, skipping"; \
+		else \
+			cd server && npm install && echo "✓ Server dependencies installed"; \
+		fi; \
+	else \
+		echo "⚠️  server/package.json not found, skipping"; \
+	fi
+	@echo ""
+	@# Install dependencies for Next.js framework
+	@echo "Installing Next.js framework dependencies..."
+	@if [ -f frameworks/nextjs/package.json ]; then \
+		if [ -d frameworks/nextjs/node_modules ]; then \
+			echo "✓ Next.js dependencies already installed, skipping"; \
+		else \
+			cd frameworks/nextjs && npm install --legacy-peer-deps && echo "✓ Next.js dependencies installed"; \
+		fi; \
+	else \
+		echo "⚠️  frameworks/nextjs/package.json not found, skipping"; \
+	fi
+	@echo ""
+	@# Install dependencies for Vite framework
+	@echo "Installing Vite framework dependencies..."
+	@if [ -f frameworks/vite-react/package.json ]; then \
+		if [ -d frameworks/vite-react/node_modules ]; then \
+			echo "✓ Vite dependencies already installed, skipping"; \
+		else \
+			cd frameworks/vite-react && npm install && echo "✓ Vite dependencies installed"; \
+		fi; \
+	else \
+		echo "⚠️  frameworks/vite-react/package.json not found, skipping"; \
+	fi
+	@echo ""
+	@# Set default framework mode if not set
+	@if [ ! -f .framework-mode ]; then \
+		echo "vite" > .framework-mode; \
+		echo "✓ Set default framework mode to 'vite'"; \
+	fi
+	@echo ""
+	@echo "=========================================="
 	@echo "✓ Setup complete!"
+	@echo "=========================================="
+	@echo ""
+	@echo "Next steps:"
+	@echo "  make start           - Start the development servers"
+	@echo "  make test-setup      - Set up Python test environment (optional)"
+	@echo "  make help            - Show all available commands"
+	@echo ""
 
-# Install dependencies
-install:
-	@npm install
+# Install dependencies (installs all project dependencies)
+install: setup
+	@echo "All dependencies are installed via 'make setup'"
+	@echo "Run 'make setup' to ensure everything is set up"
 
 # Clean node_modules
 clean:
