@@ -73,9 +73,16 @@ endef
 # Function to check and switch Node.js version using nvm
 # Usage: $(call ensure_node_version,required_version)
 # Auto-installs Node.js version if not already installed
+# This function ensures node and nvm are available before checking versions
 define ensure_node_version
-	@CURRENT_NODE=$$$$(node -v | sed 's/v//'); \
+	@# First ensure node is installed (which ensures nvm is installed)
+	@$(MAKE) -s install-node > /dev/null 2>&1 || true; \
+	CURRENT_NODE=$$$$(node -v 2>/dev/null | sed 's/v//' || echo "unknown"); \
 	REQUIRED="$(1)"; \
+	if ! command -v node >/dev/null 2>&1; then \
+		echo "❌ Error: Node.js not found. Installing..."; \
+		$(MAKE) -s install-node; \
+	fi; \
 	CHECK_RESULT=$$$$(cd frameworks/nextjs && node -e "const semver=require('semver');process.exit(semver.satisfies(process.version, '>=$$$$REQUIRED') ? 0 : 1)" 2>&1); \
 	CHECK_EXIT=$$$$?; \
 	if [ $$$$CHECK_EXIT -ne 0 ]; then \
@@ -86,11 +93,16 @@ define ensure_node_version
 			echo "   Switching to Node.js $(1) using nvm..."; \
 			. "$$$$HOME/.nvm/nvm.sh" && nvm install $(1) && nvm use $(1); \
 			echo "✓ Switched to Node.js $(1)"; \
+		elif [ -s "$$$$HOME/.config/nvm/nvm.sh" ]; then \
+			echo "   Switching to Node.js $(1) using nvm..."; \
+			. "$$$$HOME/.config/nvm/nvm.sh" && nvm install $(1) && nvm use $(1); \
+			echo "✓ Switched to Node.js $(1)"; \
 		else \
 			echo "❌ Error: nvm (Node Version Manager) not found"; \
-			echo "   Please run 'make setup' to install nvm"; \
-			echo "   Or install manually: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"; \
-			exit 1; \
+			echo "   Installing nvm..."; \
+			$(MAKE) -s install-nvm; \
+			. "$$$$HOME/.nvm/nvm.sh" && nvm install $(1) && nvm use $(1); \
+			echo "✓ Switched to Node.js $(1)"; \
 		fi; \
 	else \
 		echo "✓ Node.js version OK ($$$$CURRENT_NODE >= $(1))"; \
@@ -136,6 +148,8 @@ define switch_nextjs_version
 		echo "   Run 'make use-nextjs' first to switch to Next.js mode"; \
 		exit 1; \
 	fi
+	@# Ensure node is installed (which ensures nvm is installed)
+	@$(MAKE) -s install-node > /dev/null 2>&1 || true
 	@# Get required Node.js version and ensure it's active
 	@$(call ensure_node_version,$(call get_node_version,$(1)))
 	@case "$(1)" in \
@@ -207,7 +221,7 @@ $(foreach version,$(FIXED_VERSIONS),$(eval react-$(version):;$(call switch_react
 $(foreach version,$(NEXTJS_VULNERABLE_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 $(foreach version,$(NEXTJS_FIXED_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 
-.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.4 nextjs-15.1.8 nextjs-15.2.5 nextjs-15.3.5 nextjs-15.4.7 nextjs-15.5.6 nextjs-16.0.6 nextjs-14.0.1 nextjs-14.1.1 jq setup install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-nextjs-startup check-nextjs-16 test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
+.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.4 nextjs-15.1.8 nextjs-15.2.5 nextjs-15.3.5 nextjs-15.4.7 nextjs-15.5.6 nextjs-16.0.6 nextjs-14.0.1 nextjs-14.1.1 jq install-jq nvm install-nvm node install-node setup install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-nextjs-startup check-nextjs-16 test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
 
 # Set help as the default target when make is run without arguments
 .DEFAULT_GOAL := help
@@ -257,7 +271,9 @@ help:
 	@echo "Other commands:"
 	@echo "  make current-version - Show currently installed React version"
 	@echo "  make jq              - Check and install jq (JSON processor)"
-	@echo "  make setup           - Complete project setup (installs nvm, Node.js, all dependencies)"
+	@echo "  make nvm             - Check and install nvm (Node Version Manager)"
+	@echo "  make node            - Check and install Node.js $(NODE_VERSION_DEFAULT)"
+	@echo "  make setup           - Complete project setup (installs jq, nvm, Node.js, all dependencies)"
 	@echo "  make install         - Install dependencies (runs setup if needed)"
 	@echo "  make clean           - Remove node_modules and package-lock.json"
 	@echo ""
@@ -334,6 +350,10 @@ current-version:
 
 # Check and install jq if not available
 jq:
+	@make install-jq
+
+.PHONY: install-jq
+install-jq: ## install jq to query json files
 	@if command -v jq >/dev/null 2>&1; then \
 		echo "✓ jq already installed"; \
 		jq --version; \
@@ -360,23 +380,20 @@ jq:
 		echo "✓ jq installed successfully"; \
 	fi
 
-# Setup: Complete project setup for out-of-the-box usage
-setup: jq
-	@echo "=========================================="
-	@echo "Setting up development environment..."
-	@echo "=========================================="
-	@echo ""
-	@# Check for nvm and load it
+# nvm (Node Version Manager) - convenience target
+nvm:
+	@make install-nvm
+
+.PHONY: install-nvm
+install-nvm: ## install nvm (Node Version Manager)
 	@if [ -s "$$HOME/.nvm/nvm.sh" ]; then \
 		echo "✓ nvm already installed"; \
-		. "$$HOME/.nvm/nvm.sh" && nvm --version > /dev/null 2>&1 && echo "  Version: $$(nvm --version)"; \
+		. "$$HOME/.nvm/nvm.sh" && nvm --version; \
 	elif [ -s "$$HOME/.config/nvm/nvm.sh" ]; then \
 		echo "✓ nvm found in alternative location"; \
-		. "$$HOME/.config/nvm/nvm.sh" && nvm --version > /dev/null 2>&1 && echo "  Version: $$(nvm --version)"; \
+		. "$$HOME/.config/nvm/nvm.sh" && nvm --version; \
 	else \
-		echo "⚠️  nvm (Node Version Manager) not found"; \
-		echo ""; \
-		echo "Installing nvm..."; \
+		echo "Installing nvm (Node Version Manager)..."; \
 		if command -v curl >/dev/null 2>&1; then \
 			curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash || { \
 				echo "❌ Failed to install nvm automatically"; \
@@ -387,7 +404,7 @@ setup: jq
 				echo "Then restart your terminal or run:"; \
 				echo "  source $$HOME/.nvm/nvm.sh"; \
 				echo ""; \
-				echo "After that, run 'make setup' again."; \
+				echo "After that, run 'make install-nvm' again."; \
 				exit 1; \
 			}; \
 			echo ""; \
@@ -401,8 +418,13 @@ setup: jq
 			exit 1; \
 		fi; \
 	fi
-	@echo ""
-	@# Load nvm and install Node.js
+
+# Node.js - convenience target
+node:
+	@make install-node
+
+.PHONY: install-node
+install-node: nvm ## install Node.js $(NODE_VERSION_DEFAULT) using nvm
 	@NVM_LOADED=0; \
 	if [ -s "$$HOME/.nvm/nvm.sh" ]; then \
 		. "$$HOME/.nvm/nvm.sh" && NVM_LOADED=1; \
@@ -425,16 +447,22 @@ setup: jq
 			echo "✓ Node.js version: $$(node -v)"; \
 		else \
 			echo "⚠️  Node.js not found in PATH, but nvm is installed"; \
+			echo "   You may need to restart your terminal or run: source $$HOME/.nvm/nvm.sh"; \
 		fi; \
 	else \
-		echo "⚠️  Could not load nvm, but continuing with setup..."; \
-		if command -v node >/dev/null 2>&1; then \
-			echo "✓ Node.js found in PATH: $$(node -v)"; \
-		else \
-			echo "❌ Node.js not found. Please install Node.js or set up nvm."; \
-			exit 1; \
-		fi; \
+		echo "❌ Could not load nvm. Please ensure nvm is installed (run 'make install-nvm')"; \
+		exit 1; \
 	fi
+
+# Setup: Complete project setup for out-of-the-box usage
+setup: jq install-node
+	@echo "=========================================="
+	@echo "Setting up development environment..."
+	@echo "=========================================="
+	@echo ""
+	@echo "✓ jq installed"
+	@echo "✓ nvm installed"
+	@echo "✓ Node.js installed"
 	@echo ""
 	@# Install dependencies for server
 	@echo "Installing server dependencies..."
