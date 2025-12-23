@@ -42,13 +42,13 @@ BRANCH="${BRANCH:-main}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 TEST_ENFORCEMENT="${TEST_ENFORCEMENT:-false}"
 
-# Colors
-RED=$(tput setaf 1)
-GREEN=$(tput setaf 2)
-YELLOW=$(tput setaf 3)
-CYAN=$(tput setaf 6)
-BOLD=$(tput bold)
-RESET=$(tput sgr0)
+# Colors (handle non-TTY gracefully)
+RED=$(tput setaf 1 2>/dev/null || echo "")
+GREEN=$(tput setaf 2 2>/dev/null || echo "")
+YELLOW=$(tput setaf 3 2>/dev/null || echo "")
+CYAN=$(tput setaf 6 2>/dev/null || echo "")
+BOLD=$(tput bold 2>/dev/null || echo "")
+RESET=$(tput sgr0 2>/dev/null || echo "")
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -61,6 +61,23 @@ while [[ $# -gt 0 ]]; do
             BRANCH="$2"
             shift 2
             ;;
+        --reset-credentials)
+            echo "${CYAN}Resetting stored credentials...${RESET}"
+            if [ -f "$CREDENTIALS_FILE" ]; then
+                rm -f "$CREDENTIALS_FILE"
+                echo "${GREEN}✓ Credentials file removed: ${CREDENTIALS_FILE}${RESET}"
+            else
+                echo "${YELLOW}No credentials file found at ${CREDENTIALS_FILE}${RESET}"
+            fi
+            if [ -n "$GITHUB_TOKEN" ]; then
+                echo "${YELLOW}⚠️  GITHUB_TOKEN environment variable is set${RESET}"
+                echo "   Unset it with: unset GITHUB_TOKEN"
+            fi
+            echo "${GREEN}✓ Credentials reset complete${RESET}"
+            echo ""
+            echo "Run the script again to set up new credentials interactively."
+            exit 0
+            ;;
         -h|--help)
             cat << EOF
 Usage: $0 [OPTIONS]
@@ -70,6 +87,7 @@ Validate GitHub branch protection is configured and enforced.
 Options:
   --test-enforcement    Test actual enforcement (creates test branch/PR)
   --branch BRANCH       Branch to check (default: main)
+  --reset-credentials   Clear stored credentials and exit
   -h, --help            Show this help message
 
 Credential Loading (Three-tier priority):
@@ -100,6 +118,9 @@ Examples:
 
   # Full validation with enforcement testing
   ./scripts/validate_branch_protection_enforcement.sh --test-enforcement
+
+  # Reset stored credentials (clears credentials file)
+  ./scripts/validate_branch_protection_enforcement.sh --reset-credentials
 
   # Using environment variables (bypasses credential file)
   export GITHUB_TOKEN="ghp_..."
@@ -361,20 +382,28 @@ if [ "$http_code" != "200" ]; then
     echo ""
     if [ "$http_code" = "401" ] || [ "$http_code" = "403" ]; then
         echo "${YELLOW}⚠️  Authentication/Authorization Error${RESET}"
-        echo "   This may indicate insufficient token permissions."
-        echo ""
-        echo "   ${CYAN}Required permission for basic validation:${RESET}"
-        echo "   • Contents: Read (for fine-grained tokens)"
-        echo "   • OR repo scope (for classic tokens)"
-        echo ""
-        echo "   ${YELLOW}Known Issue:${RESET} Fine-grained tokens may have limitations accessing"
-        echo "   branch protection rules. If you're using a fine-grained token with"
-        echo "   'Contents: Read' and still getting 403, try:"
-        echo ""
-        echo "   1. Use a classic personal access token with 'repo' scope instead"
-        echo "   2. Ensure token has access to this specific repository"
-        echo "   3. Wait a few minutes after updating permissions for propagation"
-        echo ""
+        if [ "$http_code" = "401" ]; then
+            echo "   ${RED}Bad credentials - token may be invalid or expired${RESET}"
+            echo ""
+            echo "   ${CYAN}Quick fix:${RESET} Reset credentials and set up a new token:"
+            echo "   ./scripts/validate_branch_protection_enforcement.sh --reset-credentials"
+            echo ""
+        else
+            echo "   This may indicate insufficient token permissions."
+            echo ""
+            echo "   ${CYAN}Required permission for basic validation:${RESET}"
+            echo "   • Contents: Read (for fine-grained tokens)"
+            echo "   • OR repo scope (for classic tokens)"
+            echo ""
+            echo "   ${YELLOW}Known Issue:${RESET} Fine-grained tokens may have limitations accessing"
+            echo "   branch protection rules. If you're using a fine-grained token with"
+            echo "   'Contents: Read' and still getting 403, try:"
+            echo ""
+            echo "   1. Use a classic personal access token with 'repo' scope instead"
+            echo "   2. Ensure token has access to this specific repository"
+            echo "   3. Wait a few minutes after updating permissions for propagation"
+            echo ""
+        fi
         echo "   ${CYAN}📖 See permissions guide:${RESET}"
         echo "   ${PROJECT_ROOT}/docs/scripts/GITHUB_PERMISSIONS_REQUIRED.md"
         echo ""
