@@ -818,9 +818,10 @@ resource "github_repository_file" "ci_workflow" {
 **Why First:** This ensures that once workflows are created, all future changes will automatically go through CI.
 
 **Optional - Create Validation Script:**
-- Create `scripts/validate_branch_protection.sh` (see Appendix)
+- Create `scripts/validate_branch_protection_enforcement.sh` (see Appendix - recommended)
 - Test script locally
 - Add to CI/CD for ongoing validation
+- Use `--test-enforcement` flag to test actual enforcement
 
 **Checklist:**
 - [ ] Navigate to Repository Settings → Branches
@@ -1128,16 +1129,18 @@ act workflow_dispatch -W .github/workflows/version-validation.yml
 **Time:** 1 hour
 
 **Tasks:**
-1. Create `scripts/validate_branch_protection.sh`
-2. Create `scripts/validate_github_setup.sh` (comprehensive)
-3. Test scripts locally
-4. Add validation workflow (optional)
+1. Create `scripts/validate_branch_protection_enforcement.sh` (comprehensive)
+2. Create `scripts/validate_branch_protection.sh` (basic, optional)
+3. Create `scripts/validate_github_setup.sh` (comprehensive)
+4. Test scripts locally
+5. Add validation workflow (optional)
 
 **See [Appendix: Validation Scripts](#appendix-validation-scripts) for complete script examples.**
 
 **Files:**
-- `scripts/validate_branch_protection.sh`
-- `scripts/validate_github_setup.sh`
+- `scripts/validate_branch_protection_enforcement.sh` (recommended - comprehensive)
+- `scripts/validate_branch_protection.sh` (basic version, optional)
+- `scripts/validate_github_setup.sh` (comprehensive)
 - `.github/workflows/validate-setup.yml` (optional)
 
 **Checklist:**
@@ -1640,9 +1643,58 @@ strategy:
 
 ## Appendix: Scripts and Templates
 
-### Appendix: Branch Protection Validation Script
+### Appendix: Branch Protection Validation Scripts
+
+#### Comprehensive Enforcement Validation Script (Recommended)
+
+**File:** `scripts/validate_branch_protection_enforcement.sh`
+
+**Purpose:** Comprehensive validation that branch protection is configured AND enforced to prevent bypassing CI/CD.
+
+**Features:**
+- Validates all required branch protection settings
+- Checks that administrators are included (no bypass)
+- Verifies required status checks are configured
+- Optionally tests enforcement by creating test branch/PR
+- Detects security vulnerabilities in configuration
+
+**Usage:**
+```bash
+# Basic validation (configuration check)
+export GITHUB_TOKEN="ghp_..."
+export GITHUB_REPOSITORY_OWNER="your-org"
+export GITHUB_REPOSITORY_NAME="react2shell-server"
+./scripts/validate_branch_protection_enforcement.sh
+
+# Full validation with enforcement testing
+./scripts/validate_branch_protection_enforcement.sh --test-enforcement
+```
+
+**What It Validates:**
+1. ✅ Branch protection exists
+2. ✅ Required pull request reviews enabled
+3. ✅ Required status checks configured (with expected CI/CD checks)
+4. ✅ Administrators included (CRITICAL - prevents bypass)
+5. ✅ Force pushes disabled
+6. ✅ Branch deletion disabled
+7. ✅ Optional: Tests enforcement by creating test branch/PR
+
+**Output:**
+- Clear pass/fail status
+- Detailed error messages for failures
+- Warnings for suboptimal configurations
+- Summary of all checks
+
+**Integration:**
+- Can be run manually for validation
+- Can be added to CI/CD workflow for ongoing validation
+- Can be scheduled to run weekly
+
+#### Basic Validation Script
 
 **File:** `scripts/validate_branch_protection.sh`
+
+Simple script to check branch protection configuration (basic version).
 
 ```bash
 #!/usr/bin/env bash
@@ -2070,6 +2122,35 @@ jobs:
             exit 1
           fi
           echo "✅ Workflows found"
+```
+
+---
+
+### Appendix: Comprehensive Branch Protection Enforcement Validation
+
+**File:** `scripts/validate_branch_protection_enforcement.sh`
+
+Complete script for validating branch protection enforcement. See script file for full implementation.
+
+**Key Validation Points:**
+1. Branch protection exists and is configured
+2. Required PR reviews are enabled
+3. Required status checks include CI/CD jobs
+4. Administrators cannot bypass (CRITICAL)
+5. Force pushes are disabled
+6. Branch deletion is disabled
+7. Optional enforcement testing
+
+**Usage in CI/CD:**
+```yaml
+- name: Validate branch protection
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+    GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+  run: |
+    chmod +x scripts/validate_branch_protection_enforcement.sh
+    ./scripts/validate_branch_protection_enforcement.sh
 ```
 
 ---
