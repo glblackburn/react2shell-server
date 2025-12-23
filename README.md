@@ -565,17 +565,21 @@ make test-open-report
 - `make test-clean` - Clean test artifacts
 
 **Performance Tracking:**
+- `make test-performance` - **Run performance tests and generate comprehensive report (RECOMMENDED)** - Unified target that runs tests, updates baseline, generates HTML report, and shows console summary
+- `make test-update-baseline` - Quick baseline update without running full tests
+
+**Legacy Performance Targets (Deprecated - use `test-performance` instead):**
 - `make test-performance-report` - Generate and open comprehensive HTML performance report
 - `make test-performance-compare` - Compare latest run against baseline
 - `make test-performance-trends` - View performance trends
 - `make test-performance-slowest` - List slowest tests
-- `make test-update-baseline` - Update performance baseline
 
 **For detailed documentation:**
 - **[Quick Start Guide](tests/QUICKSTART.md)** - Get started in 5 minutes
 - **[Complete Testing Guide](tests/README.md)** - Comprehensive documentation
 - **[Performance Tracking Guide](tests/PERFORMANCE_TRACKING.md)** - Performance metrics and limits
 - **[Testing Plan](docs/planning/testing-plan.md)** - Testing strategy and implementation plan
+- **[Performance Targets Consolidation Recommendation](docs/archive/PERFORMANCE_TARGETS_CONSOLIDATION_RECOMMENDATION.md)** - Historical documentation of the performance targets consolidation (✅ Implemented)
 
 ## Project Structure
 
