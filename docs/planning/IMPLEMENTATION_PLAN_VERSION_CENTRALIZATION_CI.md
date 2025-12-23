@@ -9,27 +9,67 @@
 ## Executive Summary
 
 This plan addresses three high-priority improvements:
-1. **Centralize Version Constants** - Single source of truth for all version definitions
-2. **Improve Makefile Maintainability** - Refactor complex Makefile into manageable components
-3. **Add CI/CD with GitHub Actions** - Automated testing pipeline
+1. **Add CI/CD with GitHub Actions** - Automated testing pipeline (Phase 1)
+2. **Centralize Version Constants** - Single source of truth for all version definitions (Phase 2)
+3. **Improve Makefile Maintainability** - Refactor complex Makefile into manageable components (Phase 3)
 
 **Estimated Total Time:** 12-16 hours  
 **Phases:** 3 phases, can be executed incrementally
+
+**Note:** See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for detailed Phase 1 implementation guide.
 
 ---
 
 ## Table of Contents
 
-1. [Phase 1: Centralize Version Constants](#phase-1-centralize-version-constants)
-2. [Phase 2: Improve Makefile Maintainability](#phase-2-improve-makefile-maintainability)
-3. [Phase 3: Add CI/CD with GitHub Actions](#phase-3-add-cicd-with-github-actions)
+1. [Phase 1: Add CI/CD with GitHub Actions](#phase-1-add-cicd-with-github-actions)
+2. [Phase 2: Centralize Version Constants](#phase-2-centralize-version-constants)
+3. [Phase 3: Improve Makefile Maintainability](#phase-3-improve-makefile-maintainability)
 4. [Dependencies and Prerequisites](#dependencies-and-prerequisites)
 5. [Testing Strategy](#testing-strategy)
 6. [Rollback Plan](#rollback-plan)
 
 ---
 
-## Phase 1: Centralize Version Constants
+## Phase 1: Add CI/CD with GitHub Actions
+
+### Overview
+
+Implement comprehensive CI/CD pipeline using GitHub Actions for automated testing, version validation, and quality checks.
+
+**Detailed Implementation Plan:** See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for complete details, testing strategies, and step-by-step implementation guide.
+
+**Current State:**
+- Manual testing required
+- No automated validation
+- No continuous integration
+- No visibility into test status
+
+**Target State:**
+- Automated testing on every push/PR
+- Framework-aware CI (Vite + Next.js)
+- Version switching validation
+- Test results visible in PRs
+- Status badges in README
+
+**Key Components:**
+- Main CI workflow (lint, test-vite, test-nextjs, test-python, validate-versions)
+- Version validation workflow
+- Performance check workflow (optional)
+- Scanner verification workflow (optional)
+
+**Estimated Time:** 8-10 hours
+
+**See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for:**
+- Detailed workflow implementation
+- Complete testing strategy
+- Step-by-step implementation guide
+- Troubleshooting guide
+- Success criteria
+
+---
+
+## Phase 2: Centralize Version Constants
 
 ### Overview
 
@@ -592,7 +632,7 @@ Create validation script to check:
 
 ---
 
-## Phase 2: Improve Makefile Maintainability
+## Phase 3: Improve Makefile Maintainability
 
 ### Overview
 
@@ -828,9 +868,18 @@ Document:
 
 ---
 
-## Phase 3: Add CI/CD with GitHub Actions
+**Note:** Phase 1 (CI/CD) is now the first phase. See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for detailed implementation guide.
 
-### Overview
+**Legacy Phase 3 Content (for reference):**
+
+The original Phase 3 content has been moved to the dedicated [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) document which includes:
+- Complete workflow implementation details
+- Comprehensive testing strategy
+- Step-by-step implementation guide
+- Troubleshooting guide
+- Success criteria and validation
+
+### Overview (Legacy - See CI_CD_IMPLEMENTATION_PLAN.md)
 
 Create comprehensive GitHub Actions workflows for automated testing, version validation, and deployment checks.
 
@@ -1360,7 +1409,9 @@ Update `README.md` to include GitHub Actions status badges.
    - Verify all functionality still works
    - Check that no features were lost
 
-### Phase 3 Testing
+### Phase 1 Testing (CI/CD)
+
+**See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for comprehensive testing strategy.**
 
 1. **Workflow Testing:**
    - Test workflows on a feature branch first
@@ -1383,7 +1434,21 @@ Update `README.md` to include GitHub Actions status badges.
 
 ## Rollback Plan
 
-### Phase 1 Rollback
+### Phase 1 Rollback (CI/CD)
+
+If CI/CD workflows cause issues:
+
+1. **Immediate:** Disable workflows by renaming `.github/workflows/*.yml` to `.yml.disabled`
+2. **Fix issues:** Debug and fix in feature branch
+3. **Re-enable:** Once fixed, restore workflow files
+
+**Files to disable:**
+- `.github/workflows/ci.yml`
+- `.github/workflows/version-validation.yml`
+- `.github/workflows/performance-check.yml`
+- `.github/workflows/scanner-verification.yml`
+
+### Phase 2 Rollback
 
 If centralized version config causes issues:
 
@@ -1398,7 +1463,7 @@ If centralized version config causes issues:
 
 3. **Keep:** Centralized config file can remain for future use
 
-### Phase 2 Rollback
+### Phase 3 Rollback
 
 If Makefile refactoring breaks functionality:
 
@@ -1406,13 +1471,6 @@ If Makefile refactoring breaks functionality:
 2. **Keep scripts:** Extracted scripts can remain for future use
 3. **Gradual migration:** Can migrate one section at a time
 
-### Phase 3 Rollback
-
-If CI workflows cause issues:
-
-1. **Disable workflows:** Rename `.github/workflows/*.yml` to `.yml.disabled`
-2. **Fix issues:** Debug and fix in feature branch
-3. **Re-enable:** Once fixed, restore workflow files
 
 ---
 
@@ -1420,33 +1478,46 @@ If CI workflows cause issues:
 
 ### Recommended Approach: Incremental
 
-**Week 1: Phase 1**
+**Week 1: Phase 1 (CI/CD)**
+- Days 1-2: Create workflow infrastructure and lint job
+- Days 3-4: Implement test jobs (Vite, Next.js, Python)
+- Day 5: Testing, validation, and documentation
+
+**Week 2: Phase 2 (Version Centralization)**
 - Days 1-2: Create centralized config and readers
 - Days 3-4: Update all components
 - Day 5: Testing and validation
 
-**Week 2: Phase 2**
+**Week 3: Phase 3 (Makefile Refactoring)**
 - Days 1-2: Analyze and plan Makefile refactoring
 - Days 3-4: Extract functions to scripts
 - Day 5: Update Makefile and test
-
-**Week 3: Phase 3**
-- Days 1-2: Create CI workflows
-- Days 3-4: Test and iterate
-- Day 5: Documentation and badges
 
 **Total:** 3 weeks for complete implementation
 
 ### Alternative: Parallel Work
 
-- **Phase 1** and **Phase 3** can be done in parallel (CI can use hardcoded versions initially)
-- **Phase 2** should wait for Phase 1 completion
+- **Phase 1 (CI/CD)** can be done independently (uses current version definitions)
+- **Phase 2 (Version Centralization)** can benefit from CI/CD validation
+- **Phase 3 (Makefile Refactoring)** should wait for Phase 2 completion
 
 ---
 
 ## Success Criteria
 
-### Phase 1 Success
+### Phase 1 Success (CI/CD)
+
+**See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for detailed success criteria.**
+
+- ✅ CI runs on all PRs and pushes
+- ✅ Tests run automatically
+- ✅ Version validation catches errors
+- ✅ Status badges in README
+- ✅ Workflows complete successfully
+- ✅ All jobs pass consistently
+- ✅ Total workflow time < 15 minutes
+
+### Phase 2 Success (Version Centralization)
 
 - ✅ All version constants read from single `config/versions.json`
 - ✅ No hardcoded version lists in code
@@ -1454,7 +1525,7 @@ If CI workflows cause issues:
 - ✅ Version switching works for all versions
 - ✅ Adding new version requires only updating JSON file
 
-### Phase 2 Success
+### Phase 3 Success (Makefile Refactoring)
 
 - ✅ Makefile reduced to <500 lines
 - ✅ Complex logic in separate scripts
@@ -1462,23 +1533,16 @@ If CI workflows cause issues:
 - ✅ Easier to add new targets
 - ✅ Better error messages
 
-### Phase 3 Success
-
-- ✅ CI runs on all PRs and pushes
-- ✅ Tests run automatically
-- ✅ Version validation catches errors
-- ✅ Status badges in README
-- ✅ Workflows complete successfully
-
 ---
 
 ## Next Steps
 
 1. **Review this plan** with team/stakeholders
-2. **Prioritize phases** based on needs
-3. **Create GitHub issues** for tracking
-4. **Start with Phase 1** (foundation for others)
-5. **Test incrementally** after each phase
+2. **Review [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md)** for Phase 1 details
+3. **Prioritize phases** based on needs
+4. **Create GitHub issues** for tracking
+5. **Start with Phase 1 (CI/CD)** - can be done independently
+6. **Test incrementally** after each phase
 
 ---
 

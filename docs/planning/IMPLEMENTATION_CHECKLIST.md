@@ -1,10 +1,81 @@
-# Implementation Checklist: Version Centralization, Makefile Refactoring, and CI/CD
+# Implementation Checklist: CI/CD, Version Centralization, and Makefile Refactoring
 
 **Quick Reference Checklist** - See [Full Implementation Plan](IMPLEMENTATION_PLAN_VERSION_CENTRALIZATION_CI.md) for details
 
+**Note:** Phase 1 is now CI/CD. See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for detailed Phase 1 guide.
+
 ---
 
-## Phase 1: Centralize Version Constants ⏱️ 11.5 hours
+## Phase 1: Add CI/CD with GitHub Actions ⏱️ 8-10 hours
+
+**See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for complete checklist and detailed steps.**
+
+### Step 0: Configure Branch Protection (CRITICAL - Do First) ⏱️ 15-30 minutes
+- [ ] Navigate to Repository Settings → Branches
+- [ ] Create/edit branch protection rule for `main`
+- [ ] Enable "Protect matching branches"
+- [ ] Enable "Require pull request reviews before merging"
+- [ ] Enable "Require status checks to pass before merging"
+- [ ] Enable "Require branches to be up to date before merging"
+- [ ] Enable "Include administrators" (CRITICAL)
+- [ ] Enable "Do not allow bypassing the above settings"
+- [ ] Test: Try direct push to main (should fail)
+- [ ] Test: Create PR (should work)
+- [ ] Document branch protection policy (optional)
+
+### Step 1.1: Create Infrastructure
+- [ ] Create `.github/workflows/` directory
+- [ ] Create workflow skeleton files
+- [ ] Verify GitHub recognizes workflows
+
+### Step 1.2: Implement Lint Job
+- [ ] Create lint job in `ci.yml`
+- [ ] Add JSON validation
+- [ ] Add Makefile syntax check
+- [ ] Test locally with `act`
+- [ ] Test on feature branch
+
+### Step 1.3: Implement Test Jobs
+- [ ] Create test-vite job
+- [ ] Create test-nextjs job
+- [ ] Create test-python job (matrix)
+- [ ] Test each job individually
+- [ ] Test all jobs together
+
+### Step 1.4: Implement Version Validation
+- [ ] Create validate-versions job
+- [ ] Create version-validation workflow
+- [ ] Test version switching
+- [ ] Test workflow triggers
+
+### Step 1.5: Add Status Badges
+- [ ] Add CI badge to README
+- [ ] Add version validation badge
+- [ ] Test badge URLs
+
+### Step 1.6: Configure Required Status Checks
+- [ ] Go to Settings → Branches → Edit main branch rule
+- [ ] Under "Require status checks", select all CI jobs:
+  - [ ] `lint`
+  - [ ] `test-vite`
+  - [ ] `test-nextjs`
+  - [ ] `test-python / vite`
+  - [ ] `test-python / nextjs`
+  - [ ] `validate-versions`
+- [ ] Save changes
+- [ ] Test: Create PR and verify merge blocked until CI passes
+
+### Step 1.7: Documentation
+- [ ] Create `.github/workflows/README.md`
+- [ ] Document workflows
+- [ ] Create `.github/BRANCH_PROTECTION.md` (optional)
+- [ ] Update main README
+
+**See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for detailed testing checklist.**
+
+---
+
+## Phase 2: Centralize Version Constants ⏱️ 11.5 hours
 
 ### Step 1.1: Create Centralized Config
 - [ ] Create `config/` directory
@@ -39,7 +110,7 @@
 
 ---
 
-## Phase 2: Improve Makefile Maintainability ⏱️ 11 hours
+## Phase 3: Improve Makefile Maintainability ⏱️ 11 hours
 
 ### Step 2.1: Analysis
 - [ ] Analyze Makefile structure
@@ -142,7 +213,11 @@
 
 ## Quick Commands Reference
 
-### Phase 1 Testing
+### Phase 1 Testing (CI/CD)
+
+**See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for comprehensive testing checklist.**
+
+### Phase 2 Testing
 ```bash
 # Validate config
 ./scripts/validate_versions.sh
@@ -182,15 +257,19 @@ git push origin test-ci
 
 ---
 
-## Estimated Total Time: 29.5 hours
+## Estimated Total Time: 30.5 hours
 
 **Breakdown:**
-- Phase 1: 11.5 hours
-- Phase 2: 11 hours
-- Phase 3: 7 hours
+- Phase 1 (CI/CD): 8-10 hours
+- Phase 2 (Version Centralization): 11.5 hours
+- Phase 3 (Makefile Refactoring): 11 hours
 
 **Recommended Timeline:** 3 weeks (1 week per phase)
 
 ---
 
 **See [Full Implementation Plan](IMPLEMENTATION_PLAN_VERSION_CENTRALIZATION_CI.md) for detailed instructions.**
+
+**See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for detailed Phase 1 implementation guide.**
+
+**See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for detailed Phase 1 implementation guide.**
