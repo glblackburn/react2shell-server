@@ -75,8 +75,8 @@ Implemented driver caching system to pre-install drivers before tests run:
 
 ### Files Created
 - `tests/utils/driver_manager.py` - Driver caching utility
-- `docs/WEBDRIVER_CACHING_SOLUTION.md` - Solution documentation
-- `docs/WEBDRIVER_TIMEOUT_ISSUE.md` - Issue documentation
+- `docs/analysis/WEBDRIVER_CACHING_SOLUTION.md` - Solution documentation
+- `docs/analysis/WEBDRIVER_TIMEOUT_ISSUE.md` - Issue documentation
 
 ### Files Modified
 - `tests/fixtures/webdriver.py` - Use cached drivers, better error messages
@@ -100,9 +100,9 @@ After fix:
 
 ## Related Documentation
 
-- [WebDriver Timeout Issue](docs/WEBDRIVER_TIMEOUT_ISSUE.md) - Detailed issue analysis
-- [WebDriver Caching Solution](docs/WEBDRIVER_CACHING_SOLUTION.md) - Solution documentation
-- [Test Execution Fix Report](docs/TEST_EXECUTION_FIX_REPORT.md) - Related server startup fix
+- [WebDriver Timeout Issue](../analysis/WEBDRIVER_TIMEOUT_ISSUE.md) - Detailed issue analysis
+- [WebDriver Caching Solution](../analysis/WEBDRIVER_CACHING_SOLUTION.md) - Solution documentation
+- [Test Execution Fix Report](../testing/TEST_EXECUTION_FIX_REPORT.md) - Related server startup fix
 
 ## Notes
 

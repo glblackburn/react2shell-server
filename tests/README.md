@@ -162,7 +162,7 @@ make test-nextjs-startup
 - `test-nextjs-startup`: Tests all 11 versions, simple startup verification (no browser)
 - `test-smoke`: Tests current version, comprehensive UI/API testing (with browser)
 
-See [TEST_SMOKE_VS_SIMPLE_RUN_CHECK_COMPARISON.md](../docs/TEST_SMOKE_VS_SIMPLE_RUN_CHECK_COMPARISON.md) for detailed comparison.
+See [TEST_SMOKE_VS_SIMPLE_RUN_CHECK_COMPARISON.md](../docs/testing/TEST_SMOKE_VS_SIMPLE_RUN_CHECK_COMPARISON.md) for detailed comparison.
 
 **Setting Limits:**
 - Edit `tests/performance_config.yaml` to manually set limits

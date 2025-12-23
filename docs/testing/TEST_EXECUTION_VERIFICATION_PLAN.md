@@ -573,7 +573,7 @@ Before starting, verify:
 ## Output Document
 
 The final report will be saved to:
-`docs/TEST_EXECUTION_VERIFICATION_REPORT.md`
+`docs/testing/TEST_EXECUTION_VERIFICATION_REPORT.md`
 
 The report will reference the output directory for detailed logs, reports, and artifacts.
 

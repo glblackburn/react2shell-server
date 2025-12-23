@@ -1576,7 +1576,7 @@ After implementing dual-framework support, several root-level files became legac
 ### Implementation
 
 **1. Code Reorganization Analysis:**
-- Created `docs/CODE_REORGANIZATION_ANALYSIS.md` (687 lines)
+- Created `docs/analysis/CODE_REORGANIZATION_ANALYSIS.md` (687 lines)
 - Analyzed all application code files for usage
 - Identified active files, legacy duplicates, and files to reorganize
 - Recommended moving server files to `server/` directory
@@ -1632,7 +1632,7 @@ After code reorganization, all make targets needed verification to ensure they s
 ### Implementation
 
 **1. Makefile Verification Plan:**
-- Created `docs/MAKEFILE_VERIFICATION_PLAN.md`
+- Created `docs/analysis/MAKEFILE_VERIFICATION_PLAN.md`
 - Documented methodology for systematic verification
 - Created execution strategy with logical sequence
 - Planned output capture to `/tmp/` with dated directories
@@ -1642,7 +1642,7 @@ After code reorganization, all make targets needed verification to ensure they s
 - Tested 30 make targets systematically
 - Captured all output, file states, logs, and artifacts
 - Saved to `/tmp/makefile-verification-2025-12-19-120316/`
-- Generated `docs/MAKEFILE_VERIFICATION_REPORT.md`
+- Generated `docs/analysis/MAKEFILE_VERIFICATION_REPORT.md`
 
 **3. Results and Issues Found:**
 - **27/30 targets successful** (90.0% success rate)
@@ -1654,7 +1654,7 @@ After code reorganization, all make targets needed verification to ensure they s
 - Detects framework mode from `.framework-mode` file
 - Installs in `frameworks/vite-react/` for Vite mode
 - Installs in `frameworks/nextjs/` for Next.js mode (with `--legacy-peer-deps`)
-- Updated `docs/MAKEFILE_VERIFICATION_FIX_REPORT.md` with verification
+- Updated `docs/analysis/MAKEFILE_VERIFICATION_FIX_REPORT.md` with verification
 
 ### Results
 
@@ -1684,11 +1684,11 @@ After code reorganization and makefile fixes, test execution targets needed veri
 ### Implementation
 
 **1. Test Execution Verification:**
-- Created `docs/TEST_EXECUTION_VERIFICATION_PLAN.md`
+- Created `docs/testing/TEST_EXECUTION_VERIFICATION_PLAN.md`
 - Documented plan for 16 test execution targets
 - Created execution strategy with phases
 - Planned comprehensive output capture
-- Generated `docs/TEST_EXECUTION_VERIFICATION_REPORT.md`
+- Generated `docs/testing/TEST_EXECUTION_VERIFICATION_REPORT.md`
 
 **2. Initial Verification Results:**
 - **15 targets tested**
@@ -1710,7 +1710,7 @@ After code reorganization and makefile fixes, test execution targets needed veri
   - Updated `tests/utils/server_manager.py`
 
 - **Verification:**
-  - Created `docs/TEST_EXECUTION_FIX_REPORT.md`
+  - Created `docs/testing/TEST_EXECUTION_FIX_REPORT.md`
   - Verified fix with multiple test targets
   - `test-smoke` and `test-hello` now passing
   - Server startup working correctly
@@ -1722,7 +1722,7 @@ After code reorganization and makefile fixes, test execution targets needed veri
   - Added make targets: `test-driver-install`, `test-driver-status`, `test-driver-clean`, `test-driver-upgrade`
   - Updated `test-setup` to automatically install drivers
   - Modified `tests/fixtures/webdriver.py` to use cached drivers
-  - Created `docs/WEBDRIVER_CACHING_SOLUTION.md` and `docs/WEBDRIVER_TIMEOUT_ISSUE.md`
+  - Created `docs/analysis/WEBDRIVER_CACHING_SOLUTION.md` and `docs/analysis/WEBDRIVER_TIMEOUT_ISSUE.md`
   - Added BUG-9 to defect tracking
 
 - **Verification:**
@@ -1738,7 +1738,7 @@ After code reorganization and makefile fixes, test execution targets needed veri
   - Uses specific version to avoid version check network calls
   - Completely eliminates network calls to `googlechromelabs.github.io`
   - Updated `tests/fixtures/webdriver.py`
-  - Created `docs/TEST_FAILURE_ANALYSIS.md`
+  - Created `docs/testing/TEST_FAILURE_ANALYSIS.md`
 
 - **Verification:**
   - `test_button_text_is_correct` now passes (previously failing)
@@ -1748,9 +1748,9 @@ After code reorganization and makefile fixes, test execution targets needed veri
   - Driver loaded from cache: "Driver [...] found in cache"
 
 **6. Test Execution Verification v2:**
-- Updated `docs/TEST_EXECUTION_VERIFICATION_PLAN.md` with driver management
+- Updated `docs/testing/TEST_EXECUTION_VERIFICATION_PLAN.md` with driver management
 - Executed updated plan with driver caching
-- Generated `docs/TEST_EXECUTION_VERIFICATION_REPORT_V2.md`
+- Generated `docs/testing/TEST_EXECUTION_VERIFICATION_REPORT_V2.md`
 - Results: 18 targets tested, 8 successful, infrastructure working
 
 ### Results
@@ -1792,17 +1792,17 @@ After code reorganization and makefile fixes, test execution targets needed veri
 
 **Files Created:**
 - `tests/utils/driver_manager.py` - Driver caching utility
-- `docs/CODE_REORGANIZATION_ANALYSIS.md` - Reorganization analysis
-- `docs/MAKEFILE_VERIFICATION_PLAN.md` - Makefile verification plan
-- `docs/MAKEFILE_VERIFICATION_REPORT.md` - Makefile verification report
-- `docs/MAKEFILE_VERIFICATION_FIX_REPORT.md` - Install target fix verification
-- `docs/TEST_EXECUTION_VERIFICATION_PLAN.md` - Test execution verification plan
-- `docs/TEST_EXECUTION_VERIFICATION_REPORT.md` - Test execution verification report
-- `docs/TEST_EXECUTION_FIX_REPORT.md` - Server startup fix report
-- `docs/WEBDRIVER_CACHING_SOLUTION.md` - Driver caching solution
-- `docs/WEBDRIVER_TIMEOUT_ISSUE.md` - WebDriver timeout issue analysis
-- `docs/TEST_FAILURE_ANALYSIS.md` - Test failure analysis
-- `docs/TEST_EXECUTION_VERIFICATION_REPORT_V2.md` - Updated verification report
+- `docs/analysis/CODE_REORGANIZATION_ANALYSIS.md` - Reorganization analysis
+- `docs/analysis/MAKEFILE_VERIFICATION_PLAN.md` - Makefile verification plan
+- `docs/analysis/MAKEFILE_VERIFICATION_REPORT.md` - Makefile verification report
+- `docs/analysis/MAKEFILE_VERIFICATION_FIX_REPORT.md` - Install target fix verification
+- `docs/testing/TEST_EXECUTION_VERIFICATION_PLAN.md` - Test execution verification plan
+- `docs/testing/TEST_EXECUTION_VERIFICATION_REPORT.md` - Test execution verification report
+- `docs/testing/TEST_EXECUTION_FIX_REPORT.md` - Server startup fix report
+- `docs/analysis/WEBDRIVER_CACHING_SOLUTION.md` - Driver caching solution
+- `docs/analysis/WEBDRIVER_TIMEOUT_ISSUE.md` - WebDriver timeout issue analysis
+- `docs/testing/TEST_FAILURE_ANALYSIS.md` - Test failure analysis
+- `docs/testing/TEST_EXECUTION_VERIFICATION_REPORT_V2.md` - Updated verification report
 - `docs/defect-tracking/BUG-9.md` - Bug report
 
 **Files Modified:**
@@ -1922,8 +1922,8 @@ This phase represents a significant debugging failure where the AI agent spent c
    - Wasted significant time on non-issues
 
 3. **Documentation Created (But Wrong Focus):**
-   - `docs/NEXTJS_16.0.6_VERSION_ISSUE.md` - Eventually identified the Node.js requirement but only after much investigation
-   - `docs/NODE_VERSION_SWITCHING_DESIGN.md` - Design document for Node.js version switching
+   - `docs/archive/NEXTJS_16.0.6_VERSION_ISSUE.md` - Eventually identified the Node.js requirement but only after much investigation
+   - `docs/archive/NODE_VERSION_SWITCHING_DESIGN.md` - Design document for Node.js version switching
    - Multiple test runs and log analysis that didn't identify the root cause
 
 4. **The Fix (2025-12-22):** `simple-run-check_2025-12-22_081816.txt` shows the solution:

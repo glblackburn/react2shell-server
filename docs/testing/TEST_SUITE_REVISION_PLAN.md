@@ -324,7 +324,7 @@ ALL_NEXTJS_VERSIONS = NEXTJS_VULNERABLE_VERSIONS + NEXTJS_FIXED_VERSIONS
 2. **`README.md`**
    - Update `test-smoke` description in main README
 
-3. **`docs/TEST_EXECUTION_VERIFICATION_PLAN.md`**
+3. **`docs/testing/TEST_EXECUTION_VERIFICATION_PLAN.md`**
    - Update expected behavior for `test-smoke`
 
 ---

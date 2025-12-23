@@ -190,8 +190,8 @@ After fix:
 ## Related Issues
 
 - **BUG-9**: WebDriver Timeout During Test Execution (partially fixed - drivers cached, but version checks still occurred)
-- **Driver Caching Solution**: `docs/WEBDRIVER_CACHING_SOLUTION.md`
-- **WebDriver Timeout Issue**: `docs/WEBDRIVER_TIMEOUT_ISSUE.md`
+- **Driver Caching Solution**: `docs/analysis/WEBDRIVER_CACHING_SOLUTION.md`
+- **WebDriver Timeout Issue**: `docs/analysis/WEBDRIVER_TIMEOUT_ISSUE.md`
 
 ---
 

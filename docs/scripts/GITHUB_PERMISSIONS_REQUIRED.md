@@ -1,5 +1,8 @@
 # GitHub Permissions Required for validate_branch_protection_enforcement.sh
 
+**Last Updated:** 2025-12-23  
+**Status:** ✅ Active
+
 ## Overview
 
 The `validate_branch_protection_enforcement.sh` script requires GitHub API access to validate branch protection configuration. This document specifies the **minimum fine-grained permissions** needed following the principle of least privilege.

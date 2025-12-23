@@ -16,7 +16,7 @@ make test-nextjs-startup
 ```
 
 This test verifies that:
-- All 11 Next.js versions can switch correctly
+- All 11 Next.js versions can switch correctly (9 vulnerable + 2 fixed)
 - Each version starts successfully
 - Version API responds correctly
 - Takes ~5-10 minutes to complete
@@ -83,8 +83,13 @@ This project also supports Next.js framework mode for testing Next.js-specific v
 **Vulnerable Next.js versions:**
 - Next.js 14.0.0
 - Next.js 14.1.0
-- Next.js 15.0.0
-- Next.js 15.1.0
+- Next.js 15.0.4
+- Next.js 15.1.8
+- Next.js 15.2.5
+- Next.js 15.3.5
+- Next.js 15.4.7
+- Next.js 15.5.6
+- Next.js 16.0.6
 
 **Fixed Next.js versions:**
 - Next.js 14.0.1
@@ -147,10 +152,15 @@ make current-framework # Show current framework mode
 make use-nextjs      # First, switch to Next.js mode
 make nextjs-14.0.0   # Switch to Next.js 14.0.0 (VULNERABLE)
 make nextjs-14.1.0   # Switch to Next.js 14.1.0 (VULNERABLE)
-make nextjs-15.0.0   # Switch to Next.js 15.0.0 (VULNERABLE)
+make nextjs-15.0.4   # Switch to Next.js 15.0.4 (VULNERABLE)
+make nextjs-15.1.8   # Switch to Next.js 15.1.8 (VULNERABLE)
+make nextjs-15.2.5   # Switch to Next.js 15.2.5 (VULNERABLE)
+make nextjs-15.3.5   # Switch to Next.js 15.3.5 (VULNERABLE)
+make nextjs-15.4.7   # Switch to Next.js 15.4.7 (VULNERABLE)
+make nextjs-15.5.6   # Switch to Next.js 15.5.6 (VULNERABLE)
+make nextjs-16.0.6   # Switch to Next.js 16.0.6 (VULNERABLE)
 make nextjs-14.0.1   # Switch to Next.js 14.0.1 (FIXED)
 make nextjs-14.1.1   # Switch to Next.js 14.1.1 (FIXED)
-make nextjs-15.1.0   # Switch to Next.js 15.1.0 (FIXED)
 
 # Check current React version
 make current-version
@@ -378,6 +388,8 @@ This project includes automated scanner verification to ensure that security sca
 - ✅ Vulnerable Next.js versions (14.0.0, 14.1.0, 15.0.4, 15.1.8, 15.2.5, 15.3.5, 15.4.7, 15.5.6, 16.0.6) are correctly detected as vulnerable
 - ✅ Fixed Next.js versions (14.0.1, 14.1.1) are correctly identified as not vulnerable
 
+**Note:** The scanner tests 11 Next.js versions total (9 vulnerable + 2 fixed).
+
 **Documentation:**
 - **Usage Guide:** See [Scanner Verification Script Usage](docs/scanner/verify-scanner-usage.md) for detailed usage instructions, options, and examples
 - **Example Output:** See [Example Run Output](docs/scanner/verify_scanner_example_output.txt) for a complete example
@@ -421,8 +433,9 @@ make use-nextjs
 - Supports safe-check mode, quiet mode, and verbose output
 
 **Tested Versions:**
-- **Vulnerable:** 14.0.0, 14.1.0, 15.0.4, 15.1.8, 15.2.5, 15.3.5, 15.4.7, 15.5.6, 16.0.6
-- **Fixed:** 14.0.1, 14.1.1
+- **Vulnerable (9 versions):** 14.0.0, 14.1.0, 15.0.4, 15.1.8, 15.2.5, 15.3.5, 15.4.7, 15.5.6, 16.0.6
+- **Fixed (2 versions):** 14.0.1, 14.1.1
+- **Total:** 11 Next.js versions
 
 For detailed usage instructions, options, and troubleshooting, see the [Scanner Verification Script Usage](docs/scanner/verify-scanner-usage.md) documentation.
 
@@ -449,6 +462,20 @@ For detailed usage instructions, options, and troubleshooting, see the [Scanner 
 ## Development
 
 > **📖 Development History:** For a detailed narrative of the project's development journey, see [DEVELOPMENT_NARRATIVE.md](DEVELOPMENT_NARRATIVE.md).
+
+### AI Coding Standards
+
+- **[AI Coding Standards](README-AI-CODING-STANDARDS.md)** - AI agent coding rules and guidelines
+
+### Documentation
+
+- **[Documentation Index](docs/README.md)** - Complete documentation index and navigation
+- **[Scripts Documentation](scripts/README.md)** - Utility scripts documentation
+
+### Project Documentation
+
+- **[Project Review Summary](PROJECT_REVIEW_SUMMARY.md)** - Project review and analysis
+- **[Documentation and Makefile Analysis](DOCUMENTATION_AND_MAKEFILE_ANALYSIS.md)** - Analysis documents
 
 ### CI/CD and Automation
 
@@ -605,9 +632,12 @@ react2shell-server/
 ├── scripts/                  # Utility scripts
 │   ├── README.md             # Scripts documentation
 │   ├── run_test_target.sh    # Test execution helper (captures output, tracks processes)
+│   ├── run_make_test_stop_on_error.sh  # Test execution with stop-on-first-error
 │   ├── verify_tests.sh       # Test suite verification
 │   ├── verify_scanner.sh     # Scanner verification (multiple Next.js versions)
-│   └── scanner_verification_report.sh
+│   ├── scanner_verification_report.sh  # Generate scanner verification HTML report
+│   ├── test_token_scopes.sh  # Test GitHub token scopes and permissions
+│   └── validate_branch_protection_enforcement.sh  # Validate GitHub branch protection
 ├── tests/                    # Python Selenium tests
 │   ├── conftest.py           # Pytest fixtures and configuration
 │   ├── pytest.ini            # Pytest settings

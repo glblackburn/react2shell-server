@@ -179,10 +179,10 @@ make nextjs-16.0.6
 
 ### Files Created
 
-1. **docs/NODE_VERSION_MAPPING.md** - Complete version mapping reference
-2. **docs/NODE_VERSION_SWITCHING_TEST_RESULTS.md** - Test results and verification
-3. **docs/QUESTIONS_RESOLVED.md** - Summary of resolved questions
-4. **docs/NODE_VERSION_SWITCHING_IMPLEMENTATION.md** - This document
+1. **docs/archive/NODE_VERSION_MAPPING.md** - Complete version mapping reference
+2. **docs/archive/NODE_VERSION_SWITCHING_TEST_RESULTS.md** - Test results and verification
+3. **docs/archive/QUESTIONS_RESOLVED.md** - Summary of resolved questions
+4. **docs/archive/NODE_VERSION_SWITCHING_IMPLEMENTATION.md** - This document
 
 ---
 

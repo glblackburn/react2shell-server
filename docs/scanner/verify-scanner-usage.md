@@ -1,5 +1,8 @@
 # Scanner Verification Script Usage
 
+**Last Updated:** 2025-12-23  
+**Status:** ✅ Active
+
 ## Overview
 
 The `scripts/verify_scanner.sh` script automates verification of the `react2shell-scanner` against multiple Next.js versions. It tests that the scanner correctly detects vulnerabilities in vulnerable Next.js versions and correctly identifies fixed versions as not vulnerable.

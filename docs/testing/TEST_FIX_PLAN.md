@@ -75,11 +75,11 @@ This document outlines the **iterative fix loop** approach to fix `make test`. T
      - **Note:** Since the script stops at the first error, if the previous test passed, you've moved on to a new error
      - **How to find previous failing test:**
        - Check the previous run's `output/make-test-live.txt` for the failing test name
-       - Or check `docs/TEST_FIX_PLAN.md` "Fixes Applied" section for the last iteration's failing test
+       - Or check `docs/testing/TEST_FIX_PLAN.md` "Fixes Applied" section for the last iteration's failing test
        - Look for the test name in the current run's output to see if it passed
    - **Document in the current run's output directory: `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/error-analysis.txt`**
      - Note: `YYYY-MM-DD-HHMMSS` is the timestamp from the current run's directory
-   - **If this is a NEW error: Update `docs/TEST_FIX_PLAN.md` - Add to "Known Issues" section with status OUTSTANDING**
+   - **If this is a NEW error: Update `docs/testing/TEST_FIX_PLAN.md` - Add to "Known Issues" section with status OUTSTANDING**
      - Use the format template in the "Known Issues" section
      - Add at the end of the "Known Issues" section, before "Fixes Applied (By Iteration)"
      - Number sequentially (Issue 3, Issue 4, etc.)
@@ -118,7 +118,7 @@ This document outlines the **iterative fix loop** approach to fix `make test`. T
        - **Save commit message:** Save the commit message text to `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/commit-message.txt` in the current run's output directory
        - **Show what will be committed:** Display the commit message, list of files, and changes summary
        - **Commit automatically:** Commit only the files changed for this specific fix (no waiting for confirmation - exit code 0 confirms the fix)
-     - **Update `docs/TEST_FIX_PLAN.md`:**
+     - **Update `docs/testing/TEST_FIX_PLAN.md`:**
        - Update issue status (OUTSTANDING → FIXED) in "Known Issues" section
        - Update "Fixes Applied" section with iteration details
        - Update "Current Status" section with progress
@@ -281,11 +281,11 @@ venv/bin/pytest tests/ -v -x --tb=short
        - **Previous test still FAILING:** SAME error (fix didn't work, continue iterating)
      - **Find previous failing test:**
        - Check previous run's `output/make-test-live.txt` for the failing test name
-       - Or check `docs/TEST_FIX_PLAN.md` "Fixes Applied" section for last iteration's failing test
+       - Or check `docs/testing/TEST_FIX_PLAN.md` "Fixes Applied" section for last iteration's failing test
        - Look for that test name in current output to verify it passed
    - Create `/tmp/make-test-fix-YYYY-MM-DD-HHMMSS/error-analysis.txt` in that directory
    - Document: Error message, stack trace, which test failed, root cause analysis, port/process status, server log excerpts
-   - **If NEW error:** Update `docs/TEST_FIX_PLAN.md` - Add to "Known Issues" with status OUTSTANDING
+   - **If NEW error:** Update `docs/testing/TEST_FIX_PLAN.md` - Add to "Known Issues" with status OUTSTANDING
 
 2. **Fix Applied** (During Step 5):
    - **Use the SAME output directory** from step 3 (where error was analyzed)
@@ -298,7 +298,7 @@ venv/bin/pytest tests/ -v -x --tb=short
    - **The test results are in the NEW output directory** (created by step 6)
    - **The fix documentation is in the PREVIOUS output directory** (from step 5)
    - **Commit the confirmed fix**
-   - **Update `docs/TEST_FIX_PLAN.md`:**
+   - **Update `docs/testing/TEST_FIX_PLAN.md`:**
      - Update issue status (OUTSTANDING → FIXED) in "Known Issues"
      - Add iteration details to "Fixes Applied" section
      - Update "Current Status" section with progress
@@ -601,7 +601,7 @@ echo $?  # Should be 0
 - Files are created directly in the output directory (not in a subdirectory)
 
 ### Plan Updates
-- Update `docs/TEST_FIX_PLAN.md` as changes are made and tested (see steps 3, 6, and 7):
+- Update `docs/testing/TEST_FIX_PLAN.md` as changes are made and tested (see steps 3, 6, and 7):
   - When a new error is found: Add to "Known Issues" with status OUTSTANDING
   - When a fix is confirmed: Update issue status (OUTSTANDING → FIXED)
   - After each iteration: Update "Fixes Applied" section

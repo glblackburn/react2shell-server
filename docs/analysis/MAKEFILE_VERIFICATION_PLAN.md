@@ -516,7 +516,7 @@ All output will be saved to:
 ## Output Document
 
 The final report will be saved to:
-`docs/MAKEFILE_VERIFICATION_REPORT.md`
+`docs/analysis/MAKEFILE_VERIFICATION_REPORT.md`
 
 The report will reference the output directory for detailed logs and artifacts.
 

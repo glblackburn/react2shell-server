@@ -23,11 +23,13 @@ After reading the full standards, remember these are the most frequently violate
 
 1. **Git Commits:** NEVER commit immediately when user says "commit". ALWAYS show commit message FIRST, then wait for confirmation.
 
-2. **File Creation:** "Review X" means provide review in conversation, NOT create a review document file. Only create documentation files when explicitly requested.
+2. **Pull Request Workflow:** NEVER commit directly to `main` branch. ALWAYS use feature branches and PRs. Branch protection is enforced - direct pushes to `main` will be rejected.
 
-3. **Code Quality:** No trailing whitespace, files must end with newline, remove backup files.
+3. **File Creation:** "Review X" means provide review in conversation, NOT create a review document file. Only create documentation files when explicitly requested.
 
-4. **Security:** NEVER commit sensitive data (API keys, tokens, passwords, etc.)
+4. **Code Quality:** No trailing whitespace, files must end with newline, remove backup files.
+
+5. **Security:** NEVER commit sensitive data (API keys, tokens, passwords, etc.)
 
 ## Protocol for Commits
 

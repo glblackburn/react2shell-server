@@ -6,6 +6,30 @@ This directory contains historical documentation that has been implemented or su
 
 ## Contents
 
+### Node Version Switching Documentation
+
+**Status:** ✅ **IMPLEMENTED**  
+**Date:** Historical (implementation complete)
+
+These documents document the node version switching implementation:
+
+- **[NODE_VERSION_MAPPING.md](NODE_VERSION_MAPPING.md)** - Node version mapping documentation
+- **[NODE_VERSION_SWITCHING_DESIGN.md](NODE_VERSION_SWITCHING_DESIGN.md)** - Design for version switching
+- **[NODE_VERSION_SWITCHING_IMPLEMENTATION.md](NODE_VERSION_SWITCHING_IMPLEMENTATION.md)** - Implementation details
+- **[NODE_VERSION_SWITCHING_IMPLEMENTATION_GAPS.md](NODE_VERSION_SWITCHING_IMPLEMENTATION_GAPS.md)** - Implementation gaps analysis
+- **[NODE_VERSION_SWITCHING_TEST_RESULTS.md](NODE_VERSION_SWITCHING_TEST_RESULTS.md)** - Test results
+
+**Note:** Version switching is fully implemented. See [Main README](../../README.md) for current usage.
+
+### Next.js Version Issues
+
+- **[NEXTJS_16.0.6_VERSION_ISSUE.md](NEXTJS_16.0.6_VERSION_ISSUE.md)** - Historical issue with Next.js 16.0.6
+
+### Questions and Resolutions
+
+- **[QUESTIONS_RESOLVED.md](QUESTIONS_RESOLVED.md)** - Historical questions and resolutions
+- **[OUTSTANDING_QUESTIONS.md](OUTSTANDING_QUESTIONS.md)** - Historical outstanding questions
+
 ### `PERFORMANCE_TARGETS_CONSOLIDATION_RECOMMENDATION.md`
 
 **Status:** ✅ **IMPLEMENTED** (2025-12-23)  
