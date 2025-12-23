@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '24.12.0'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # Job 1: Lint and Validate
+  # Purpose: Quick validation before running expensive tests
+  # TODO: Implement in Step 2
+  lint:
+    name: Lint and Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder - Lint job to be implemented
+        run: echo "Lint job - implementation pending"
+
+  # Job 2: Test Vite + React Framework
+  # Purpose: Test Vite framework with React versions
+  # TODO: Implement in Step 3
+  test-vite:
+    name: Test Vite Framework
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder - Vite test job to be implemented
+        run: echo "Vite test job - implementation pending"
+
+  # Job 3: Test Next.js Framework
+  # Purpose: Test Next.js framework with Next.js versions
+  # TODO: Implement in Step 4
+  test-nextjs:
+    name: Test Next.js Framework
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder - Next.js test job to be implemented
+        run: echo "Next.js test job - implementation pending"
+
+  # Job 4: Python Tests (Matrix)
+  # Purpose: Run comprehensive Python test suite
+  # TODO: Implement in Step 5
+  test-python:
+    name: Test Python (${{ matrix.framework }})
+    runs-on: ubuntu-latest
+    needs: lint
+    strategy:
+      matrix:
+        framework: [vite, nextjs]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder - Python test job to be implemented
+        run: echo "Python test job for ${{ matrix.framework }} - implementation pending"
+
+  # Job 5: Version Validation
+  # Purpose: Validate version switching works
+  # TODO: Implement in Step 6
+  validate-versions:
+    name: Validate Versions
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder - Version validation job to be implemented
+        run: echo "Version validation job - implementation pending"
