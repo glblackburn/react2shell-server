@@ -450,6 +450,18 @@ For detailed usage instructions, options, and troubleshooting, see the [Scanner 
 
 > **📖 Development History:** For a detailed narrative of the project's development journey, see [DEVELOPMENT_NARRATIVE.md](DEVELOPMENT_NARRATIVE.md).
 
+### CI/CD and Automation
+
+This project includes comprehensive CI/CD planning and implementation guides:
+
+- **[Complete CI/CD Implementation Plan](docs/planning/CI_CD_COMPLETE_PLAN.md)** - Complete guide for implementing GitHub Actions CI/CD pipeline
+  - Branch protection configuration
+  - Workflow implementation
+  - Automation options and validation scripts
+  - Testing strategies and troubleshooting
+
+For implementation details, see the [planning documentation](docs/planning/README.md).
+
 ### Quick Start (Recommended)
 
 **Start both servers with one command:**

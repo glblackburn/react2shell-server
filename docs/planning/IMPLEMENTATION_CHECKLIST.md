@@ -2,13 +2,13 @@
 
 **Quick Reference Checklist** - See [Full Implementation Plan](IMPLEMENTATION_PLAN_VERSION_CENTRALIZATION_CI.md) for details
 
-**Note:** Phase 1 is now CI/CD. See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for detailed Phase 1 guide.
+**Note:** Phase 1 is now CI/CD. See [Complete CI/CD Implementation Plan](CI_CD_COMPLETE_PLAN.md) for detailed Phase 1 guide.
 
 ---
 
 ## Phase 1: Add CI/CD with GitHub Actions ⏱️ 8-10 hours
 
-**See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for complete checklist and detailed steps.**
+**See [Complete CI/CD Implementation Plan](CI_CD_COMPLETE_PLAN.md) for complete checklist and detailed steps.**
 
 ### Step 0: Configure Branch Protection (CRITICAL - Do First) ⏱️ 15-30 minutes
 - [ ] Navigate to Repository Settings → Branches
@@ -71,7 +71,7 @@
 - [ ] Create `.github/BRANCH_PROTECTION.md` (optional)
 - [ ] Update main README
 
-**See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for detailed testing checklist.**
+**See [Complete CI/CD Implementation Plan](CI_CD_COMPLETE_PLAN.md) for detailed testing checklist.**
 
 ---
 
@@ -215,7 +215,7 @@
 
 ### Phase 1 Testing (CI/CD)
 
-**See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for comprehensive testing checklist.**
+**See [Complete CI/CD Implementation Plan](CI_CD_COMPLETE_PLAN.md) for comprehensive testing checklist.**
 
 ### Phase 2 Testing
 ```bash
@@ -270,6 +270,6 @@ git push origin test-ci
 
 **See [Full Implementation Plan](IMPLEMENTATION_PLAN_VERSION_CENTRALIZATION_CI.md) for detailed instructions.**
 
-**See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for detailed Phase 1 implementation guide.**
+**See [Complete CI/CD Implementation Plan](CI_CD_COMPLETE_PLAN.md) for detailed Phase 1 implementation guide.**
 
-**See [CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md) for detailed Phase 1 implementation guide.**
+**See [Complete CI/CD Implementation Plan](CI_CD_COMPLETE_PLAN.md) for detailed Phase 1 implementation guide.**

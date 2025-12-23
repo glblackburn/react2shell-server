@@ -7,10 +7,9 @@ Planning documents and strategies for the react2shell-server project.
 - **[Project Plan](project-plan.md)** - Original project plan
 - **[Testing Plan](testing-plan.md)** - Testing strategy and implementation plan
 - **[Refactoring Plan](refactoring-plan.md)** - DRY refactoring plan
-- **[CI/CD Implementation Plan](CI_CD_IMPLEMENTATION_PLAN.md)** - ⭐ **NEW** - Detailed Phase 1 implementation guide for CI/CD setup
-- **[CI/CD Automation Options](CI_CD_AUTOMATION_OPTIONS.md)** - ⭐ **NEW** - Automation options for branch protection and pipeline creation
-- **[Implementation Plan: CI/CD, Version Centralization, and Makefile Refactoring](IMPLEMENTATION_PLAN_VERSION_CENTRALIZATION_CI.md)** - ⭐ **NEW** - Comprehensive plan for high-priority improvements
-- **[Implementation Checklist](IMPLEMENTATION_CHECKLIST.md)** - ⭐ **NEW** - Quick reference checklist for implementation
+- **[Complete CI/CD Implementation Plan](CI_CD_COMPLETE_PLAN.md)** - ⭐ **CONSOLIDATED** - Complete CI/CD implementation guide (consolidates all CI/CD planning, automation options, and validation scripts)
+- **[Implementation Plan: CI/CD, Version Centralization, and Makefile Refactoring](IMPLEMENTATION_PLAN_VERSION_CENTRALIZATION_CI.md)** - Comprehensive plan for high-priority improvements
+- **[Implementation Checklist](IMPLEMENTATION_CHECKLIST.md)** - Quick reference checklist for implementation
 
 ## Status
 
