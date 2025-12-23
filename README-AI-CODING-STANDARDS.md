@@ -34,6 +34,25 @@ When AI agents are used to modify or create files in any repository:
 - AI assistants may only ask to check `git status` or `git diff`
 - The user handles ALL git operations (add, commit, push, etc.)
 
+**CRITICAL: Pull Request Workflow (Branch Protection Enforced)**
+- **NEVER commit directly to `main` branch** - Branch protection is configured and will reject direct pushes
+- **ALWAYS use feature branches and pull requests** for all changes:
+  1. Create a feature branch: `git checkout -b feature/description-of-change`
+  2. Make changes and commit to the feature branch
+  3. Push the feature branch: `git push -u origin feature/description-of-change`
+  4. Create a pull request via GitHub web interface or API
+  5. Merge the PR (which updates `main` on remote)
+  6. After PR is merged, sync local `main`: `git checkout main && git pull origin main`
+- **Why this is required:**
+  - Branch protection enforces PR workflow for CI/CD
+  - Direct commits to `main` will be rejected by GitHub
+  - PRs ensure code review and CI/CD checks run before merging
+  - This prevents "git madness" from diverged branches
+- **If you're on `main` and need to make changes:**
+  - ALWAYS create a feature branch first: `git checkout -b feature/your-change`
+  - NEVER commit directly to `main` - it will fail when pushing
+- **Exception:** This rule applies to the `main` branch. Other branches may have different protection rules.
+
 **MANDATORY: Commit Workflow (Two-Step Process)**
 
 AI assistants MUST follow this exact workflow to commit changes. This is a REQUIRED PROCESS, not optional.
