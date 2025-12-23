@@ -463,6 +463,20 @@ For detailed usage instructions, options, and troubleshooting, see the [Scanner 
 
 > **📖 Development History:** For a detailed narrative of the project's development journey, see [DEVELOPMENT_NARRATIVE.md](DEVELOPMENT_NARRATIVE.md).
 
+### AI Coding Standards
+
+- **[AI Coding Standards](README-AI-CODING-STANDARDS.md)** - AI agent coding rules and guidelines
+
+### Documentation
+
+- **[Documentation Index](docs/README.md)** - Complete documentation index and navigation
+- **[Scripts Documentation](scripts/README.md)** - Utility scripts documentation
+
+### Project Documentation
+
+- **[Project Review Summary](PROJECT_REVIEW_SUMMARY.md)** - Project review and analysis
+- **[Documentation and Makefile Analysis](DOCUMENTATION_AND_MAKEFILE_ANALYSIS.md)** - Analysis documents
+
 ### CI/CD and Automation
 
 This project includes comprehensive CI/CD planning and implementation guides:

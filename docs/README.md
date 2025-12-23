@@ -106,6 +106,12 @@ This directory contains all project documentation organized by category.
 - [Historical Documents](historical/) - Historical reference materials
 - See [historical/README.md](historical/README.md) for complete list
 
+#### Documentation Management
+- [Documentation Review 2025-12-23](DOCUMENTATION_REVIEW_2025-12-23.md) - Latest documentation review
+- [Reorganization Recommendation](REORGANIZATION_RECOMMENDATION.md) - Documentation reorganization plan
+- [Reorganization Summary](REORGANIZATION_SUMMARY.md) - Reorganization summary
+- [Design Proposal: Next.js Startup Test](DESIGN_PROPOSAL_TEST_NEXTJS_STARTUP.md) - Design proposal
+
 ## Documentation Status
 
 **Status Indicators:**
