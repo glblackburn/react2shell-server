@@ -1,0 +1,54 @@
+name: Validate GitHub Setup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday at midnight UTC
+
+# Least privilege permissions - Contents: Read required for branch protection API
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Repository Setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+      
+      - name: Validate branch protection
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          chmod +x scripts/validate_branch_protection_enforcement.sh
+          ./scripts/validate_branch_protection_enforcement.sh
+      
+      - name: Validate workflows exist
+        run: |
+          echo "Checking for required workflow files..."
+          workflows=(
+            ".github/workflows/ci.yml"
+          )
+          missing=0
+          for workflow in "${workflows[@]}"; do
+            if [ ! -f "$workflow" ]; then
+              echo "❌ Workflow not found: $workflow"
+              missing=$((missing + 1))
+            else
+              echo "✅ Found: $workflow"
+            fi
+          done
+          
+          if [ $missing -gt 0 ]; then
+            echo "❌ $missing required workflow(s) missing"
+            exit 1
+          fi
+          echo "✅ All required workflows found"

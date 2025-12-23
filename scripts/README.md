@@ -154,6 +154,85 @@ For `test-parallel` target, the script automatically:
 
 ---
 
+### Branch Protection Validation Scripts
+
+#### `validate_branch_protection_enforcement.sh`
+
+**Purpose:** Comprehensive validation that GitHub branch protection is configured and enforced to prevent bypassing CI/CD automation.
+
+**Usage:**
+```bash
+# Basic validation (configuration check only)
+export GITHUB_TOKEN="ghp_..."
+export GITHUB_REPOSITORY_OWNER="your-org"
+export GITHUB_REPOSITORY_NAME="react2shell-server"
+./scripts/validate_branch_protection_enforcement.sh
+
+# Full validation with enforcement testing
+./scripts/validate_branch_protection_enforcement.sh --test-enforcement
+```
+
+**Options:**
+- `--test-enforcement` - Test actual enforcement by creating test branch/PR
+- `--branch BRANCH` - Branch to check (default: main)
+- `-h, --help` - Show help message
+
+**Features:**
+- Validates branch protection configuration exists
+- Checks required pull request reviews are enabled
+- Verifies required status checks include CI/CD jobs
+- Validates administrators cannot bypass (CRITICAL)
+- Checks force pushes and deletions are disabled
+- Optionally tests enforcement by creating test branch/PR
+- Detects security vulnerabilities in configuration
+- Clear pass/fail output with detailed error messages
+
+**What It Validates:**
+1. ✅ Branch protection exists and is configured
+2. ✅ Required pull request reviews enabled
+3. ✅ Required status checks configured (with expected CI/CD checks)
+4. ✅ Administrators included (CRITICAL - prevents bypass)
+5. ✅ Force pushes disabled
+6. ✅ Branch deletion disabled
+7. ✅ Optional: Tests enforcement by creating test branch/PR
+
+**Integration:**
+- Can be run manually for validation
+- Can be added to CI/CD workflow for ongoing validation
+- Can be scheduled to run weekly
+- Use `--test-enforcement` for comprehensive testing
+
+**Example Output:**
+```
+========================================
+Branch Protection Enforcement Validation
+========================================
+
+[1/6] Checking if branch protection is configured...
+✓ Branch protection is configured
+
+[2/6] Validating required pull request reviews...
+✓ Required PR reviews enabled
+
+[3/6] Validating required status checks...
+✓ Required status checks configured
+
+[4/6] Validating administrator enforcement...
+✓ Administrators are included in protection
+
+[5/6] Validating force push and deletion restrictions...
+✓ Force pushes are disabled
+✓ Branch deletion is disabled
+
+✅ PASS: Branch protection is properly configured and enforced
+```
+
+**See Also:**
+- [Complete CI/CD Implementation Plan](../docs/planning/CI_CD_COMPLETE_PLAN.md)
+- [GitHub Branch Protection Documentation](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches)
+
+---
+
 ## Script Development Guidelines
 
 ### Best Practices

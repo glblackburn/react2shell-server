@@ -6,6 +6,8 @@ fixtures and plugins from organized modules.
 """
 import pytest
 import logging
+import os
+import sys
 from pathlib import Path
 
 # Import fixtures from organized modules
@@ -52,6 +54,45 @@ def verify_framework_mode():
 # Import performance plugin
 # The plugin hooks are automatically registered when the module is imported
 import plugins.performance
+
+# Explicitly register the plugin to ensure hooks are discovered
+def pytest_configure(config):
+    """Configure pytest, register markers, and register performance plugin."""
+    # Register performance plugin explicitly to ensure hooks are discovered
+    if not config.pluginmanager.has_plugin("performance_plugin"):
+        config.pluginmanager.register(plugins.performance, "performance_plugin")
+        if os.environ.get('PYTEST_SAVE_HISTORY') == 'true':
+            print(f"\n🔍 Registered performance plugin explicitly", file=sys.stderr)
+    
+    # Register markers
+    config.addinivalue_line(
+        "markers", "smoke: Smoke tests - critical functionality (timeout: 10s)"
+    )
+    config.addinivalue_line(
+        "markers", "regression: Regression tests"
+    )
+    config.addinivalue_line(
+        "markers", "version_switch: Tests that switch React versions (must run sequentially, not in parallel) (timeout: 120s)"
+    )
+    config.addinivalue_line(
+        "markers", "browser_chrome: Tests specific to Chrome"
+    )
+    config.addinivalue_line(
+        "markers", "browser_firefox: Tests specific to Firefox"
+    )
+    config.addinivalue_line(
+        "markers", "browser_safari: Tests specific to Safari"
+    )
+    config.addinivalue_line(
+        "markers", "slow: Tests that take longer to run (timeout: 60s)"
+    )
+    config.addinivalue_line(
+        "markers", "scanner: Scanner verification tests (requires external scanner)"
+    )
+    
+    # Handle --update-baseline flag
+    if config.getoption("--update-baseline"):
+        os.environ['PYTEST_UPDATE_BASELINE'] = 'true'
 
 # Test configuration - import from server_constants for consistency
 # Use functions to get dynamic URLs
@@ -105,24 +146,3 @@ def pytest_addoption(parser):
     # Note: --base-url is provided by pytest-selenium plugin, don't add it here
 
 
-def pytest_configure(config):
-    """Configure pytest and register markers."""
-    config.addinivalue_line(
-        "markers", "smoke: Smoke tests - critical functionality (timeout: 10s)"
-    )
-    config.addinivalue_line(
-        "markers", "regression: Regression tests"
-    )
-    config.addinivalue_line(
-        "markers", "version_switch: Tests that switch React versions (timeout: 120s)"
-    )
-    config.addinivalue_line(
-        "markers", "slow: Tests that take longer to run (timeout: 60s)"
-    )
-    config.addinivalue_line(
-        "markers", "scanner: Scanner verification tests (requires external scanner)"
-    )
-    
-    if config.getoption("--update-baseline"):
-        import os
-        os.environ['PYTEST_UPDATE_BASELINE'] = 'true'

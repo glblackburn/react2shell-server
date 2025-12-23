@@ -7,6 +7,7 @@ import pytest
 import time
 import json
 import os
+import sys
 import tempfile
 import glob
 from pathlib import Path
@@ -136,6 +137,14 @@ class PerformanceTracker:
 _performance_tracker = PerformanceTracker()
 
 
+@pytest.hookimpl
+def pytest_configure(config):
+    """Verify plugin is loaded."""
+    if os.environ.get('PYTEST_SAVE_HISTORY') == 'true':
+        print(f"\n🔍 Performance plugin loaded (pytest_configure called)", file=sys.stderr)
+        print(f"   Plugin file: {__file__}", file=sys.stderr)
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_call(item):
     """Track test execution start time for performance tracking."""
@@ -162,6 +171,10 @@ def pytest_runtest_makereport(item, call):
         
         suite_name = item.cls.__name__ if item.cls else item.module.__name__
         _performance_tracker.record_suite_time(suite_name, duration)
+        
+        # Debug: Log when tests are recorded
+        if os.environ.get('PYTEST_SAVE_HISTORY') == 'true' and len(_performance_tracker.current_run) <= 3:
+            print(f"   📝 Recorded test: {test_id[:60]}... (duration: {duration:.2f}s)", file=sys.stderr)
         
         regression = _performance_tracker.check_regression(test_id, duration)
         if regression:
@@ -197,8 +210,13 @@ def pytest_runtest_makereport(item, call):
                     print(f"\n⚠️  Failed to save screenshot: {e}")
 
 
+@pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session, exitstatus):
     """Generate performance report at end of session."""
+    # Debug: Always log when session finishes
+    if os.environ.get('PYTEST_SAVE_HISTORY') == 'true':
+        print(f"\n🔍 pytest_sessionfinish called (exitstatus={exitstatus})", file=sys.stderr)
+        print(f"   Current run has {len(_performance_tracker.current_run)} tests", file=sys.stderr)
     import tempfile
     
     # Check if we're in a worker process (pytest-xdist)
@@ -281,6 +299,17 @@ def pytest_sessionfinish(session, exitstatus):
     # Use aggregated tracker for reporting
     tracker = aggregated_tracker if aggregated_tracker.current_run else _performance_tracker
     
+    # Debug: Log tracker state if PYTEST_SAVE_HISTORY is set
+    if os.environ.get('PYTEST_SAVE_HISTORY') == 'true':
+        print(f"\n🔍 Performance tracker debug:", file=sys.stderr)
+        print(f"   Aggregated tracker has data: {bool(aggregated_tracker.current_run)}", file=sys.stderr)
+        print(f"   Master tracker has data: {bool(_performance_tracker.current_run)}", file=sys.stderr)
+        print(f"   Using tracker: {'aggregated' if aggregated_tracker.current_run else 'master'}", file=sys.stderr)
+        if tracker.current_run:
+            print(f"   Tests in current_run: {list(tracker.current_run.keys())[:5]}", file=sys.stderr)
+        else:
+            print(f"   ⚠️  No test data in tracker.current_run!", file=sys.stderr)
+    
     # Save to history (always save, even if some tests failed)
     if tracker.current_run:
         try:
@@ -302,6 +331,9 @@ def pytest_sessionfinish(session, exitstatus):
             if os.environ.get('PYTEST_SAVE_HISTORY') == 'true':
                 print(f"\n📊 Performance history saved: {history_file} (Framework: {framework_mode})")
         except Exception as e:
+            # Log error for debugging if PYTEST_SAVE_HISTORY is set
+            if os.environ.get('PYTEST_SAVE_HISTORY') == 'true':
+                print(f"\n⚠️  Failed to save performance history: {e}", file=sys.stderr)
             # Silently fail - history is optional
             pass
     

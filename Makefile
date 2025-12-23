@@ -338,7 +338,7 @@ $(foreach version,$(FIXED_VERSIONS),$(eval react-$(version):;$(call switch_react
 $(foreach version,$(NEXTJS_VULNERABLE_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 $(foreach version,$(NEXTJS_FIXED_VERSIONS),$(eval nextjs-$(version):;$(call switch_nextjs_version,$(version))))
 
-.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.4 nextjs-15.1.8 nextjs-15.2.5 nextjs-15.3.5 nextjs-15.4.7 nextjs-15.5.6 nextjs-16.0.6 nextjs-14.0.1 nextjs-14.1.1 jq install-jq nvm install-nvm node install-node install-nextjs-deps install-nextjs-deps-internal setup install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-nextjs-startup check-nextjs-16 test-browser test-clean test-open-report test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
+.PHONY: help react-19.0 react-19.1.0 react-19.1.1 react-19.2.0 react-19.0.1 react-19.1.2 react-19.2.1 nextjs-14.0.0 nextjs-14.1.0 nextjs-15.0.4 nextjs-15.1.8 nextjs-15.2.5 nextjs-15.3.5 nextjs-15.4.7 nextjs-15.5.6 nextjs-16.0.6 nextjs-14.0.1 nextjs-14.1.1 jq install-jq nvm install-nvm node install-node install-nextjs-deps install-nextjs-deps-internal setup install current-version clean vulnerable start stop status tail-vite tail-server test-setup test test-quick test-parallel test-report test-smoke test-hello test-version test-security test-version-switch test-nextjs-startup check-nextjs-16 test-browser test-clean test-open-report test-performance test-update-baseline test-performance-check test-performance-trends test-performance-compare test-performance-slowest test-performance-history test-performance-summary test-performance-report test-makefile
 
 # Set help as the default target when make is run without arguments
 .DEFAULT_GOAL := help
@@ -417,14 +417,17 @@ help:
 	@echo "  make test-browser    - Run tests with specific browser (use BROWSER=chrome|firefox|safari)"
 	@echo "  make test-clean      - Clean test artifacts (reports, screenshots, cache)"
 	@echo "  make test-open-report - Open test report in browser"
-	@echo "  make test-update-baseline - Update performance baseline with current test times"
-	@echo "  make test-performance-check - Check for performance regressions"
-	@echo "  make test-performance-trends [TEST_ID=test_id] [LIMIT=N] - Show performance trends"
-	@echo "  make test-performance-compare - Compare latest run against baseline"
-	@echo "  make test-performance-slowest [LIMIT=N] - List slowest tests"
-	@echo "  make test-performance-history [LIMIT=N] - List recent performance history"
-	@echo "  make test-performance-summary [LIMIT=N] - Show summary of recent runs"
-	@echo "  make test-performance-report - Generate and open comprehensive HTML performance report"
+	@echo "  make test-performance - Run performance tests and generate comprehensive report (RECOMMENDED)"
+	@echo "  make test-update-baseline - Quick baseline update without running full tests"
+	@echo ""
+	@echo "  (Legacy targets - use test-performance instead):"
+	@echo "  make test-performance-check - Check for performance regressions (DEPRECATED)"
+	@echo "  make test-performance-trends [TEST_ID=test_id] [LIMIT=N] - Show trends (DEPRECATED)"
+	@echo "  make test-performance-compare - Compare vs baseline (DEPRECATED)"
+	@echo "  make test-performance-slowest [LIMIT=N] - List slowest tests (DEPRECATED)"
+	@echo "  make test-performance-history [LIMIT=N] - Show history (DEPRECATED)"
+	@echo "  make test-performance-summary [LIMIT=N] - Show summary (DEPRECATED)"
+	@echo "  make test-performance-report - Generate HTML report (DEPRECATED)"
 	@echo ""
 	@echo "Note: Versions 19.0, 19.1.0, 19.1.1, and 19.2.0 contain a critical"
 	@echo "      security vulnerability in React Server Components."
@@ -1172,15 +1175,55 @@ test-scanner-script:
 	@bash scripts/verify_scanner.sh
 
 # Update performance baseline
+# Unified performance testing target - runs tests, generates reports, updates trends
+test-performance: check-venv
+	@echo "================================================================================="
+	@echo "Running Performance Tests and Generating Reports"
+	@echo "================================================================================="
+	@echo ""
+	@# Step 1: Run tests with history tracking
+	@echo "Step 1: Running performance tests..."
+	@PYTEST_SAVE_HISTORY=true $(PYTEST) $(TEST_DIR)/ -v || true
+	@echo ""
+	@# Step 2: Update baseline if UPDATE_BASELINE is set or baseline doesn't exist
+	@if [ "$$UPDATE_BASELINE" = "true" ] || [ ! -f tests/.performance_baseline.json ]; then \
+		echo "Step 2: Updating performance baseline..."; \
+		PYTEST_UPDATE_BASELINE=true PYTEST_SAVE_HISTORY=true $(PYTEST) $(TEST_DIR)/ -v || true; \
+		echo "✓ Performance baseline updated!"; \
+	else \
+		echo "Step 2: Baseline exists, skipping update (set UPDATE_BASELINE=true to force update)"; \
+	fi
+	@echo ""
+	@# Step 3: Generate comprehensive HTML report
+	@echo "Step 3: Generating comprehensive performance report..."
+	@cd $(TEST_DIR) && ./generate_performance_report.sh || echo "⚠️  Report generation had issues, but continuing..."
+	@echo ""
+	@# Step 4: Show summary in console
+	@echo "Step 4: Performance Summary:"
+	@echo "--------------------------------------------------------------------------------"
+	@cd $(TEST_DIR) && $(VENV_BIN)/python3 performance_report.py summary --limit 5 || echo "⚠️  Summary generation had issues"
+	@echo ""
+	@echo "================================================================================="
+	@echo "✓ Performance testing complete!"
+	@echo "================================================================================="
+	@echo "  - HTML Report: tests/reports/performance_history_report.html"
+	@echo "  - Baseline: tests/.performance_baseline.json"
+	@echo "  - History: tests/.performance_history/"
+	@echo ""
+	@echo "To update baseline: UPDATE_BASELINE=true make test-performance"
+
+# Quick baseline update (convenience target - no test execution)
 test-update-baseline: check-venv
 	@echo "Updating performance baseline..."
 	@PYTEST_UPDATE_BASELINE=true PYTEST_SAVE_HISTORY=true $(PYTEST) $(TEST_DIR)/ -v || true
 	@echo ""
 	@echo "✓ Performance baseline updated!"
 
-# Check for performance regressions
+# Deprecated: Use test-performance instead
 test-performance-check: check-venv
-	@if [ ! -f tests/PERFORMANCE_BASELINE.txt ]; then \
+	@echo "⚠️  DEPRECATED: Use 'make test-performance' instead"
+	@echo "Running legacy performance check..."
+	@if [ ! -f tests/.performance_baseline.json ]; then \
 		echo "⚠️  Performance baseline not found. Running test-update-baseline first..."; \
 		$(MAKE) test-update-baseline; \
 	fi
@@ -1189,28 +1232,39 @@ test-performance-check: check-venv
 	@echo ""
 	@echo "✓ Performance check completed!"
 
-# Performance analysis commands
+# Deprecated: Use test-performance instead (reports included in HTML)
 test-performance-trends: check-venv
+	@echo "⚠️  DEPRECATED: Use 'make test-performance' for comprehensive reports"
 	@echo "Performance Trends:"
 	@cd $(TEST_DIR) && $(VENV_BIN)/python3 performance_report.py trends $(TEST_ID) --limit $(or $(LIMIT),10)
 
+# Deprecated: Use test-performance instead (reports included in HTML)
 test-performance-compare: check-venv
+	@echo "⚠️  DEPRECATED: Use 'make test-performance' for comprehensive reports"
 	@echo "Comparing latest run against baseline..."
 	@cd $(TEST_DIR) && $(VENV_BIN)/python3 performance_report.py compare
 
+# Deprecated: Use test-performance instead (reports included in HTML)
 test-performance-slowest: check-venv
+	@echo "⚠️  DEPRECATED: Use 'make test-performance' for comprehensive reports"
 	@echo "Slowest tests:"
 	@cd $(TEST_DIR) && $(VENV_BIN)/python3 performance_report.py slowest --limit $(or $(LIMIT),10)
 
+# Deprecated: Use test-performance instead (reports included in HTML)
 test-performance-history: check-venv
+	@echo "⚠️  DEPRECATED: Use 'make test-performance' for comprehensive reports"
 	@echo "Recent performance history:"
 	@cd $(TEST_DIR) && $(VENV_BIN)/python3 performance_report.py history --limit $(or $(LIMIT),10)
 
+# Deprecated: Use test-performance instead (reports included in HTML)
 test-performance-summary: check-venv
+	@echo "⚠️  DEPRECATED: Use 'make test-performance' for comprehensive reports"
 	@echo "Performance summary:"
 	@cd $(TEST_DIR) && $(VENV_BIN)/python3 performance_report.py summary --limit $(or $(LIMIT),5)
 
+# Deprecated: Use test-performance instead (reports included automatically)
 test-performance-report: check-venv
+	@echo "⚠️  DEPRECATED: Use 'make test-performance' (includes report generation)"
 	@echo "Generating comprehensive performance history report..."
 	@cd $(TEST_DIR) && ./generate_performance_report.sh
 
