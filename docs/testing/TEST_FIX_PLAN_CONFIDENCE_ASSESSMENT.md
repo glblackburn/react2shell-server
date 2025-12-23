@@ -3,7 +3,7 @@
 **Date:** 2025-12-20  
 **Assessment ID:** `agent-assessment-2025-12-20-023559`  
 **Agent Identifier:** Auto (Cursor AI Agent)  
-**Session Context:** Final review of `docs/TEST_FIX_PLAN.md` before execution
+**Session Context:** Final review of `docs/testing/TEST_FIX_PLAN.md` before execution
 
 ---
 
@@ -14,7 +14,7 @@ This document records the confidence assessment for:
 2. Ability to correct all issues preventing `make test` from passing
 
 **Assessment Date:** 2025-12-20  
-**Plan Document:** `docs/TEST_FIX_PLAN.md`  
+**Plan Document:** `docs/testing/TEST_FIX_PLAN.md`  
 **Plan Last Updated:** 2025-12-20
 
 ---
@@ -143,11 +143,11 @@ The iterative approach, thorough documentation, and clear success criteria provi
 **Assessment ID:** `agent-assessment-2025-12-20-023559`  
 **Session Timestamp:** 2025-12-20 02:35:59 UTC  
 **Workspace:** `/Users/lblackb/data/lblackb/git/react2shell-server`  
-**Plan Document:** `docs/TEST_FIX_PLAN.md`
+**Plan Document:** `docs/testing/TEST_FIX_PLAN.md`
 
 **Traceability:**
 - This assessment was generated during a review session where the agent:
-  1. Read and analyzed `docs/TEST_FIX_PLAN.md`
+  1. Read and analyzed `docs/testing/TEST_FIX_PLAN.md`
   2. Reviewed codebase structure (test fixtures, server management)
   3. Examined the test execution script
   4. Provided this confidence assessment
@@ -163,7 +163,7 @@ The iterative approach, thorough documentation, and clear success criteria provi
 ## Notes
 
 - This assessment is based on:
-  - Complete review of `docs/TEST_FIX_PLAN.md`
+  - Complete review of `docs/testing/TEST_FIX_PLAN.md`
   - Understanding of the codebase structure (test fixtures, server management)
   - Review of the test execution script
   - Analysis of known issues documented in the plan

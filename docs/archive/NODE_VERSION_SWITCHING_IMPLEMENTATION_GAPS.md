@@ -18,7 +18,7 @@
   - Next.js 14.x: requires `>=18.17.0` ✅
   - Next.js 15.x: requires `^18.18.0 || ^19.8.0 || >= 20.0.0` ✅
   - Next.js 16.0.6: requires `>=20.9.0` ✅
-- ✅ Complete mapping documented in `docs/NODE_VERSION_MAPPING.md`
+- ✅ Complete mapping documented in `docs/archive/NODE_VERSION_MAPPING.md`
 - ✅ Makefile implementation updated with all 11 version mappings
 
 **Decision:** Use latest Node.js LTS (24.12.0) that satisfies all Next.js engine requirements

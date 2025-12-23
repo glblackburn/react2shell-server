@@ -330,7 +330,7 @@ DURATION=$((END_TIME - START_TIME))
 **Action:** Document that `test-parallel` spawns long-running background processes
 
 **Files:** 
-- `docs/TEST_EXECUTION_VERIFICATION_REPORT_V3.md` - Background process behavior documented
+- `docs/testing/TEST_EXECUTION_VERIFICATION_REPORT_V3.md` - Background process behavior documented
 - `scripts/README.md` - Script documentation includes background process tracking details
 
 **Status:** ✅ Implemented - Background process behavior is documented in the verification report and scripts README.

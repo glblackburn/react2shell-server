@@ -3,7 +3,7 @@
 **Date:** 2025-12-19  
 **Purpose:** Comprehensive verification of all test execution make targets with driver caching  
 **Output Directory:** `/tmp/test-execution-verification-2025-12-19-133816/`  
-**Plan:** `docs/TEST_EXECUTION_VERIFICATION_PLAN.md` (updated with driver management)
+**Plan:** `docs/testing/TEST_EXECUTION_VERIFICATION_PLAN.md` (updated with driver management)
 
 ---
 

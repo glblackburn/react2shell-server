@@ -326,7 +326,7 @@ get_node_version = $(shell \
 - No network dependency
 - Predictable behavior
 
-**Version Mapping:** See `docs/NODE_VERSION_MAPPING.md` for complete version mapping details.
+**Version Mapping:** See `docs/archive/NODE_VERSION_MAPPING.md` for complete version mapping details.
 - All Next.js versions use **Node.js 24.12.0** (current LTS)
 - This version satisfies all Next.js engine requirements
 - Strategy: Use latest Node.js LTS that is supported by React and Next.js frameworks

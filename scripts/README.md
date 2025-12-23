@@ -67,6 +67,53 @@ For `test-parallel` target, the script automatically:
 
 ---
 
+### Test Execution Utilities (Advanced)
+
+#### `run_make_test_stop_on_error.sh`
+
+**Purpose:** Run tests with stop-on-first-error behavior for iterative debugging and fix loops.
+
+**Usage:**
+```bash
+./scripts/run_make_test_stop_on_error.sh [OUTPUT_DIR]
+```
+
+**Features:**
+- Runs pytest with `-x` flag to stop immediately at first failure
+- Captures comprehensive state before and after execution
+- Framework-aware (handles both Vite and Next.js modes)
+- Automatically starts servers if needed
+- Creates timestamped output directory structure
+- Captures processes, ports, logs, and test reports
+- Exits with code 0 if all tests pass, code 1 if any failure
+
+**Output Structure:**
+```
+OUTPUT_DIR/
+├── output/
+│   ├── make-test-live.txt      # Live test output
+│   ├── make-test-exitcode.txt  # Exit code
+│   ├── make-test-duration.txt  # Execution duration
+│   └── test-metadata.txt       # Environment metadata
+├── files-before/               # State before execution
+├── files-after/                # State after execution
+├── logs/                       # Server logs
+├── reports/                    # Test reports
+└── artifacts/                  # Test artifacts
+```
+
+**Use Cases:**
+- Iterative test fixing (fix one error at a time)
+- Debugging test failures
+- Comprehensive test execution analysis
+- Following the test fix loop process
+
+**See Also:**
+- [Test Fix Plan](../docs/testing/TEST_FIX_PLAN.md) - Detailed iterative fix loop process
+- [Test Execution Verification Plan](../docs/testing/TEST_EXECUTION_VERIFICATION_PLAN.md)
+
+---
+
 ### Test Verification Scripts
 
 #### `verify_tests.sh`
@@ -151,6 +198,50 @@ For `test-parallel` target, the script automatically:
 - Aggregates scanner verification results
 - Generates HTML report
 - Opens report in browser automatically
+
+---
+
+### GitHub Token Utilities
+
+#### `test_token_scopes.sh`
+
+**Purpose:** Utility script to test GitHub token scopes and permissions.
+
+**Usage:**
+```bash
+./scripts/test_token_scopes.sh
+```
+
+**Features:**
+- Tests if GITHUB_TOKEN is set (checks environment variable or ~/.secure/github-set-token.sh)
+- Validates token is valid by calling GitHub API
+- Displays token scopes from GitHub API response headers
+- Checks for 'repo' scope (required for branch protection API access)
+- Provides clear error messages if token is invalid or missing
+
+**Requirements:**
+- GITHUB_TOKEN environment variable set, OR
+- Token available in ~/.secure/github-set-token.sh
+
+**Example Output:**
+```
+Testing token scopes...
+
+✅ Token is valid
+
+Token scopes: repo
+
+✅ 'repo' scope is present - should work for branch protection
+```
+
+**Use Cases:**
+- Debugging GitHub API authentication issues
+- Verifying token has correct permissions
+- Troubleshooting branch protection validation failures
+
+**See Also:**
+- [GitHub Permissions Guide](../docs/scripts/GITHUB_PERMISSIONS_REQUIRED.md)
+- [Branch Protection Validation Script](#validate_branch_protection_enforcementsh)
 
 ---
 
@@ -304,8 +395,8 @@ These scripts are designed to work with the test execution framework:
 - **`verify_scanner.sh`** - Scanner-specific verification (separate from main test suite)
 
 See also:
-- [Test Execution Verification Plan](../docs/TEST_EXECUTION_VERIFICATION_PLAN.md)
-- [Test Execution Recommendations](../docs/TEST_EXECUTION_RECOMMENDATIONS.md)
+- [Test Execution Verification Plan](../docs/testing/TEST_EXECUTION_VERIFICATION_PLAN.md)
+- [Test Execution Recommendations](../docs/testing/TEST_EXECUTION_RECOMMENDATIONS.md)
 - [Test README](../tests/README.md)
 
 ---

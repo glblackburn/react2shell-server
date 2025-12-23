@@ -371,7 +371,7 @@ make test-driver-install
 
 ## Related Documentation
 
-- **Issue Documentation**: `docs/WEBDRIVER_TIMEOUT_ISSUE.md`
+- **Issue Documentation**: `docs/analysis/WEBDRIVER_TIMEOUT_ISSUE.md`
 - **Test Setup**: `tests/README.md`
 - **Makefile Targets**: See `make help` or `README.md`
 

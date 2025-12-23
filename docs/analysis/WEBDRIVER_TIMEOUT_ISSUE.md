@@ -276,7 +276,7 @@ Install driver as part of CI/CD setup:
 - **webdriver-manager**: https://github.com/SergeyPirogov/webdriver_manager
 - **ChromeDriver**: https://chromedriver.chromium.org/
 - **googlechromelabs.github.io**: Hosts ChromeDriver releases
-- **Issue Report**: See `docs/TEST_EXECUTION_FIX_REPORT.md` for related context
+- **Issue Report**: See `docs/testing/TEST_EXECUTION_FIX_REPORT.md` for related context
 
 ---
 
@@ -295,5 +295,5 @@ The `googlechromelabs.github.io` timeout is a **network issue**, not a server st
 ---
 
 **Document Created**: 2025-12-19  
-**Related Issues**: Server startup fix (see `docs/TEST_EXECUTION_FIX_REPORT.md`)  
+**Related Issues**: Server startup fix (see `docs/testing/TEST_EXECUTION_FIX_REPORT.md`)  
 **Status**: Known issue, solutions available

@@ -140,7 +140,7 @@
 - Added references from main README and test documentation
 
 **Files modified:**
-- `docs/TEST_EXECUTION_VERIFICATION_REPORT_V3.md` - Background process behavior documented
+- `docs/testing/TEST_EXECUTION_VERIFICATION_REPORT_V3.md` - Background process behavior documented
 - `scripts/README.md` - Script documentation includes background process tracking details
 - `README.md` - Added reference to scripts utilities
 - `tests/README.md` - Added reference to test execution utilities
