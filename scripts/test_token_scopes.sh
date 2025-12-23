@@ -24,16 +24,16 @@ response=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" \
 if echo "$response" | grep -q '"login"'; then
     echo "✅ Token is valid"
     echo ""
-    
+
     # Get scopes from response headers (GitHub returns scopes in X-OAuth-Scopes header)
     scopes=$(curl -s -I -H "Authorization: token ${GITHUB_TOKEN}" \
         -H "Accept: application/vnd.github.v3+json" \
         https://api.github.com/user | grep -i "X-OAuth-Scopes" | cut -d' ' -f2- | tr -d '\r')
-    
+
     if [ -n "$scopes" ]; then
         echo "Token scopes: $scopes"
         echo ""
-        
+
         if echo "$scopes" | grep -q "repo"; then
             echo "✅ 'repo' scope is present - should work for branch protection"
         else

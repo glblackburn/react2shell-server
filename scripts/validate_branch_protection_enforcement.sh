@@ -216,7 +216,7 @@ setup_github_credentials_interactive() {
         echo "   ${YELLOW}Note:${RESET} Fine-grained 'Contents: Read' may not work - use classic token"
     fi
     echo ""
-    
+
     # Check if credentials file already exists
     if [ -f "$CREDENTIALS_FILE" ]; then
         echo "${YELLOW}WARNING: ${CREDENTIALS_FILE} already exists.${RESET}"
@@ -226,7 +226,7 @@ setup_github_credentials_interactive() {
             return 1
         fi
     fi
-    
+
     echo "${YELLOW}⚠️  Important:${RESET} Use a CLASSIC token (not fine-grained) for branch protection API"
     echo ""
     echo "Go get your GitHub personal access token:"
@@ -235,7 +235,7 @@ setup_github_credentials_interactive() {
     echo ""
     echo "Press Enter to open classic token settings (or 'N' to skip and enter manually)."
     read response
-    
+
     if [ "${response,,}" != "n" ]; then
         classic_token_url="https://github.com/settings/tokens"
         if command -v open >/dev/null 2>&1; then
@@ -246,33 +246,33 @@ setup_github_credentials_interactive() {
             echo "Please open manually: ${classic_token_url}"
         fi
     fi
-    
+
     echo ""
     echo "Enter your GitHub personal access token:"
     echo "  (Token will be hidden for security)"
     read -s token_input
     echo ""
-    
+
     if [ -z "$token_input" ]; then
         echo "${RED}ERROR: GitHub token is required${RESET}" >&2
         return 1
     fi
-    
+
     # Create secure directory
     echo ""
     echo "Creating secure directory: ${SECURE_DIR}"
     mkdir -p "$SECURE_DIR"
     chmod 700 "$SECURE_DIR"
-    
+
     # Write credentials file
     echo "Creating credentials file: ${CREDENTIALS_FILE}"
     cat > "$CREDENTIALS_FILE" <<EOF
 export GITHUB_TOKEN="${token_input}"
 EOF
-    
+
     # Set permissions: 400 (read-only for owner)
     chmod 400 "$CREDENTIALS_FILE"
-    
+
     echo ""
     echo "${GREEN}${BOLD}========================================${RESET}"
     echo "${GREEN}${BOLD}Credentials file created successfully!${RESET}"
@@ -280,7 +280,7 @@ EOF
     echo "File: ${CREDENTIALS_FILE}"
     echo "Permissions: $(stat -f "%OLp" "$CREDENTIALS_FILE" 2>/dev/null || stat -c "%a" "$CREDENTIALS_FILE" 2>/dev/null || echo "400")"
     echo ""
-    
+
     # Load the token
     GITHUB_TOKEN="$token_input"
     return 0
@@ -435,11 +435,11 @@ if [ -z "$required_pr" ] || [ "$required_pr" = "null" ]; then
 else
     required_approvals=$(echo "$required_pr" | jq -r '.required_approving_review_count // 0')
     dismiss_stale=$(echo "$required_pr" | jq -r '.dismiss_stale_reviews // false')
-    
+
     echo "${GREEN}✓ Required PR reviews enabled${RESET}"
     echo "   - Required approvals: ${required_approvals}"
     echo "   - Dismiss stale reviews: ${dismiss_stale}"
-    
+
     if [ "$required_approvals" -eq 0 ]; then
         WARNINGS+=("Required approvals is 0 (allows PRs without reviews)")
     fi
@@ -462,7 +462,7 @@ if [ -z "$required_status_checks" ] || [ "$required_status_checks" = "null" ]; t
 else
     strict=$(echo "$required_status_checks" | jq -r '.strict // false')
     contexts=$(echo "$required_status_checks" | jq -r '.contexts[]? // empty')
-    
+
     if [ -z "$contexts" ]; then
         echo "${RED}❌ FAIL: No status checks are required${RESET}"
         echo "   This allows PRs to be merged without any CI/CD checks"
@@ -475,21 +475,21 @@ else
         echo "$contexts" | while read -r check; do
             echo "     • ${check}"
         done
-        
+
         if [ "$strict" != "true" ]; then
             WARNINGS+=("Branches don't need to be up-to-date (strict=false)")
         fi
-        
+
         # Check for expected CI/CD checks
         expected_checks=("lint" "test-vite" "test-nextjs" "validate-versions")
         missing_checks=()
-        
+
         for expected in "${expected_checks[@]}"; do
             if ! echo "$contexts" | grep -q "^${expected}$"; then
                 missing_checks+=("$expected")
             fi
         done
-        
+
         if [ ${#missing_checks[@]} -gt 0 ]; then
             echo "${YELLOW}⚠️  WARNING: Expected CI/CD checks not found:${RESET}"
             for check in "${missing_checks[@]}"; do
@@ -555,7 +555,7 @@ echo ""
 
 if [ "$TEST_ENFORCEMENT" = "true" ]; then
     echo "${CYAN}[6/6]${RESET} Testing enforcement (creating test branch/PR)..."
-    
+
     # Check if we're in a git repository
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
         echo "${YELLOW}⚠️  WARNING: Not in a git repository, skipping enforcement test${RESET}"
@@ -563,64 +563,64 @@ if [ "$TEST_ENFORCEMENT" = "true" ]; then
     else
         # Get current branch
         current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
-        
+
         # Create test branch name
         test_branch="test-branch-protection-$(date +%s)"
-        
+
         echo "   Creating test branch: ${test_branch}"
-        
+
         # Create test branch
         if git checkout -b "$test_branch" > /dev/null 2>&1; then
             # Create a test commit
             echo "# Test commit for branch protection validation" > "${PROJECT_ROOT}/.branch-protection-test-${test_branch}.md"
             git add ".branch-protection-test-${test_branch}.md" > /dev/null 2>&1
             git commit -m "Test: Branch protection validation" > /dev/null 2>&1
-            
+
             # Try to push to main (should fail)
             echo "   Testing: Attempting to push directly to ${BRANCH} (should fail)..."
-            
+
             # Switch to main temporarily
             git checkout "$BRANCH" > /dev/null 2>&1 || {
                 echo "${YELLOW}⚠️  WARNING: Could not checkout ${BRANCH}, skipping direct push test${RESET}"
                 WARNINGS+=("Could not test direct push (not on ${BRANCH})")
             }
-            
+
             # Try to merge test branch into main (should fail if protection works)
             if git merge "$test_branch" --no-ff --no-commit > /dev/null 2>&1; then
                 git merge --abort > /dev/null 2>&1
                 echo "   ${YELLOW}⚠️  WARNING: Local merge succeeded (expected if protection only blocks remote)${RESET}"
                 INFO+=("Local merge test completed (protection blocks remote pushes, not local)")
             fi
-            
+
             # Try to push test branch
             echo "   Testing: Pushing test branch (should succeed)..."
             if git push -u origin "$test_branch" > /dev/null 2>&1; then
                 echo "   ${GREEN}✓ Test branch pushed successfully${RESET}"
-                
+
                 # Try to create PR (this will show if CI is required)
                 echo "   Testing: Creating test PR..."
-                
+
                 # Use GitHub CLI if available, otherwise use API
                 if command -v gh >/dev/null 2>&1; then
                     pr_url=$(gh pr create --base "$BRANCH" --head "$test_branch" \
                         --title "Test: Branch Protection Validation" \
                         --body "Automated test PR for branch protection validation. This PR should be blocked from merging until CI passes." \
                         --draft 2>/dev/null)
-                    
+
                     if [ -n "$pr_url" ]; then
                         echo "   ${GREEN}✓ Test PR created: ${pr_url}${RESET}"
                         INFO+=("Test PR created: ${pr_url}")
-                        
+
                         # Check if PR can be merged (should be blocked)
                         sleep 2  # Wait for GitHub to process
                         pr_data=$(gh pr view "$test_branch" --json mergeable,mergeStateStatus 2>/dev/null)
-                        
+
                         if [ -n "$pr_data" ]; then
                             mergeable=$(echo "$pr_data" | jq -r '.mergeable // "UNKNOWN"')
                             merge_state=$(echo "$pr_data" | jq -r '.mergeStateStatus // "UNKNOWN"')
-                            
+
                             echo "   PR merge status: ${mergeable} (${merge_state})"
-                            
+
                             if [ "$mergeable" = "false" ] || [ "$merge_state" != "CLEAN" ]; then
                                 echo "   ${GREEN}✓ PR is correctly blocked from merging${RESET}"
                                 INFO+=("PR correctly blocked (mergeable: ${mergeable})")
@@ -638,7 +638,7 @@ if [ "$TEST_ENFORCEMENT" = "true" ]; then
                     echo "   Create PR manually to test: https://github.com/${REPO_OWNER}/${REPO_NAME}/compare/${BRANCH}...${test_branch}"
                     INFO+=("Test branch created: ${test_branch} (create PR manually to test)")
                 fi
-                
+
                 # Cleanup: delete test branch (optional)
                 echo ""
                 echo "   ${CYAN}Note:${RESET} Test branch '${test_branch}' was created."
@@ -648,7 +648,7 @@ if [ "$TEST_ENFORCEMENT" = "true" ]; then
                 ERRORS+=("Could not push test branch")
                 VALIDATION_PASSED=false
             fi
-            
+
             # Return to original branch
             if [ -n "$current_branch" ] && [ "$current_branch" != "$BRANCH" ]; then
                 git checkout "$current_branch" > /dev/null 2>&1 || true
