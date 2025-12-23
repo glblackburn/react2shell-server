@@ -10,15 +10,30 @@
 # 5. Optional: Test enforcement by attempting operations
 #
 # Usage:
+#   ./scripts/validate_branch_protection_enforcement.sh [--test-enforcement]
+#
+# Credential Loading (automatic):
+#   1. Environment variable GITHUB_TOKEN (highest priority)
+#   2. Secure credentials file ~/.secure/github-set-token.sh
+#   3. Interactive setup (prompts if credentials missing)
+#
+# Repository Detection (automatic):
+#   Automatically detected from git remote origin
+#
+# Manual override (optional):
 #   export GITHUB_TOKEN="ghp_..."
 #   export GITHUB_REPOSITORY_OWNER="your-org"
 #   export GITHUB_REPOSITORY_NAME="react2shell-server"
-#   ./scripts/validate_branch_protection_enforcement.sh [--test-enforcement]
 
 set -euET -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Credentials configuration
+SECURE_DIR="${HOME}/.secure"
+CREDENTIALS_FILE="${SECURE_DIR}/github-set-token.sh"
+GITHUB_TOKEN_URL="https://github.com/settings/tokens"
 
 # Configuration
 REPO_OWNER="${GITHUB_REPOSITORY_OWNER:-}"
@@ -57,21 +72,42 @@ Options:
   --branch BRANCH       Branch to check (default: main)
   -h, --help            Show this help message
 
-Environment Variables:
-  GITHUB_TOKEN              GitHub personal access token (required)
-  GITHUB_REPOSITORY_OWNER   Repository owner (required)
-  GITHUB_REPOSITORY_NAME    Repository name (required)
+Credential Loading (Three-tier priority):
+  1. Environment variable GITHUB_TOKEN (highest priority)
+  2. Secure credentials file ~/.secure/github-set-token.sh
+  3. Interactive setup (if credentials missing)
+
+Repository Detection:
+  Automatically detected from git remote origin if not provided via environment variables.
+
+Environment Variables (optional if using credentials file):
+  GITHUB_TOKEN              GitHub personal access token
+  GITHUB_REPOSITORY_OWNER   Repository owner (auto-detected from git remote)
+  GITHUB_REPOSITORY_NAME    Repository name (auto-detected from git remote)
   BRANCH                    Branch to check (default: main)
 
+GitHub Token Permissions:
+  ⚠️  Fine-grained tokens may not work for branch protection API
+  Recommended: Use classic token with 'repo' scope
+    Suggested token name: react2shell-branch-protection-readonly
+  For --test-enforcement: Same classic token with 'repo' scope works
+    Suggested token name: react2shell-branch-protection-full
+  See: docs/scripts/GITHUB_PERMISSIONS_REQUIRED.md for detailed permissions guide
+
 Examples:
-  # Basic validation (configuration check only)
-  export GITHUB_TOKEN="ghp_..."
-  export GITHUB_REPOSITORY_OWNER="myorg"
-  export GITHUB_REPOSITORY_NAME="myrepo"
+  # Basic validation (will prompt for credentials if needed)
   ./scripts/validate_branch_protection_enforcement.sh
 
   # Full validation with enforcement testing
   ./scripts/validate_branch_protection_enforcement.sh --test-enforcement
+
+  # Using environment variables (bypasses credential file)
+  export GITHUB_TOKEN="ghp_..."
+  ./scripts/validate_branch_protection_enforcement.sh
+
+Documentation:
+  - GitHub Permissions Guide: docs/scripts/GITHUB_PERMISSIONS_REQUIRED.md
+  - CI/CD Setup Plan: docs/planning/CI_CD_COMPLETE_PLAN.md
 EOF
             exit 0
             ;;
@@ -82,18 +118,180 @@ EOF
     esac
 done
 
-# Validate required environment variables
+# ============================================================================
+# Credential Loading Functions
+# ============================================================================
+
+load_github_credentials() {
+    # Load GitHub token from secure credentials file
+    if [ -f "$CREDENTIALS_FILE" ]; then
+        # Source the credentials file to load GITHUB_TOKEN
+        source "$CREDENTIALS_FILE" 2>/dev/null || true
+        if [ -n "$GITHUB_TOKEN" ]; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+detect_repository_info() {
+    # Detect repository owner and name from git remote origin
+    if [ -d "$PROJECT_ROOT/.git" ]; then
+        local remote_url=$(git -C "$PROJECT_ROOT" remote get-url origin 2>/dev/null || echo "")
+        if [ -n "$remote_url" ]; then
+            # Handle git@github.com:owner/repo.git format
+            if [[ "$remote_url" =~ ^git@github\.com:([^/]+)/([^/]+)(\.git)?$ ]]; then
+                REPO_OWNER="${BASH_REMATCH[1]}"
+                local repo_part="${BASH_REMATCH[2]}"
+                REPO_NAME="${repo_part%.git}"
+                return 0
+            # Handle https://github.com/owner/repo.git or https://github.com/owner/repo format
+            elif [[ "$remote_url" =~ ^https?://github\.com/([^/]+)/([^/]+)(\.git)?/?$ ]]; then
+                REPO_OWNER="${BASH_REMATCH[1]}"
+                local repo_part="${BASH_REMATCH[2]}"
+                REPO_NAME="${repo_part%.git}"
+                return 0
+            fi
+        fi
+    fi
+    return 1
+}
+
+setup_github_credentials_interactive() {
+    # Interactive setup for GitHub token credentials
+    echo ""
+    echo "${BOLD}${CYAN}========================================${RESET}"
+    echo "${BOLD}${CYAN}GitHub Token Credential Setup${RESET}"
+    echo "${BOLD}${CYAN}========================================${RESET}"
+    echo ""
+    echo "This script requires a GitHub personal access token to validate branch protection."
+    echo ""
+    echo "Credentials file: ${CREDENTIALS_FILE}"
+    echo "GitHub Token Settings (Classic): https://github.com/settings/tokens"
+    echo "GitHub Token Settings (Fine-grained): https://github.com/settings/tokens?type=beta"
+    echo ""
+    echo "${CYAN}📖 Documentation:${RESET}"
+    echo "   For detailed permissions requirements, see:"
+    echo "   ${PROJECT_ROOT}/docs/scripts/GITHUB_PERMISSIONS_REQUIRED.md"
+    echo ""
+    echo "${CYAN}Token Type Recommendation:${RESET}"
+    echo "   ${YELLOW}⚠️  Fine-grained tokens may not work for branch protection API${RESET}"
+    echo "   ${BOLD}Recommended:${RESET} Use a classic personal access token"
+    echo ""
+    echo "${CYAN}Token Name Suggestion:${RESET}"
+    if [ "$TEST_ENFORCEMENT" = "true" ]; then
+        echo "   ${BOLD}react2shell-branch-protection-full${RESET}"
+        echo "   (Full validation mode - creates test branch/PR)"
+    else
+        echo "   ${BOLD}react2shell-branch-protection-readonly${RESET}"
+        echo "   (Read-only validation mode)"
+    fi
+    echo ""
+    echo "${CYAN}Required Permissions:${RESET}"
+    if [ "$TEST_ENFORCEMENT" = "true" ]; then
+        echo "   Classic token: 'repo' scope (includes read/write)"
+    else
+        echo "   Classic token: 'repo' scope (or 'public_repo' for public repos only)"
+        echo "   ${YELLOW}Note:${RESET} Fine-grained 'Contents: Read' may not work - use classic token"
+    fi
+    echo ""
+    
+    # Check if credentials file already exists
+    if [ -f "$CREDENTIALS_FILE" ]; then
+        echo "${YELLOW}WARNING: ${CREDENTIALS_FILE} already exists.${RESET}"
+        read -p "Overwrite? (y/N): " response
+        if [ "${response,,}" != "y" ]; then
+            echo "Exiting without changes."
+            return 1
+        fi
+    fi
+    
+    echo "${YELLOW}⚠️  Important:${RESET} Use a CLASSIC token (not fine-grained) for branch protection API"
+    echo ""
+    echo "Go get your GitHub personal access token:"
+    echo "  • Classic token (recommended): https://github.com/settings/tokens"
+    echo "  • Fine-grained token (may not work): https://github.com/settings/tokens?type=beta"
+    echo ""
+    echo "Press Enter to open classic token settings (or 'N' to skip and enter manually)."
+    read response
+    
+    if [ "${response,,}" != "n" ]; then
+        classic_token_url="https://github.com/settings/tokens"
+        if command -v open >/dev/null 2>&1; then
+            open "$classic_token_url" 2>/dev/null || true
+        elif command -v xdg-open >/dev/null 2>&1; then
+            xdg-open "$classic_token_url" 2>/dev/null || true
+        else
+            echo "Please open manually: ${classic_token_url}"
+        fi
+    fi
+    
+    echo ""
+    echo "Enter your GitHub personal access token:"
+    echo "  (Token will be hidden for security)"
+    read -s token_input
+    echo ""
+    
+    if [ -z "$token_input" ]; then
+        echo "${RED}ERROR: GitHub token is required${RESET}" >&2
+        return 1
+    fi
+    
+    # Create secure directory
+    echo ""
+    echo "Creating secure directory: ${SECURE_DIR}"
+    mkdir -p "$SECURE_DIR"
+    chmod 700 "$SECURE_DIR"
+    
+    # Write credentials file
+    echo "Creating credentials file: ${CREDENTIALS_FILE}"
+    cat > "$CREDENTIALS_FILE" <<EOF
+export GITHUB_TOKEN="${token_input}"
+EOF
+    
+    # Set permissions: 400 (read-only for owner)
+    chmod 400 "$CREDENTIALS_FILE"
+    
+    echo ""
+    echo "${GREEN}${BOLD}========================================${RESET}"
+    echo "${GREEN}${BOLD}Credentials file created successfully!${RESET}"
+    echo "${GREEN}${BOLD}========================================${RESET}"
+    echo "File: ${CREDENTIALS_FILE}"
+    echo "Permissions: $(stat -f "%OLp" "$CREDENTIALS_FILE" 2>/dev/null || stat -c "%a" "$CREDENTIALS_FILE" 2>/dev/null || echo "400")"
+    echo ""
+    
+    # Load the token
+    GITHUB_TOKEN="$token_input"
+    return 0
+}
+
+# ============================================================================
+# Load Credentials (Three-tier priority system)
+# ============================================================================
+
+# Tier 1: Environment variable (highest priority)
 if [ -z "$GITHUB_TOKEN" ]; then
-    echo "${RED}❌ Error: GITHUB_TOKEN environment variable required${RESET}" >&2
-    echo "   Set it with: export GITHUB_TOKEN=\"ghp_...\"" >&2
-    exit 1
+    # Tier 2: Secure credentials file
+    if ! load_github_credentials; then
+        # Tier 3: Interactive setup
+        echo "${YELLOW}GitHub token not found in environment or credentials file.${RESET}"
+        if ! setup_github_credentials_interactive; then
+            echo "${RED}❌ Error: Failed to set up GitHub credentials${RESET}" >&2
+            exit 1
+        fi
+    fi
 fi
 
+# Detect repository info from git remote if not provided
 if [ -z "$REPO_OWNER" ] || [ -z "$REPO_NAME" ]; then
-    echo "${RED}❌ Error: Repository owner and name required${RESET}" >&2
-    echo "   Set with: export GITHUB_REPOSITORY_OWNER=\"your-org\"" >&2
-    echo "            export GITHUB_REPOSITORY_NAME=\"repo-name\"" >&2
-    exit 1
+    if detect_repository_info; then
+        echo "${CYAN}Detected repository: ${REPO_OWNER}/${REPO_NAME}${RESET}"
+    else
+        echo "${RED}❌ Error: Could not detect repository from git remote${RESET}" >&2
+        echo "   Set with: export GITHUB_REPOSITORY_OWNER=\"your-org\"" >&2
+        echo "            export GITHUB_REPOSITORY_NAME=\"repo-name\"" >&2
+        exit 1
+    fi
 fi
 
 # Check dependencies
@@ -148,6 +346,10 @@ if [ "$http_code" = "404" ]; then
     echo "   Configure it at:"
     echo "   https://github.com/${REPO_OWNER}/${REPO_NAME}/settings/branches"
     echo ""
+    echo "${CYAN}📖 Documentation:${RESET}"
+    echo "   See CI/CD Setup Plan for detailed configuration instructions:"
+    echo "   ${PROJECT_ROOT}/docs/planning/CI_CD_COMPLETE_PLAN.md"
+    echo ""
     ERRORS+=("Branch protection not configured")
     VALIDATION_PASSED=false
     exit 1
@@ -156,6 +358,27 @@ fi
 if [ "$http_code" != "200" ]; then
     echo "${RED}❌ FAIL: API request failed (HTTP ${http_code})${RESET}"
     echo "$body" | jq '.' 2>/dev/null || echo "$body"
+    echo ""
+    if [ "$http_code" = "401" ] || [ "$http_code" = "403" ]; then
+        echo "${YELLOW}⚠️  Authentication/Authorization Error${RESET}"
+        echo "   This may indicate insufficient token permissions."
+        echo ""
+        echo "   ${CYAN}Required permission for basic validation:${RESET}"
+        echo "   • Contents: Read (for fine-grained tokens)"
+        echo "   • OR repo scope (for classic tokens)"
+        echo ""
+        echo "   ${YELLOW}Known Issue:${RESET} Fine-grained tokens may have limitations accessing"
+        echo "   branch protection rules. If you're using a fine-grained token with"
+        echo "   'Contents: Read' and still getting 403, try:"
+        echo ""
+        echo "   1. Use a classic personal access token with 'repo' scope instead"
+        echo "   2. Ensure token has access to this specific repository"
+        echo "   3. Wait a few minutes after updating permissions for propagation"
+        echo ""
+        echo "   ${CYAN}📖 See permissions guide:${RESET}"
+        echo "   ${PROJECT_ROOT}/docs/scripts/GITHUB_PERMISSIONS_REQUIRED.md"
+        echo ""
+    fi
     ERRORS+=("API request failed: HTTP ${http_code}")
     VALIDATION_PASSED=false
     exit 1
@@ -468,6 +691,10 @@ else
     echo ""
     echo "Configure branch protection at:"
     echo "  https://github.com/${REPO_OWNER}/${REPO_NAME}/settings/branches"
+    echo ""
+    echo "${CYAN}📖 Documentation:${RESET}"
+    echo "  • CI/CD Setup Plan: ${PROJECT_ROOT}/docs/planning/CI_CD_COMPLETE_PLAN.md"
+    echo "  • GitHub Permissions Guide: ${PROJECT_ROOT}/docs/scripts/GITHUB_PERMISSIONS_REQUIRED.md"
     echo ""
     exit 1
 fi
