@@ -364,12 +364,63 @@ if [ "$http_code" = "404" ]; then
     echo "${RED}❌ FAIL: Branch protection not configured for ${BRANCH}${RESET}"
     echo ""
     echo "   Branch protection must be configured to enforce CI/CD requirements."
-    echo "   Configure it at:"
-    echo "   https://github.com/${REPO_OWNER}/${REPO_NAME}/settings/branches"
+    echo ""
+    BRANCH_SETTINGS_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/settings/branches"
+    echo "   ${CYAN}Configure it at:${RESET}"
+    echo "   ${BRANCH_SETTINGS_URL}"
     echo ""
     echo "${CYAN}📖 Documentation:${RESET}"
-    echo "   See CI/CD Setup Plan for detailed configuration instructions:"
-    echo "   ${PROJECT_ROOT}/docs/planning/CI_CD_COMPLETE_PLAN.md"
+    BRANCH_PROTECTION_DOC="${PROJECT_ROOT}/docs/scripts/BRANCH_PROTECTION_SETUP.md"
+    echo "   See Branch Protection Setup Guide for step-by-step instructions:"
+    echo "   ${BRANCH_PROTECTION_DOC}"
+    echo ""
+    echo "   ${CYAN}Quick link to your repository's branch settings:${RESET}"
+    echo "   ${BRANCH_SETTINGS_URL}"
+    echo ""
+    
+    # Create temporary processed version with actual URLs and open it
+    if [ -f "$BRANCH_PROTECTION_DOC" ]; then
+        echo "${CYAN}Opening documentation with your repository URLs...${RESET}"
+        
+        # Create temporary file with populated URLs
+        # Use timestamp and PID to ensure uniqueness (mktemp pattern issue with .md extension)
+        TEMP_DOC="${TMPDIR:-/tmp}/branch-protection-setup-$(date +%s)-$$.md"
+        
+        # Process the markdown: replace {owner} and {repo} placeholders with actual values
+        sed "s|{owner}|${REPO_OWNER}|g; s|{repo}|${REPO_NAME}|g" "$BRANCH_PROTECTION_DOC" > "$TEMP_DOC"
+        
+        # Also add a note at the top with the actual URL
+        {
+            echo "---"
+            echo "**Repository-Specific Information**"
+            echo ""
+            echo "This document has been customized for your repository:"
+            echo "- **Repository:** ${REPO_OWNER}/${REPO_NAME}"
+            echo "- **Branch Settings URL:** [${BRANCH_SETTINGS_URL}](${BRANCH_SETTINGS_URL})"
+            echo ""
+            echo "---"
+            echo ""
+            cat "$TEMP_DOC"
+        } > "${TEMP_DOC}.tmp" && mv "${TEMP_DOC}.tmp" "$TEMP_DOC"
+        
+        # Open the processed version
+        if command -v open >/dev/null 2>&1; then
+            # macOS
+            open "$TEMP_DOC" 2>/dev/null && echo "${GREEN}✓ Opened Branch Protection Setup Guide (with your repository URLs)${RESET}" || echo "${YELLOW}⚠️  Could not open documentation${RESET}"
+        elif command -v xdg-open >/dev/null 2>&1; then
+            # Linux
+            xdg-open "$TEMP_DOC" 2>/dev/null && echo "${GREEN}✓ Opened Branch Protection Setup Guide (with your repository URLs)${RESET}" || echo "${YELLOW}⚠️  Could not open documentation${RESET}"
+        else
+            echo "${YELLOW}⚠️  No suitable command found to open documentation${RESET}"
+            echo "   Please open manually: ${BRANCH_PROTECTION_DOC}"
+        fi
+        
+        # Note: Temporary file will be cleaned up by system (or user can delete it)
+        echo "   ${CYAN}Note:${RESET} Temporary file created: ${TEMP_DOC}"
+        echo "   (This file contains your repository-specific URLs and will be cleaned up automatically)"
+    else
+        echo "${YELLOW}⚠️  Documentation file not found: ${BRANCH_PROTECTION_DOC}${RESET}"
+    fi
     echo ""
     ERRORS+=("Branch protection not configured")
     VALIDATION_PASSED=false
@@ -718,12 +769,58 @@ else
     echo ""
     echo "Fix the errors above to ensure CI/CD is properly enforced."
     echo ""
-    echo "Configure branch protection at:"
-    echo "  https://github.com/${REPO_OWNER}/${REPO_NAME}/settings/branches"
+    BRANCH_SETTINGS_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/settings/branches"
+    echo "${CYAN}Configure branch protection at:${RESET}"
+    echo "  ${BRANCH_SETTINGS_URL}"
     echo ""
     echo "${CYAN}📖 Documentation:${RESET}"
-    echo "  • CI/CD Setup Plan: ${PROJECT_ROOT}/docs/planning/CI_CD_COMPLETE_PLAN.md"
-    echo "  • GitHub Permissions Guide: ${PROJECT_ROOT}/docs/scripts/GITHUB_PERMISSIONS_REQUIRED.md"
+    BRANCH_PROTECTION_DOC="${PROJECT_ROOT}/docs/scripts/BRANCH_PROTECTION_SETUP.md"
+    PERMISSIONS_DOC="${PROJECT_ROOT}/docs/scripts/GITHUB_PERMISSIONS_REQUIRED.md"
+    echo "  • Branch Protection Setup Guide: ${BRANCH_PROTECTION_DOC}"
+    echo "  • GitHub Permissions Guide: ${PERMISSIONS_DOC}"
+    echo ""
+    
+    # Create temporary processed version with actual URLs and open it
+    if [ -f "$BRANCH_PROTECTION_DOC" ]; then
+        echo "${CYAN}Opening Branch Protection Setup Guide with your repository URLs...${RESET}"
+        
+        # Create temporary file with populated URLs
+        # Use timestamp and PID to ensure uniqueness (mktemp pattern issue with .md extension)
+        TEMP_DOC="${TMPDIR:-/tmp}/branch-protection-setup-$(date +%s)-$$.md"
+        
+        # Process the markdown: replace {owner} and {repo} placeholders with actual values
+        sed "s|{owner}|${REPO_OWNER}|g; s|{repo}|${REPO_NAME}|g" "$BRANCH_PROTECTION_DOC" > "$TEMP_DOC"
+        
+        # Also add a note at the top with the actual URL
+        {
+            echo "---"
+            echo "**Repository-Specific Information**"
+            echo ""
+            echo "This document has been customized for your repository:"
+            echo "- **Repository:** ${REPO_OWNER}/${REPO_NAME}"
+            echo "- **Branch Settings URL:** [${BRANCH_SETTINGS_URL}](${BRANCH_SETTINGS_URL})"
+            echo ""
+            echo "---"
+            echo ""
+            cat "$TEMP_DOC"
+        } > "${TEMP_DOC}.tmp" && mv "${TEMP_DOC}.tmp" "$TEMP_DOC"
+        
+        # Open the processed version
+        if command -v open >/dev/null 2>&1; then
+            # macOS
+            open "$TEMP_DOC" 2>/dev/null && echo "${GREEN}✓ Opened Branch Protection Setup Guide (with your repository URLs)${RESET}" || echo "${YELLOW}⚠️  Could not open documentation${RESET}"
+        elif command -v xdg-open >/dev/null 2>&1; then
+            # Linux
+            xdg-open "$TEMP_DOC" 2>/dev/null && echo "${GREEN}✓ Opened Branch Protection Setup Guide (with your repository URLs)${RESET}" || echo "${YELLOW}⚠️  Could not open documentation${RESET}"
+        else
+            echo "${YELLOW}⚠️  No suitable command found to open documentation${RESET}"
+            echo "   Please open manually: ${BRANCH_PROTECTION_DOC}"
+        fi
+        
+        # Note: Temporary file will be cleaned up by system (or user can delete it)
+        echo "   ${CYAN}Note:${RESET} Temporary file created: ${TEMP_DOC}"
+        echo "   (This file contains your repository-specific URLs)"
+    fi
     echo ""
     exit 1
 fi
