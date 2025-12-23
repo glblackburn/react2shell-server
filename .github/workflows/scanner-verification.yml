@@ -1,0 +1,21 @@
+name: Scanner Verification
+
+on:
+  workflow_dispatch:
+
+# Optional scanner integration tests
+# Purpose: Test scanner integration (requires external scanner)
+# Note: May not work in CI if scanner not available
+# TODO: Implement if scanner integration is needed
+
+env:
+  NODE_VERSION: '24.12.0'
+
+jobs:
+  scanner-verification:
+    name: Scanner Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder - Scanner verification workflow to be implemented
+        run: echo "Scanner verification workflow - implementation pending (optional)"
