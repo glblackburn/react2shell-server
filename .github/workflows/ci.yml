@@ -67,43 +67,21 @@ jobs:
           make react-19.0
           echo "✅ Switched to React 19.0"
       
-      - name: Start servers
-        run: |
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          make start
-          echo "✅ Servers started"
-      
-      - name: Wait for servers to be ready
-        run: |
-          echo "Waiting for servers to be ready..."
-          sleep 10
-          # Check if servers are running
-          if lsof -ti:5173 >/dev/null 2>&1 && lsof -ti:3000 >/dev/null 2>&1; then
-            echo "✅ Both servers are running"
-          else
-            echo "⚠️  Servers may not be fully ready, continuing..."
-          fi
-      
       - name: Setup Python test environment
         run: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           make test-setup
       
-      - name: Run smoke tests
+      - name: Run smoke tests (vulnerable version)
         run: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           make test-smoke
-      
-      - name: Stop servers
-        if: always()
         run: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          make stop || true
-          echo "✅ Servers stopped"
+          make test-smoke
       
       - name: Test with fixed React version (19.2.1)
         run: |
@@ -111,23 +89,6 @@ jobs:
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           make react-19.2.1
           echo "✅ Switched to React 19.2.1"
-      
-      - name: Start servers (fixed version)
-        run: |
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          make start
-          echo "✅ Servers started with fixed version"
-      
-      - name: Wait for servers to be ready (fixed version)
-        run: |
-          echo "Waiting for servers to be ready..."
-          sleep 10
-          if lsof -ti:5173 >/dev/null 2>&1 && lsof -ti:3000 >/dev/null 2>&1; then
-            echo "✅ Both servers are running"
-          else
-            echo "⚠️  Servers may not be fully ready, continuing..."
-          fi
       
       - name: Run smoke tests (fixed version)
         run: |
