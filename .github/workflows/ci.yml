@@ -95,7 +95,7 @@ jobs:
         run: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          make test-smoke
+          make test-nextjs-startup
       
       - name: Stop servers
         if: always()
@@ -133,7 +133,7 @@ jobs:
         run: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          make test-smoke
+          make test-nextjs-startup
       
       - name: Cleanup
         if: always()
