@@ -44,7 +44,6 @@ jobs:
           nvm install ${{ env.NODE_VERSION }}
           nvm use ${{ env.NODE_VERSION }}
           echo "NVM_DIR=$NVM_DIR" >> $GITHUB_ENV
-          echo "[ -s \"$NVM_DIR/nvm.sh\" ] && \. \"$NVM_DIR/nvm.sh\"" >> $GITHUB_ENV
       
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
