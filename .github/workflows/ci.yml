@@ -85,6 +85,12 @@ jobs:
             echo "⚠️  Servers may not be fully ready, continuing..."
           fi
       
+      - name: Setup Python test environment
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          make test-setup
+      
       - name: Run smoke tests
         run: |
           export NVM_DIR="$HOME/.nvm"
