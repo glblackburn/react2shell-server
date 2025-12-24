@@ -13,14 +13,59 @@ env:
 jobs:
   # Job 1: Lint and Validate
   # Purpose: Quick validation before running expensive tests
-  # TODO: Implement in Step 2
   lint:
     name: Lint and Validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Placeholder - Lint job to be implemented
-        run: echo "Lint job - implementation pending"
+      
+      - name: Check Makefile syntax
+        run: |
+          make -n help > /dev/null 2>&1 || (echo "ERROR: Makefile syntax check failed" && exit 1)
+          echo "✅ Makefile syntax is valid"
+      
+      - name: Validate YAML files
+        run: |
+          echo "Validating YAML files..."
+          # Install PyYAML if needed (usually pre-installed in ubuntu-latest)
+          python3 -c "import yaml" 2>/dev/null || pip3 install --user pyyaml || echo "PyYAML check skipped"
+          
+          # Check workflow files
+          for file in .github/workflows/*.yml .github/workflows/*.yaml; do
+            if [ -f "$file" ]; then
+              python3 -c "import yaml; yaml.safe_load(open('$file'))" 2>&1 || (echo "ERROR: Invalid YAML in $file" && exit 1)
+              echo "✅ $file is valid YAML"
+            fi
+          done
+      
+      - name: Validate JSON files
+        run: |
+          echo "Validating JSON files..."
+          # Check for package.json files (skip node_modules)
+          find . -name "package.json" -type f -not -path "*/node_modules/*" | while read -r file; do
+            python3 -c "import json; json.load(open('$file'))" 2>&1 || (echo "ERROR: Invalid JSON in $file" && exit 1)
+            echo "✅ $file is valid JSON"
+          done || echo "No package.json files found (this is OK)"
+      
+      - name: Basic file validation
+        run: |
+          echo "Performing basic file validation..."
+          # Check that required files exist
+          [ -f "Makefile" ] || (echo "ERROR: Makefile not found" && exit 1)
+          [ -f "README.md" ] || (echo "ERROR: README.md not found" && exit 1)
+          [ -d ".github/workflows" ] || (echo "ERROR: .github/workflows directory not found" && exit 1)
+          echo "✅ Required files and directories exist"
+          
+          # Check for common issues
+          if find . -name "*.md" -type f -exec grep -l "  $" {} \; | grep -v node_modules | head -1; then
+            echo "WARNING: Found files with trailing whitespace (non-blocking)"
+          fi
+          echo "✅ Basic file validation complete"
+      
+      - name: Lint job summary
+        run: |
+          echo "✅ All lint checks passed"
+          echo "Lint job completed successfully"
 
   # Job 2: Test Vite + React Framework
   # Purpose: Test Vite framework with React versions
