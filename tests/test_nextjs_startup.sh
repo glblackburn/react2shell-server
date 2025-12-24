@@ -129,7 +129,15 @@ test_version() {
     done
     
     if [ $attempt -eq $max_attempts ]; then
-        print_error "❌ Server not ready for ${version_clean}"
+        print_error "❌ Server not ready for ${version_clean} (waited ${max_attempts} seconds)"
+        print_error "Capturing server logs..."
+        if [ -f "$PROJECT_ROOT/.logs/server.log" ]; then
+            print_error "--- Server Log (last 50 lines) ---"
+            tail -50 "$PROJECT_ROOT/.logs/server.log" | sed 's/^/  /' >&2
+            print_error "--- End Server Log ---"
+        else
+            print_error "Server log not found at $PROJECT_ROOT/.logs/server.log"
+        fi
         (cd "$PROJECT_ROOT" && make stop >/dev/null 2>&1)
         ((FAILED++))
         FAILED_VERSIONS+=("${version_clean}: server not ready")
@@ -142,18 +150,38 @@ test_version() {
     
     # Test API
     local response
-    if ! response=$(curl -s http://localhost:3000/api/version 2>&1); then
-        print_error "❌ Failed to call API for ${version_clean}"
+    local http_code
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/version 2>/dev/null || echo "000")
+    response=$(curl -s http://localhost:3000/api/version 2>&1)
+    
+    if [ "$http_code" != "200" ]; then
+        print_error "❌ API call failed for ${version_clean} (HTTP ${http_code})"
+        print_error "Response: $response"
+        print_error "Capturing server logs..."
+        if [ -f "$PROJECT_ROOT/.logs/server.log" ]; then
+            print_error "--- Server Log (last 50 lines) ---"
+            tail -50 "$PROJECT_ROOT/.logs/server.log" | sed 's/^/  /' >&2
+            print_error "--- End Server Log ---"
+        else
+            print_error "Server log not found at $PROJECT_ROOT/.logs/server.log"
+        fi
         (cd "$PROJECT_ROOT" && make stop >/dev/null 2>&1)
         ((FAILED++))
-        FAILED_VERSIONS+=("${version_clean}: API call failed")
+        FAILED_VERSIONS+=("${version_clean}: API call failed (HTTP ${http_code})")
         return 1
     fi
     
-    # Validate JSON response
     if ! echo "$response" | jq . >/dev/null 2>&1; then
         print_error "❌ Invalid JSON response for ${version_clean}"
         print_error "Response: $response"
+        print_error "Capturing server logs..."
+        if [ -f "$PROJECT_ROOT/.logs/server.log" ]; then
+            print_error "--- Server Log (last 50 lines) ---"
+            tail -50 "$PROJECT_ROOT/.logs/server.log" | sed 's/^/  /' >&2
+            print_error "--- End Server Log ---"
+        else
+            print_error "Server log not found at $PROJECT_ROOT/.logs/server.log"
+        fi
         (cd "$PROJECT_ROOT" && make stop >/dev/null 2>&1)
         ((FAILED++))
         FAILED_VERSIONS+=("${version_clean}: invalid JSON")
