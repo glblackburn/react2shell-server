@@ -30,12 +30,12 @@ jobs:
     needs: lint
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      
+
       - name: Install nvm
         run: |
           curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
@@ -44,22 +44,22 @@ jobs:
           nvm install ${{ env.NODE_VERSION }}
           nvm use ${{ env.NODE_VERSION }}
           echo "NVM_DIR=$NVM_DIR" >> $GITHUB_ENV
-      
+
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
-      
+
       - name: Setup project
         run: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           make setup
-      
+
       - name: Run Next.js startup tests
         run: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           make test-nextjs-startup
-      
+
       - name: Cleanup
         if: always()
         run: |
