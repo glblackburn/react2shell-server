@@ -220,6 +220,14 @@ Before starting implementation, ensure you have:
 - Workflow files: ⚠️ On `feature/ci-cd-implementation` branch, not merged to main
 - Current branch: `feature/implement-lint-job` (documentation work, not lint implementation)
 
+**Makefile Targets Verification:**
+All Makefile targets mentioned in this document have been verified to exist in the project's Makefile:
+- ✅ Setup and framework: `make setup`, `make use-vite`, `make use-nextjs`, `make current-version`
+- ✅ Server management: `make start`, `make stop`, `make status`
+- ✅ Testing: `make test-smoke`, `make test-quick`, `make test-performance`, `make test-setup`
+- ✅ Version switching: `make react-19.0`, `make nextjs-15.0.4`, and all other version targets
+- ✅ All other targets referenced in workflow steps
+
 **Note:** See [Starting Point for Implementation](#starting-point-for-implementation) section for branch strategy and current state details.
 
 ---
