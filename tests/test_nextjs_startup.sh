@@ -109,11 +109,42 @@ test_version() {
     print_info "version=[${version_clean}]: start"
     print_info "================================================================================="
     
+    # Verify port 3000 is available before starting
+    if lsof -ti:3000 >/dev/null 2>&1; then
+        print_error "❌ Port 3000 is already in use before starting ${version_clean}"
+        print_error "Attempting cleanup..."
+        (cd "$PROJECT_ROOT" && make stop >/dev/null 2>&1) || true
+        lsof -ti:3000 2>/dev/null | xargs kill -9 2>/dev/null || true
+        sleep 2
+        if lsof -ti:3000 >/dev/null 2>&1; then
+            print_error "❌ Port 3000 still in use after cleanup, cannot start server"
+            ((FAILED++))
+            FAILED_VERSIONS+=("${version_clean}: port conflict - port 3000 in use")
+            return 1
+        fi
+        print_info "✓ Port 3000 cleaned up, proceeding with start"
+    fi
+    
     # Start server
     if ! (cd "$PROJECT_ROOT" && make start >/dev/null 2>&1); then
         print_error "❌ Failed to start server for ${version_clean}"
         ((FAILED++))
         FAILED_VERSIONS+=("${version_clean}: start failed")
+        return 1
+    fi
+    
+    # Verify server started on the correct port (3000)
+    sleep 2
+    if ! lsof -ti:3000 >/dev/null 2>&1; then
+        print_error "❌ Server did not start on port 3000 for ${version_clean}"
+        print_error "Checking if server started on a different port..."
+        local alt_port=$(lsof -ti:3001,3002,3003,3004,3005 2>/dev/null | head -1)
+        if [ -n "$alt_port" ]; then
+            print_error "Server may have started on an alternate port (found process on port)"
+        fi
+        (cd "$PROJECT_ROOT" && make stop >/dev/null 2>&1)
+        ((FAILED++))
+        FAILED_VERSIONS+=("${version_clean}: server not on port 3000")
         return 1
     fi
     
@@ -216,6 +247,32 @@ test_version() {
     
     # Stop server
     (cd "$PROJECT_ROOT" && make stop >/dev/null 2>&1)
+    
+    # Wait for port to be released and verify cleanup
+    print_info "Verifying port 3000 is released..."
+    local port_wait_attempts=10
+    local port_wait_attempt=0
+    while [ $port_wait_attempt -lt $port_wait_attempts ]; do
+        if ! lsof -ti:3000 >/dev/null 2>&1; then
+            print_info "✓ Port 3000 is free"
+            break
+        fi
+        sleep 1
+        ((port_wait_attempt++))
+    done
+    
+    # Force cleanup if port is still in use
+    if lsof -ti:3000 >/dev/null 2>&1; then
+        print_info "⚠️  Port 3000 still in use, forcing cleanup..."
+        lsof -ti:3000 2>/dev/null | xargs kill -9 2>/dev/null || true
+        sleep 2
+        # Verify cleanup succeeded
+        if lsof -ti:3000 >/dev/null 2>&1; then
+            print_error "❌ Warning: Port 3000 still in use after forced cleanup"
+        else
+            print_info "✓ Port 3000 cleaned up"
+        fi
+    fi
     
     ((PASSED++))
     print_success "✓ ${version_clean} passed"
