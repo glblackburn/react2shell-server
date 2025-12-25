@@ -133,26 +133,37 @@ test_version() {
         return 1
     fi
     
-    # Verify server started on the correct port (3000) with busy wait
+    # Verify server accepts HTTP requests on port 3000 with busy wait
     # Typical startup time is 5-15 seconds, so use 30 seconds (2x) as timeout
-    print_info "Waiting for server to bind to port 3000..."
-    local port_check_timeout=30
-    local port_check_attempt=0
-    local port_check_interval=0.5
-    local server_started=0
+    print_info "Waiting for server to accept requests on port 3000..."
+    local http_check_timeout=30
+    local http_check_attempt=0
+    local http_check_interval=0.5
+    local server_ready=0
+    local start_time
+    start_time=$(date +%s)
     
-    while [ $port_check_attempt -lt $((port_check_timeout * 2)) ]; do
-        if lsof -ti:3000 >/dev/null 2>&1; then
-            print_info "✓ Server bound to port 3000"
-            server_started=1
+    while [ $http_check_attempt -lt $((http_check_timeout * 2)) ]; do
+        # Try to curl the server - check if it responds with HTTP 200
+        local http_code
+        http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 http://localhost:3000/api/version 2>/dev/null || echo "000")
+        
+        if [ "$http_code" = "200" ]; then
+            local elapsed_time
+            elapsed_time=$(($(date +%s) - start_time))
+            print_info "✓ Server accepting requests on port 3000 (startup time: ${elapsed_time}s)"
+            server_ready=1
             break
         fi
-        sleep $port_check_interval
-        ((port_check_attempt++))
+        
+        sleep $http_check_interval
+        ((http_check_attempt++))
     done
     
-    if [ $server_started -eq 0 ]; then
-        print_error "❌ Server did not bind to port 3000 for ${version_clean} within ${port_check_timeout} seconds"
+    if [ $server_ready -eq 0 ]; then
+        local elapsed_time
+        elapsed_time=$(($(date +%s) - start_time))
+        print_error "❌ Server did not accept requests on port 3000 for ${version_clean} within ${http_check_timeout} seconds (waited: ${elapsed_time}s)"
         print_error "Checking if server started on a different port..."
         local alt_ports=""
         for port in 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010; do
@@ -194,36 +205,12 @@ test_version() {
             print_info "✓ All ports cleaned up"
         fi
         ((FAILED++))
-        FAILED_VERSIONS+=("${version_clean}: server not on port 3000")
+        FAILED_VERSIONS+=("${version_clean}: server not accepting requests on port 3000")
         return 1
     fi
     
-    # Wait for server to be ready
-    local max_attempts=60
-    local attempt=0
-    while [ $attempt -lt $max_attempts ]; do
-        if curl -s http://localhost:3000/api/version >/dev/null 2>&1; then
-            break
-        fi
-        sleep 1
-        ((attempt++))
-    done
-    
-    if [ $attempt -eq $max_attempts ]; then
-        print_error "❌ Server not ready for ${version_clean} (waited ${max_attempts} seconds)"
-        print_error "Capturing server logs..."
-        if [ -f "$PROJECT_ROOT/.logs/server.log" ]; then
-            print_error "--- Server Log (last 50 lines) ---"
-            tail -50 "$PROJECT_ROOT/.logs/server.log" | sed 's/^/  /' >&2
-            print_error "--- End Server Log ---"
-        else
-            print_error "Server log not found at $PROJECT_ROOT/.logs/server.log"
-        fi
-        (cd "$PROJECT_ROOT" && make stop >/dev/null 2>&1)
-        ((FAILED++))
-        FAILED_VERSIONS+=("${version_clean}: server not ready")
-        return 1
-    fi
+    # Server is already verified to be accepting requests from the HTTP check above
+    # No need for additional readiness check
     
     print_info "================================================================================="
     print_info "version=[${version_clean}]: curl"
