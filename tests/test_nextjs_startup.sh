@@ -133,14 +133,36 @@ test_version() {
         return 1
     fi
     
-    # Verify server started on the correct port (3000)
-    sleep 2
-    if ! lsof -ti:3000 >/dev/null 2>&1; then
-        print_error "❌ Server did not start on port 3000 for ${version_clean}"
+    # Verify server started on the correct port (3000) with busy wait
+    # Typical startup time is 5-15 seconds, so use 30 seconds (2x) as timeout
+    print_info "Waiting for server to bind to port 3000..."
+    local port_check_timeout=30
+    local port_check_attempt=0
+    local port_check_interval=0.5
+    local server_started=0
+    
+    while [ $port_check_attempt -lt $((port_check_timeout * 2)) ]; do
+        if lsof -ti:3000 >/dev/null 2>&1; then
+            print_info "✓ Server bound to port 3000"
+            server_started=1
+            break
+        fi
+        sleep $port_check_interval
+        ((port_check_attempt++))
+    done
+    
+    if [ $server_started -eq 0 ]; then
+        print_error "❌ Server did not bind to port 3000 for ${version_clean} within ${port_check_timeout} seconds"
         print_error "Checking if server started on a different port..."
         local alt_port=$(lsof -ti:3001,3002,3003,3004,3005 2>/dev/null | head -1)
         if [ -n "$alt_port" ]; then
             print_error "Server may have started on an alternate port (found process on port)"
+        fi
+        print_error "Capturing server logs..."
+        if [ -f "$PROJECT_ROOT/.logs/server.log" ]; then
+            print_error "--- Server Log (last 50 lines) ---"
+            tail -50 "$PROJECT_ROOT/.logs/server.log" | sed 's/^/  /' >&2
+            print_error "--- End Server Log ---"
         fi
         (cd "$PROJECT_ROOT" && make stop >/dev/null 2>&1)
         ((FAILED++))
