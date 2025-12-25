@@ -154,9 +154,14 @@ test_version() {
     if [ $server_started -eq 0 ]; then
         print_error "❌ Server did not bind to port 3000 for ${version_clean} within ${port_check_timeout} seconds"
         print_error "Checking if server started on a different port..."
-        local alt_port=$(lsof -ti:3001,3002,3003,3004,3005 2>/dev/null | head -1)
-        if [ -n "$alt_port" ]; then
-            print_error "Server may have started on an alternate port (found process on port)"
+        local alt_ports=""
+        for port in 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010; do
+            if lsof -ti:$port >/dev/null 2>&1; then
+                alt_ports="$alt_ports $port"
+            fi
+        done
+        if [ -n "$alt_ports" ]; then
+            print_error "Server may have started on alternate port(s):$alt_ports"
         fi
         print_error "Capturing server logs..."
         if [ -f "$PROJECT_ROOT/.logs/server.log" ]; then
@@ -164,7 +169,30 @@ test_version() {
             tail -50 "$PROJECT_ROOT/.logs/server.log" | sed 's/^/  /' >&2
             print_error "--- End Server Log ---"
         fi
-        (cd "$PROJECT_ROOT" && make stop >/dev/null 2>&1)
+        print_error "Performing aggressive cleanup..."
+        # Kill all processes on ports 3000-3010
+        for port in 3000 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010; do
+            lsof -ti:$port 2>/dev/null | xargs kill -9 2>/dev/null || true
+        done
+        # Kill all Next.js/node processes
+        pkill -f "next dev" 2>/dev/null || true
+        pkill -f "next-server" 2>/dev/null || true
+        pkill -f "node.*next" 2>/dev/null || true
+        sleep 2
+        # Also call make stop for good measure
+        (cd "$PROJECT_ROOT" && make stop >/dev/null 2>&1) || true
+        # Verify cleanup
+        local ports_still_in_use=""
+        for port in 3000 3001 3002 3003 3004 3005; do
+            if lsof -ti:$port >/dev/null 2>&1; then
+                ports_still_in_use="$ports_still_in_use $port"
+            fi
+        done
+        if [ -n "$ports_still_in_use" ]; then
+            print_error "⚠️  Warning: Ports still in use after cleanup:$ports_still_in_use"
+        else
+            print_info "✓ All ports cleaned up"
+        fi
         ((FAILED++))
         FAILED_VERSIONS+=("${version_clean}: server not on port 3000")
         return 1
@@ -283,16 +311,29 @@ test_version() {
         ((port_wait_attempt++))
     done
     
-    # Force cleanup if port is still in use
+    # Force cleanup if port is still in use - kill all ports and processes
     if lsof -ti:3000 >/dev/null 2>&1; then
-        print_info "⚠️  Port 3000 still in use, forcing cleanup..."
-        lsof -ti:3000 2>/dev/null | xargs kill -9 2>/dev/null || true
+        print_info "⚠️  Port 3000 still in use, performing aggressive cleanup..."
+        # Kill all processes on ports 3000-3010
+        for port in 3000 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010; do
+            lsof -ti:$port 2>/dev/null | xargs kill -9 2>/dev/null || true
+        done
+        # Kill all Next.js/node processes
+        pkill -f "next dev" 2>/dev/null || true
+        pkill -f "next-server" 2>/dev/null || true
+        pkill -f "node.*next" 2>/dev/null || true
         sleep 2
         # Verify cleanup succeeded
-        if lsof -ti:3000 >/dev/null 2>&1; then
-            print_error "❌ Warning: Port 3000 still in use after forced cleanup"
+        local ports_still_in_use=""
+        for port in 3000 3001 3002 3003 3004 3005; do
+            if lsof -ti:$port >/dev/null 2>&1; then
+                ports_still_in_use="$ports_still_in_use $port"
+            fi
+        done
+        if [ -n "$ports_still_in_use" ]; then
+            print_error "❌ Warning: Ports still in use after cleanup:$ports_still_in_use"
         else
-            print_info "✓ Port 3000 cleaned up"
+            print_info "✓ All ports cleaned up"
         fi
     fi
     
