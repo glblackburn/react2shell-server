@@ -765,7 +765,7 @@ start: $(PID_DIR) $(LOG_DIR)
 		if [ -f $(SERVER_PID) ] && kill -0 `cat $(SERVER_PID)` 2>/dev/null; then \
 			echo "⚠️  Express server is already running (PID: $$(cat $(SERVER_PID)))"; \
 		else \
-			nohup node server.js > $(SERVER_LOG) 2>&1 & \
+			nohup node server/server.js > $(SERVER_LOG) 2>&1 & \
 			echo $$! > $(SERVER_PID); \
 			echo "✓ Started Express server (PID: $$(cat $(SERVER_PID)))"; \
 		fi; \
