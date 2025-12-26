@@ -156,6 +156,25 @@ test_version() {
             break
         fi
         
+        # Periodically check server logs to see what's happening (every 10 seconds)
+        local elapsed_time
+        elapsed_time=$(($(date +%s) - start_time))
+        
+        if [ $((http_check_attempt % 20)) -eq 0 ] && [ -f "$PROJECT_ROOT/.logs/server.log" ]; then
+            local last_log_line
+            last_log_line=$(tail -1 "$PROJECT_ROOT/.logs/server.log" 2>/dev/null || echo "")
+            
+            if echo "$last_log_line" | grep -q "Ready"; then
+                print_info "  [${elapsed_time}s] Server reports Ready (HTTP: $http_code)"
+            elif echo "$last_log_line" | grep -q "Starting"; then
+                print_info "  [${elapsed_time}s] Server is Starting (HTTP: $http_code)"
+            elif echo "$last_log_line" | grep -q "Compiling"; then
+                print_info "  [${elapsed_time}s] Server is Compiling (HTTP: $http_code)"
+            elif echo "$last_log_line" | grep -qiE "Error|Failed"; then
+                print_info "  [${elapsed_time}s] ⚠️  Server has errors (HTTP: $http_code)"
+            fi
+        fi
+        
         sleep $http_check_interval
         ((http_check_attempt++))
     done
@@ -176,9 +195,29 @@ test_version() {
         fi
         print_error "Capturing server logs..."
         if [ -f "$PROJECT_ROOT/.logs/server.log" ]; then
-            print_error "--- Server Log (last 50 lines) ---"
-            tail -50 "$PROJECT_ROOT/.logs/server.log" | sed 's/^/  /' >&2
+            print_error "--- Server Log (full log) ---"
+            cat "$PROJECT_ROOT/.logs/server.log" | sed 's/^/  /' >&2
             print_error "--- End Server Log ---"
+            print_error ""
+            print_error "--- Server Log Analysis ---"
+            local log_lines
+            log_lines=$(wc -l < "$PROJECT_ROOT/.logs/server.log" 2>/dev/null || echo "0")
+            print_error "Total log lines: $log_lines"
+            if grep -q "Ready" "$PROJECT_ROOT/.logs/server.log" 2>/dev/null; then
+                print_error "✓ Server reported 'Ready' in logs"
+                local ready_line
+                ready_line=$(grep -n "Ready" "$PROJECT_ROOT/.logs/server.log" 2>/dev/null | head -1 | cut -d: -f1 || echo "unknown")
+                print_error "  First 'Ready' at line: $ready_line"
+            else
+                print_error "✗ Server never reported 'Ready' in logs"
+            fi
+            if grep -qiE "Error|error|Failed|failed" "$PROJECT_ROOT/.logs/server.log" 2>/dev/null; then
+                print_error "⚠️  Errors found in server logs:"
+                grep -iE "Error|error|Failed|failed" "$PROJECT_ROOT/.logs/server.log" 2>/dev/null | tail -5 | sed 's/^/    /' >&2
+            fi
+            print_error "--- End Analysis ---"
+        else
+            print_error "Server log file not found at $PROJECT_ROOT/.logs/server.log"
         fi
         print_error "Performing aggressive cleanup..."
         # Kill all processes on ports 3000-3010
