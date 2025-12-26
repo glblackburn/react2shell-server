@@ -765,7 +765,7 @@ start: $(PID_DIR) $(LOG_DIR)
 		if [ -f $(SERVER_PID) ] && kill -0 `cat $(SERVER_PID)` 2>/dev/null; then \
 			echo "⚠️  Express server is already running (PID: $$(cat $(SERVER_PID)))"; \
 		else \
-			nohup node server.js > $(SERVER_LOG) 2>&1 & \
+			nohup node server/server.js > $(SERVER_LOG) 2>&1 & \
 			echo $$! > $(SERVER_PID); \
 			echo "✓ Started Express server (PID: $$(cat $(SERVER_PID)))"; \
 		fi; \
@@ -816,6 +816,12 @@ stop:
 		lsof -ti:3000 2>/dev/null | xargs kill -9 2>/dev/null && echo "✓ Killed process on port 3000" || true; \
 		rm -f frameworks/nextjs/.next/dev/lock 2>/dev/null || true; \
 		rm -rf frameworks/nextjs/.next/dev/*.pid 2>/dev/null || true; \
+		sleep 1; \
+		if lsof -ti:3000 >/dev/null 2>&1; then \
+			echo "⚠️  Port 3000 still in use, forcing cleanup..."; \
+			lsof -ti:3000 2>/dev/null | xargs kill -9 2>/dev/null || true; \
+			sleep 1; \
+		fi; \
 		echo "✓ Server stopped"; \
 	else \
 		if [ -f $(VITE_PID) ]; then \

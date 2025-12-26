@@ -67,19 +67,205 @@ jobs:
           echo "✅ All lint checks passed"
           echo "Lint job completed successfully"
 
-  # Job 2: Test Vite + React Framework
-  # Purpose: Test Vite framework with React versions
-  # TODO: Implement in Step 3
-  test-vite:
-    name: Test Vite Framework
+  # Job 2: Test Next.js Startup
+  # Purpose: Test Next.js framework startup for all versions
+  test-nextjs-startup:
+    name: Test Next.js Startup
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     needs: lint
     steps:
       - uses: actions/checkout@v4
-      - name: Placeholder - Vite test job to be implemented
-        run: echo "Vite test job - implementation pending"
 
-  # Job 3: Test Next.js Framework
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install nvm
+        run: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm install ${{ env.NODE_VERSION }}
+          nvm use ${{ env.NODE_VERSION }}
+          echo "NVM_DIR=$NVM_DIR" >> $GITHUB_ENV
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Setup project
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          make setup
+
+      - name: Run Next.js startup tests
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          make test-nextjs-startup
+
+      - name: Cleanup
+        if: always()
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          make stop || true
+          echo "✅ Cleanup complete"
+
+  # Job 3: Test Vite + React Framework
+  # Purpose: Test Vite framework with React version switching
+  test-vite:
+    name: Test Vite + React
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install nvm
+        run: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm install ${{ env.NODE_VERSION }}
+          nvm use ${{ env.NODE_VERSION }}
+          echo "NVM_DIR=$NVM_DIR" >> $GITHUB_ENV
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Setup project
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          make setup
+
+      - name: Switch to Vite framework
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          make use-vite
+
+      - name: Test with vulnerable React version (19.0)
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          echo "Testing with React 19.0 (VULNERABLE)..."
+          
+          # Verify version switch
+          echo "Switching to React 19.0..."
+          make react-19.0
+          
+          # Check package.json to verify version was set
+          echo "Verifying package.json was updated..."
+          if [ -f "frameworks/vite-react/package.json" ]; then
+            REACT_IN_PACKAGE=$(grep -o '"react": "[^"]*"' frameworks/vite-react/package.json | cut -d'"' -f4)
+            echo "React version in package.json: $REACT_IN_PACKAGE"
+          fi
+          
+          make stop || true
+          sleep 2
+          make start
+          echo "Checking server status..."
+          make status
+          echo "Waiting for servers to be ready..."
+          # Wait for Vite dev server (port 5173) and Express server (port 3000)
+          for i in {1..30}; do
+            if curl -s http://localhost:5173 > /dev/null && curl -s http://localhost:3000/api/version > /dev/null; then
+              echo "✓ Servers are ready"
+              break
+            fi
+            sleep 1
+          done
+          # Check status again after waiting
+          echo "Final server status:"
+          make status
+          # Verify version API with detailed diagnostics
+          echo "Fetching version API response..."
+          VERSION_RESPONSE=$(curl -s http://localhost:3000/api/version)
+          echo "Version API response (raw): $VERSION_RESPONSE"
+          echo "Version API response (formatted):"
+          echo "$VERSION_RESPONSE" | jq '.'
+          
+          REACT_VERSION=$(echo "$VERSION_RESPONSE" | jq -r '.react')
+          VULNERABLE=$(echo "$VERSION_RESPONSE" | jq -r '.vulnerable')
+          STATUS=$(echo "$VERSION_RESPONSE" | jq -r '.status')
+          
+          echo "Extracted values:"
+          echo "  React version: $REACT_VERSION"
+          echo "  Vulnerable: $VULNERABLE"
+          echo "  Status: $STATUS"
+          
+          # Check if version matches (handle both "19.0" and "19.0.0" formats)
+          if [[ "$REACT_VERSION" != "19.0" && "$REACT_VERSION" != "19.0.0" && "$REACT_VERSION" != "^19.0.0" ]]; then
+            echo "❌ Expected React 19.0 (or 19.0.0 or ^19.0.0), got $REACT_VERSION"
+            exit 1
+          fi
+          
+          if [ "$VULNERABLE" != "true" ]; then
+            echo "❌ Expected vulnerable=true, got $VULNERABLE"
+            echo "   This may indicate the version matching logic needs adjustment"
+            exit 1
+          fi
+          
+          echo "✓ React 19.0 (VULNERABLE) verified"
+          make stop || true
+
+      - name: Test with fixed React version (19.2.1)
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          echo "Testing with React 19.2.1 (FIXED)..."
+          make react-19.2.1
+          make stop || true
+          sleep 2
+          make start
+          echo "Checking server status..."
+          make status
+          echo "Waiting for servers to be ready..."
+          # Wait for Vite dev server (port 5173) and Express server (port 3000)
+          for i in {1..30}; do
+            if curl -s http://localhost:5173 > /dev/null && curl -s http://localhost:3000/api/version > /dev/null; then
+              echo "✓ Servers are ready"
+              break
+            fi
+            sleep 1
+          done
+          # Check status again after waiting
+          echo "Final server status:"
+          make status
+          # Verify version API
+          VERSION_RESPONSE=$(curl -s http://localhost:3000/api/version)
+          echo "Version API response: $VERSION_RESPONSE"
+          REACT_VERSION=$(echo "$VERSION_RESPONSE" | jq -r '.react')
+          if [ "$REACT_VERSION" != "19.2.1" ]; then
+            echo "❌ Expected React 19.2.1, got $REACT_VERSION"
+            exit 1
+          fi
+          VULNERABLE=$(echo "$VERSION_RESPONSE" | jq -r '.vulnerable')
+          if [ "$VULNERABLE" != "false" ]; then
+            echo "❌ Expected vulnerable=false, got $VULNERABLE"
+            exit 1
+          fi
+          echo "✓ React 19.2.1 (FIXED) verified"
+          make stop || true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          make stop || true
+          echo "✅ Cleanup complete"
+
+  # Job 4: Test Next.js Framework
   # Purpose: Test Next.js framework with Next.js versions
   # TODO: Implement in Step 4
   test-nextjs:
@@ -91,7 +277,7 @@ jobs:
       - name: Placeholder - Next.js test job to be implemented
         run: echo "Next.js test job - implementation pending"
 
-  # Job 4: Python Tests (Matrix)
+  # Job 5: Python Tests (Matrix)
   # Purpose: Run comprehensive Python test suite
   # TODO: Implement in Step 5
   test-python:
@@ -107,7 +293,7 @@ jobs:
       - name: Placeholder - Python test job to be implemented
         run: echo "Python test job for ${{ matrix.framework }} - implementation pending"
 
-  # Job 5: Version Validation
+  # Job 6: Version Validation
   # Purpose: Validate version switching works
   # TODO: Implement in Step 6
   validate-versions:

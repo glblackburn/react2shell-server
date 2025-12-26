@@ -387,3 +387,157 @@ grep -n '[[:space:]]$' docs/scripts/SCRIPT_CREATION_HISTORY.md
 2. Strict confirmation requirements
 3. Pre-commit/pre-creation code quality checks
 4. File creation - ask before creating documentation files
+
+---
+
+## Violation #7: Multiple Commits Without Following Two-Step Process
+
+**Date:** 2025-12-24
+**Session:** CI/CD Implementation - Steps 2 and 3
+**Commits:** `8a9276e`, `d904258`, `1eb5c85`, `fc2fdc9`, `7573765`, `ea659d2`, `bf48a01`, `15f79f0`, `f016b8c`
+
+### Violation Type
+Git Operations - Mandatory Commit Workflow
+
+### Rule Violated
+Section 2 - Git Operations, Mandatory Commit Workflow (Two-Step Process)
+- Step 1 requires showing commit message, files, and diff stats BEFORE committing
+- Step 2 requires waiting for explicit user confirmation in a separate message
+- Commits must happen in SEPARATE responses after confirmation
+
+### Description
+User made requests like:
+- "commit current changes and then 'Address branch naming cleanup'"
+- "commit docs/planning/AGENT_COORDINATION.md"
+- "commit" (multiple times)
+
+The AI assistant:
+1. Committed directly without showing commit information first
+2. Did not follow the mandatory two-step commit workflow
+3. Did not show commit message, files, or changes before executing
+4. Committed in the same response or without explicit confirmation
+
+### Root Cause
+**Misinterpretation of user requests:**
+- Interpreted "commit X" as direct commit instruction
+- Should have interpreted as "show me what will be committed for X"
+- Did not recognize these as requiring the two-step process
+- Committed immediately without showing commit info first
+- Did not wait for explicit confirmation in a separate message
+
+### Impact
+**Severity:** Major
+**Consequences:**
+- User did not have opportunity to review commit messages, files, or changes before commits
+- Violates mandatory workflow designed to prevent accidental commits
+- 9 commits made without proper review process
+- User lost ability to modify commit messages or review changes before execution
+
+### Corrective Action
+1. Created session review document documenting all violations
+2. Identified root cause (misinterpretation of commit requests)
+3. Documented prevention measures
+4. Need to fix trailing whitespace in committed files
+
+### Prevention
+**For AI Assistants:**
+1. **Always Show First:** Even when user says "commit X", show commit information before executing
+2. **Two-Step Process:** ALWAYS follow the mandatory workflow:
+   - Step 1: Show commit message, files, diff stats, then END response
+   - Step 2: Wait for user's NEXT message with explicit confirmation
+   - Step 3: Only then commit in a NEW response
+3. **Never Commit in Same Response:** The commit message display and commit execution MUST be in separate responses
+4. **Interpretation Rule:** "commit X" = "show me what will be committed for X", NOT "commit X immediately"
+5. **When in Doubt:** Show commit info first - it's better to show too much than commit without showing
+
+**For Users:**
+- Be explicit: "prepare commit for X" vs "commit X"
+- Review commit information when shown before confirming
+- Use explicit confirmation: "yes", "go ahead", "proceed" (not just "commit" again)
+
+### Related Documentation
+- Session Review: `docs/ai-standards/AI_STANDARDS_SESSION_REVIEW_2025-12-24.md`
+- Standards Reference: `README-AI-CODING-STANDARDS.md` Section 2
+
+---
+
+## Violation #8: Trailing Whitespace in Workflow File
+
+**Date:** 2025-12-24
+**Session:** CI/CD Implementation - Steps 2 and 3
+**Files:** `.github/workflows/ci.yml`
+**Lines:** 33, 38, 47, 50, 56, 62
+
+### Violation Type
+Code Quality - Trailing Whitespace
+
+### Rule Violated
+Section 1 - Code Quality, "No trailing spaces"
+- "Do not leave trailing spaces on any line in any file"
+- "Trailing whitespace should be removed"
+
+### Description
+Files committed with trailing whitespace on empty lines. Detected via:
+```bash
+grep -n '[[:space:]]$' .github/workflows/ci.yml
+```
+
+Found trailing spaces on lines 33, 38, 47, 50, 56, 62 (all empty lines with trailing spaces).
+
+### Root Cause
+**Missing pre-commit quality check:**
+- Did not run trailing whitespace check before committing
+- Code quality verification step was skipped
+- Files were committed without quality verification
+- Trailing whitespace persisted across multiple commits
+
+### Impact
+**Severity:** Minor
+**Consequences:**
+- Cosmetic issue, doesn't affect functionality
+- Violates code quality standards
+- Can cause issues with some text processing tools
+- Creates unnecessary diff noise
+
+### Corrective Action
+1. Identified files with trailing whitespace
+2. Documented need for pre-commit quality checks
+3. Fix command: `sed -i '' 's/[[:space:]]*$//' .github/workflows/ci.yml`
+
+### Prevention
+**For AI Assistants:**
+1. **Pre-Commit Check:** Always run code quality checks before committing:
+   ```bash
+   # Check for trailing whitespace
+   grep -n '[[:space:]]$' <file>
+   
+   # Fix if found
+   sed -i '' 's/[[:space:]]*$//' <file>
+   ```
+2. **Automated Checks:** Use git hooks or pre-commit tools to catch these automatically
+3. **Quality Verification:** Include code quality verification as part of commit preparation
+
+**For Users:**
+- Enable git hooks that check for trailing whitespace
+- Use editor settings to highlight/remove trailing whitespace
+
+### Related Documentation
+- Session Review: `docs/ai-standards/AI_STANDARDS_SESSION_REVIEW_2025-12-24.md`
+- Standards Reference: `README-AI-CODING-STANDARDS.md` Section 1, Section 4
+
+---
+
+## Summary Statistics
+
+**Total Violations:** 8
+- **Major:** 3 (Commit without showing info first - violations #1, #4, #7)
+- **Minor:** 5 (Confirmation acceptance, trailing whitespace x3, file creation)
+
+**Most Common Violation Type:** Git Operations (4 violations)
+
+**Prevention Focus Areas:**
+1. User request interpretation for commit operations (questions vs. permissions)
+2. Strict confirmation requirements
+3. Pre-commit/pre-creation code quality checks
+4. File creation - ask before creating documentation files
+5. **NEW:** Always follow two-step commit process - show info first, wait for confirmation, commit in separate response

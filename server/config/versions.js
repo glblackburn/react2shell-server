@@ -12,12 +12,32 @@ export const VULNERABLE_VERSIONS = ['19.0', '19.1.0', '19.1.1', '19.2.0'];
 export const FIXED_VERSIONS = ['19.0.1', '19.1.2', '19.2.1'];
 
 /**
+ * Normalize a version string by removing carets and extracting major.minor
+ * @param {string} version - Version string (e.g., "19.0.0", "^19.0.0", "19.0")
+ * @returns {string} Normalized version (e.g., "19.0")
+ */
+function normalizeVersion(version) {
+  if (!version || version === 'unknown') {
+    return version;
+  }
+  // Remove caret, tilde, and other prefix characters
+  const cleaned = version.replace(/^[\^~>=<]+\s*/, '');
+  // Extract major.minor (e.g., "19.0.0" -> "19.0", "19.1.0" -> "19.1")
+  const parts = cleaned.split('.');
+  if (parts.length >= 2) {
+    return `${parts[0]}.${parts[1]}`;
+  }
+  return cleaned;
+}
+
+/**
  * Check if a React version is vulnerable.
- * @param {string} version - React version string
+ * @param {string} version - React version string (e.g., "19.0", "19.0.0", "^19.0.0")
  * @returns {boolean} True if version is vulnerable
  */
 export function isVulnerableVersion(version) {
-  return VULNERABLE_VERSIONS.includes(version);
+  const normalized = normalizeVersion(version);
+  return VULNERABLE_VERSIONS.includes(normalized);
 }
 
 /**
@@ -28,9 +48,10 @@ export function isVulnerableVersion(version) {
 export function getVersionStatus(version) {
   if (isVulnerableVersion(version)) {
     return 'VULNERABLE';
-  } else if (FIXED_VERSIONS.includes(version)) {
-    return 'FIXED';
-  } else {
-    return 'UNKNOWN';
   }
+  const normalized = normalizeVersion(version);
+  if (FIXED_VERSIONS.includes(normalized)) {
+    return 'FIXED';
+  }
+  return 'UNKNOWN';
 }
