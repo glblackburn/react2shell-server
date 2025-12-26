@@ -147,17 +147,49 @@ for port in 3000 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010; do
 **Requirement:** Three consecutive successful runs where the entire workflow completes without any failures.
 
 **Consecutive Successes:**
-- Run 1: ⏳ Pending - Run ID: [TBD]
+- Run 1: ✅ **SUCCESS** - Run ID: 20525899853
 - Run 2: ⏳ Pending - Run ID: [TBD]
 - Run 3: ⏳ Pending - Run ID: [TBD]
 
-**Status:** 0/3 consecutive successes achieved
+**Status:** 1/3 consecutive successes achieved
 
 ---
 
 ### Run 1 Results
 
-[To be filled after monitoring GitHub Actions run]
+**Run ID:** 20525899853  
+**Status:** ✅ **SUCCESS**  
+**Conclusion:** success  
+**Branch:** ci-cd/step-3-vite-test-job  
+**Commit:** a99e4f6 - "fix: Expand Next.js port detection range to 3000-3010"  
+**Started:** 2025-12-26T16:44:25Z  
+**Completed:** 2025-12-26T16:49:26Z  
+**Duration:** ~5 minutes
+
+**Job Results:**
+- ✅ Lint and Validate: Success
+- ✅ Validate Versions: Success
+- ✅ **Test Next.js Startup: Success** - All 11 versions passed!
+- ✅ Test Vite + React: Success
+- ✅ Test Next.js Framework: Success
+- ✅ Test Python (nextjs): Success
+- ✅ Test Python (vite): Success
+
+**Next.js Startup Test Results:**
+- ✅ **All 11 versions passed**
+- ✅ Port detection working correctly (range 3000-3010)
+- ✅ No "server not accepting requests" errors
+- ✅ Summary: "✓ Passed: 11"
+
+**Key Observations:**
+- Port detection fix worked perfectly
+- All versions tested successfully
+- No port-related failures
+- Express server fix from previous iteration also working
+
+**Log Files:**
+- Full run log: `/tmp/github_actions_run_20525899853_2025-12-26_164425.txt`
+- Next.js job log: `/tmp/github_actions_nextjs_job_20525899853_2025-12-26_164425.txt`
 
 ---
 
