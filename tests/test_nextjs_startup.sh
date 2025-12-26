@@ -93,6 +93,11 @@ test_version() {
     local version=$1
     local version_clean=$(echo "$version" | sed 's/nextjs-//')
     
+    # Known Issue: Next.js 15.2.5 has a deploymentId bug that causes crashes
+    # When handling requests, it crashes with: TypeError: Cannot read properties of undefined (reading 'deploymentId')
+    # This is a known Next.js bug and may cause test failures in CI
+    # See: docs/ci-cd/CI_TEST_FAILURE_ANALYSIS_2025-12-26.md for details
+    
     print_info "================================================================================="
     print_info "version=[${version_clean}]: switch"
     print_info "================================================================================="
@@ -109,20 +114,42 @@ test_version() {
     print_info "version=[${version_clean}]: start"
     print_info "================================================================================="
     
-    # Verify port 3000 is available before starting
-    if lsof -ti:3000 >/dev/null 2>&1; then
-        print_error "❌ Port 3000 is already in use before starting ${version_clean}"
+    # Verify ports 3000-3010 are available before starting
+    # Next.js can use any port from 3000-3010 if ports are in use
+    local PORTS_IN_USE=""
+    for port in 3000 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010; do
+        if lsof -ti:$port >/dev/null 2>&1; then
+            PORTS_IN_USE="$PORTS_IN_USE $port"
+        fi
+    done
+    
+    if [ -n "$PORTS_IN_USE" ]; then
+        print_error "❌ Ports in use before starting ${version_clean}:$PORTS_IN_USE"
         print_error "Attempting cleanup..."
         (cd "$PROJECT_ROOT" && make stop >/dev/null 2>&1) || true
-        lsof -ti:3000 2>/dev/null | xargs kill -9 2>/dev/null || true
-        sleep 2
-        if lsof -ti:3000 >/dev/null 2>&1; then
-            print_error "❌ Port 3000 still in use after cleanup, cannot start server"
+        # Kill all processes on ports 3000-3010
+        for port in 3000 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010; do
+            lsof -ti:$port 2>/dev/null | xargs kill -9 2>/dev/null || true
+        done
+        # Kill all Next.js/node processes
+        pkill -f "next dev" 2>/dev/null || true
+        pkill -f "next-server" 2>/dev/null || true
+        pkill -f "node.*next" 2>/dev/null || true
+        sleep 3
+        # Verify cleanup
+        local PORTS_STILL_IN_USE=""
+        for port in 3000 3001 3002 3003 3004 3005; do
+            if lsof -ti:$port >/dev/null 2>&1; then
+                PORTS_STILL_IN_USE="$PORTS_STILL_IN_USE $port"
+            fi
+        done
+        if [ -n "$PORTS_STILL_IN_USE" ]; then
+            print_error "❌ Ports still in use after cleanup:$PORTS_STILL_IN_USE"
             ((FAILED++))
-            FAILED_VERSIONS+=("${version_clean}: port conflict - port 3000 in use")
+            FAILED_VERSIONS+=("${version_clean}: port conflict - ports in use")
             return 1
         fi
-        print_info "✓ Port 3000 cleaned up, proceeding with start"
+        print_info "✓ Ports cleaned up, proceeding with start"
     fi
     
     # Start server
@@ -133,9 +160,9 @@ test_version() {
         return 1
     fi
     
-    # Verify server accepts HTTP requests on port 3000 with busy wait
-    # Typical startup time is 5-15 seconds, so use 30 seconds (2x) as timeout
-    print_info "Waiting for server to accept requests on port 3000..."
+    # Detect which port the server actually started on
+    # Next.js may start on 3000-3010 if ports are in use
+    local DETECTED_PORT=""
     local http_check_timeout=30
     local http_check_attempt=0
     local http_check_interval=0.5
@@ -143,46 +170,86 @@ test_version() {
     local start_time
     start_time=$(date +%s)
     
-    while [ $http_check_attempt -lt $((http_check_timeout * 2)) ]; do
-        # Try to curl the server - check if it responds with HTTP 200
-        local http_code
-        http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 http://localhost:3000/api/version 2>/dev/null || echo "000")
-        
-        if [ "$http_code" = "200" ]; then
-            local elapsed_time
-            elapsed_time=$(($(date +%s) - start_time))
-            print_info "✓ Server accepting requests on port 3000 (startup time: ${elapsed_time}s)"
-            server_ready=1
-            break
-        fi
-        
-        # Periodically check server logs to see what's happening (every 10 seconds)
-        local elapsed_time
-        elapsed_time=$(($(date +%s) - start_time))
-        
-        if [ $((http_check_attempt % 20)) -eq 0 ] && [ -f "$PROJECT_ROOT/.logs/server.log" ]; then
-            local last_log_line
-            last_log_line=$(tail -1 "$PROJECT_ROOT/.logs/server.log" 2>/dev/null || echo "")
+    print_info "Detecting which port server started on..."
+    
+    # Wait for server to start and detect the port
+    while [ $http_check_attempt -lt $((http_check_timeout * 2)) ] && [ -z "$DETECTED_PORT" ]; do
+        # Check ports 3000-3005 to find where server is listening
+        for port in 3000 3001 3002 3003 3004 3005; do
+            local http_code
+            http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 http://localhost:$port/api/version 2>/dev/null || echo "000")
             
-            if echo "$last_log_line" | grep -q "Ready"; then
-                print_info "  [${elapsed_time}s] Server reports Ready (HTTP: $http_code)"
-            elif echo "$last_log_line" | grep -q "Starting"; then
-                print_info "  [${elapsed_time}s] Server is Starting (HTTP: $http_code)"
-            elif echo "$last_log_line" | grep -q "Compiling"; then
-                print_info "  [${elapsed_time}s] Server is Compiling (HTTP: $http_code)"
-            elif echo "$last_log_line" | grep -qiE "Error|Failed"; then
-                print_info "  [${elapsed_time}s] ⚠️  Server has errors (HTTP: $http_code)"
+            if [ "$http_code" = "200" ]; then
+                DETECTED_PORT=$port
+                local elapsed_time
+                elapsed_time=$(($(date +%s) - start_time))
+                print_info "✓ Server detected on port $port (detection time: ${elapsed_time}s)"
+                server_ready=1
+                break
             fi
+        done
+        
+        if [ -n "$DETECTED_PORT" ]; then
+            break
         fi
         
         sleep $http_check_interval
         ((http_check_attempt++))
     done
     
+    # If port not detected, continue with readiness check on detected port (or 3000 as fallback)
+    if [ -z "$DETECTED_PORT" ]; then
+        print_info "Server port not yet detected, continuing readiness check..."
+        DETECTED_PORT="3000"  # Fallback to 3000 for backward compatibility
+    fi
+    
+    # Verify server accepts HTTP requests on detected port with busy wait
+    # Typical startup time is 5-15 seconds, so use 30 seconds (2x) as timeout
+    if [ $server_ready -eq 0 ]; then
+        print_info "Waiting for server to accept requests on port $DETECTED_PORT..."
+        http_check_attempt=0
+        
+        while [ $http_check_attempt -lt $((http_check_timeout * 2)) ]; do
+            # Try to curl the server - check if it responds with HTTP 200
+            local http_code
+            http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 http://localhost:$DETECTED_PORT/api/version 2>/dev/null || echo "000")
+            
+            if [ "$http_code" = "200" ]; then
+                local elapsed_time
+                elapsed_time=$(($(date +%s) - start_time))
+                print_info "✓ Server accepting requests on port $DETECTED_PORT (startup time: ${elapsed_time}s)"
+                server_ready=1
+                break
+            fi
+        
+            # Periodically check server logs to see what's happening (every 10 seconds)
+            local elapsed_time
+            elapsed_time=$(($(date +%s) - start_time))
+            
+            if [ $((http_check_attempt % 20)) -eq 0 ] && [ -f "$PROJECT_ROOT/.logs/server.log" ]; then
+                local last_log_line
+                last_log_line=$(tail -1 "$PROJECT_ROOT/.logs/server.log" 2>/dev/null || echo "")
+                
+                if echo "$last_log_line" | grep -q "Ready"; then
+                    print_info "  [${elapsed_time}s] Server reports Ready (HTTP: $http_code)"
+                elif echo "$last_log_line" | grep -q "Starting"; then
+                    print_info "  [${elapsed_time}s] Server is Starting (HTTP: $http_code)"
+                elif echo "$last_log_line" | grep -q "Compiling"; then
+                    print_info "  [${elapsed_time}s] Server is Compiling (HTTP: $http_code)"
+                elif echo "$last_log_line" | grep -qiE "Error|Failed"; then
+                    print_info "  [${elapsed_time}s] ⚠️  Server has errors (HTTP: $http_code)"
+                fi
+            fi
+            
+            sleep $http_check_interval
+            ((http_check_attempt++))
+        done
+    fi
+    
     if [ $server_ready -eq 0 ]; then
         local elapsed_time
         elapsed_time=$(($(date +%s) - start_time))
-        print_error "❌ Server did not accept requests on port 3000 for ${version_clean} within ${http_check_timeout} seconds (waited: ${elapsed_time}s)"
+        print_error "❌ Server did not accept requests on port $DETECTED_PORT for ${version_clean} within ${http_check_timeout} seconds (waited: ${elapsed_time}s)"
         print_error "Checking if server started on a different port..."
         local alt_ports=""
         for port in 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010; do
@@ -244,7 +311,7 @@ test_version() {
             print_info "✓ All ports cleaned up"
         fi
         ((FAILED++))
-        FAILED_VERSIONS+=("${version_clean}: server not accepting requests on port 3000")
+        FAILED_VERSIONS+=("${version_clean}: server not accepting requests on port $DETECTED_PORT")
         return 1
     fi
     
@@ -255,11 +322,11 @@ test_version() {
     print_info "version=[${version_clean}]: curl"
     print_info "================================================================================="
     
-    # Test API
+    # Test API using detected port
     local response
     local http_code
-    http_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/version 2>/dev/null || echo "000")
-    response=$(curl -s http://localhost:3000/api/version 2>&1)
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$DETECTED_PORT/api/version 2>/dev/null || echo "000")
+    response=$(curl -s http://localhost:$DETECTED_PORT/api/version 2>&1)
     
     if [ "$http_code" != "200" ]; then
         print_error "❌ API call failed for ${version_clean} (HTTP ${http_code})"
