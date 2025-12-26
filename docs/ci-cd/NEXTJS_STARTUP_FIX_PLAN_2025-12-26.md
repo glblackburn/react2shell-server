@@ -1,4 +1,8 @@
-# Next.js Startup Test Fix Plan - December 26, 2025
+# Next.js Startup Test Fix Plan
+
+**Date Created:** December 26, 2025 06:32:00 EST  
+**Attempt:** 1  
+**Status:** ✅ Success
 
 ## Problem Statement
 
@@ -169,6 +173,73 @@ TypeError: Cannot read properties of undefined (reading 'deploymentId')
 - [CI Test Failure Analysis 2025-12-26](CI_TEST_FAILURE_ANALYSIS_2025-12-26.md) - Original analysis
 - [test_nextjs_startup.sh](../../tests/test_nextjs_startup.sh) - Test script with fixes
 - [Makefile](../../Makefile) - `test-nextjs-startup` target
+
+## GitHub Actions Run Results
+
+### Run Information
+- **Run ID:** 20521706863
+- **Branch:** `ci-cd/step-3-vite-test-job`
+- **Commit:** `1600e9a` - "fix: Improve Next.js startup test port handling and add logging scripts"
+- **Status:** ✅ **SUCCESS**
+- **Conclusion:** success
+- **URL:** https://github.com/glblackburn/react2shell-server/actions/runs/20521706863
+- **Started:** 2025-12-26T11:32:22Z
+- **Completed:** 2025-12-26T11:37:21Z
+- **Duration:** ~5 minutes
+
+### Test Results
+
+**Job: Test Next.js Startup**
+- **Status:** ✅ **SUCCESS**
+- **Conclusion:** success
+- **All 11 versions passed:**
+  - ✅ 14.0.0 passed
+  - ✅ 14.1.0 passed
+  - ✅ 15.0.4 passed
+  - ✅ 15.1.8 passed
+  - ✅ 15.2.5 passed (previously failed)
+  - ✅ 15.3.5 passed
+  - ✅ 15.4.7 passed (previously failed, started on port 3004)
+  - ✅ 15.5.6 passed
+  - ✅ 16.0.6 passed
+  - ✅ 14.0.1 passed (previously failed)
+  - ✅ 14.1.1 passed
+
+**Summary:**
+```
+✓ Passed: 11
+✓ All versions passed!
+```
+
+### Key Observations
+
+1. **Port Detection Working:**
+   - Most versions detected on port 3000
+   - Version 15.4.7 detected on port 3004 (proving port detection works)
+   - All versions passed regardless of which port they started on
+
+2. **Port Cleanup Working:**
+   - One warning: "Ports in use before starting 14.1.1: 3006"
+   - Cleanup handled it successfully
+   - Version 14.1.1 still passed
+
+3. **All Previously Failing Versions Now Pass:**
+   - 15.2.5: ✅ Passed (was failing)
+   - 15.4.7: ✅ Passed (was failing, started on port 3004)
+   - 14.0.1: ✅ Passed (was failing)
+
+### Log Files Saved
+
+- Full run log: `/tmp/github_actions_run_20521706863_2025-12-26_113222.txt`
+- Next.js job log: `/tmp/github_actions_nextjs_job_20521706863_2025-12-26_113222.txt`
+
+### Analysis
+
+**The fix worked perfectly!** Port detection was the critical component that made it work. When version 15.4.7 started on port 3004 (instead of 3000), the script detected it and used port 3004 for all subsequent checks, allowing the test to pass.
+
+**Conclusion:** No further iterations needed. The fix is complete and successful.
+
+---
 
 ## Date
 
