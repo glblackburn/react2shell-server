@@ -93,10 +93,13 @@ test_version() {
     local version=$1
     local version_clean=$(echo "$version" | sed 's/nextjs-//')
     
-    # Known Issue: Next.js 15.2.5 has a deploymentId bug that causes crashes
-    # When handling requests, it crashes with: TypeError: Cannot read properties of undefined (reading 'deploymentId')
+    # Known Issues:
+    # - Next.js 15.2.5 has a deploymentId bug that causes crashes
+    # - Next.js 16.0.6 has the same deploymentId bug
+    # When handling requests, they crash with: TypeError: Cannot read properties of undefined (reading 'deploymentId')
     # This is a known Next.js bug and may cause test failures in CI
     # See: docs/ci-cd/CI_TEST_FAILURE_ANALYSIS_2025-12-26.md for details
+    # See: docs/ci-cd/CI_TEST_FAILURE_ANALYSIS_2025-12-26_070413.md for 16.0.6 details
     
     print_info "================================================================================="
     print_info "version=[${version_clean}]: switch"
