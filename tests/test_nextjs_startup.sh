@@ -177,8 +177,8 @@ test_version() {
     
     # Wait for server to start and detect the port
     while [ $http_check_attempt -lt $((http_check_timeout * 2)) ] && [ -z "$DETECTED_PORT" ]; do
-        # Check ports 3000-3005 to find where server is listening
-        for port in 3000 3001 3002 3003 3004 3005; do
+        # Check ports 3000-3010 to find where server is listening (matches cleanup range)
+        for port in 3000 3001 3002 3003 3004 3005 3006 3007 3008 3009 3010; do
             local http_code
             http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 http://localhost:$port/api/version 2>/dev/null || echo "000")
             
