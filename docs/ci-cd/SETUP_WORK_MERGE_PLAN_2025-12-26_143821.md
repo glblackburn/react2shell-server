@@ -95,6 +95,12 @@ git commit -m "docs: Add setup work branch analysis and comparison reports
 
 **Method:** Manual extraction (cherry-pick may include unwanted changes)
 
+**Key Commits:**
+- `77deccd` - Add setup targets for scanner and project dependencies
+- `988bbc5` - Fix setup-deps to source nvm when npm is not in PATH
+- `5270354` - Fix directory navigation in setup-deps after vite-react install
+- `901a1a7` - Update setup to prefer Node.js 18+ for Next.js compatibility
+
 **Process:**
 1. View setup targets from branch:
    ```bash
@@ -236,6 +242,10 @@ Add help text for setup targets (after "Clean:" section, before "Framework Switc
 ### Step 3: Merge verify_scanner.sh Changes
 
 **Method:** Apply diff manually or use patch
+
+**Key Commits:**
+- `b0e207c` - Improve verify_scanner.sh to show all version switch output
+- `cecba4b` - Fix version switching to use nvm and ensure verify_scanner.sh captures all output
 
 **Changes to Apply:**
 
