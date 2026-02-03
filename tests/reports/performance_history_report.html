@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance History Report</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; }
+        .section { background: white; padding: 25px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h2 { color: #667eea; border-bottom: 3px solid #667eea; padding-bottom: 10px; }
+        pre { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 5px; padding: 15px; overflow-x: auto; font-size: 0.9em; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #667eea; color: white; }
+        tr:hover { background-color: #f5f5f5; }
+        .positive { color: #28a745; }
+        .negative { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .over-limit { background-color: #ffe6e6; }
+        .individual-limit { font-weight: bold; color: #667eea; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Performance History Report</h1>
+        <p>Generated: 2026-02-03T06:10:18.158222</p>
+        <p>Total Runs: 1 | Individual Test Limits: 28</p>
+    </div>
+
+    <div class="section">
+        <h2>📈 Recent Test Runs</h2>
+        <table>
+            <tr><th>Timestamp</th><th>Total Tests</th><th>Total Suites</th><th>Total Time</th></tr>
+<tr><td>2026-02-03T06:10:18</td><td>10</td><td>2</td><td>168.51s</td></tr>
+</table></div>
+
+    <div class="section">
+        <h2>📊 Suite Performance Trends</h2>
+        <table>
+            <tr><th>Suite</th><th>Avg Time</th><th>Min</th><th>Max</th><th>Limit</th><th>Runs</th><th>Trend</th><th>Status</th></tr>
+<tr class="over-limit"><td>TestHelloWorldButton</td><td>9.74s</td><td>9.74s</td><td>9.74s</td><td>9s</td><td>1</td><td class="negative">↑ 0.0%</td><td>❌ Over Limit</td></tr>
+<tr class="over-limit"><td>TestNextJS16Startup</td><td>158.77s</td><td>158.77s</td><td>158.77s</td><td>7s</td><td>1</td><td class="negative">↑ 0.0%</td><td>❌ Over Limit</td></tr>
+</table></div>
+
+    <div class="section">
+        <h2>🐌 Slowest Tests (with Individual Limits)</h2>
+        <table>
+            <tr><th>Test</th><th>Avg (s)</th><th>Min (s)</th><th>Max (s)</th><th>Limit (s)</th><th>Runs</th><th>Status</th></tr>
+<tr class="over-limit"><td>test_nextjs_16_homepage_loads</td><td>93.060</td><td>93.060</td><td>93.060</td><td><span class="">7</span></td><td>1</td><td>❌ Over Limit</td></tr>
+<tr class="over-limit"><td>test_nextjs_16_server_starts</td><td>65.708</td><td>65.708</td><td>65.708</td><td><span class="">7</span></td><td>1</td><td>❌ Over Limit</td></tr>
+<tr class=""><td>test_message_appears_after_click</td><td>3.761</td><td>3.761</td><td>3.761</td><td><span class="individual-limit">5</span></td><td>1</td><td>✅ OK</td></tr>
+<tr class="over-limit"><td>test_button_loading_state</td><td>3.308</td><td>3.308</td><td>3.308</td><td><span class="individual-limit">1</span></td><td>1</td><td>❌ Over Limit</td></tr>
+<tr class=""><td>test_button_multiple_clicks</td><td>1.837</td><td>1.837</td><td>1.837</td><td><span class="individual-limit">3</span></td><td>1</td><td>✅ OK</td></tr>
+<tr class=""><td>test_button_click_displays_message</td><td>0.789</td><td>0.789</td><td>0.789</td><td><span class="individual-limit">1</span></td><td>1</td><td>✅ OK</td></tr>
+<tr class=""><td>test_button_text_is_correct</td><td>0.022</td><td>0.022</td><td>0.022</td><td><span class="individual-limit">1</span></td><td>1</td><td>✅ OK</td></tr>
+<tr class=""><td>test_button_is_visible</td><td>0.014</td><td>0.014</td><td>0.014</td><td><span class="individual-limit">1</span></td><td>1</td><td>✅ OK</td></tr>
+<tr class=""><td>test_button_is_enabled</td><td>0.013</td><td>0.013</td><td>0.013</td><td><span class="individual-limit">1</span></td><td>1</td><td>✅ OK</td></tr>
+<tr class=""><td>test_switch_to_nextjs_16</td><td>0.001</td><td>0.001</td><td>0.001</td><td><span class="">7</span></td><td>1</td><td>✅ OK</td></tr>
+</table><p><em>Note: Limits in <span class='individual-limit'>blue/bold</span> are individual test limits. Others use category-based limits.</em></p></div>
+
+    <div class="section">
+        <h2>📈 Performance Trends</h2>
+        <pre>================================================================================
+PERFORMANCE TREND REPORT
+================================================================================
+Analyzing 1 historical runs
+Most recent run: 2026-02-03T06:10:18.158222
+Oldest run: 2026-02-03T06:10:18.158222
+
+Suite Performance Trends:
+--------------------------------------------------------------------------------</pre>
+    </div>
+
+</body>
+</html>

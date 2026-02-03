@@ -23,9 +23,6 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
-reports/
-tests/.performance_baseline.json
-tests/.performance_history/
 *.egg-info/
 dist/
 build/
