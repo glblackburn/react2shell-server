@@ -16,7 +16,15 @@ from typing import Dict, List, Optional
 from datetime import datetime
 
 # Import performance history utilities
-from utils.performance_history import save_run_history
+from utils.performance_history import (
+    save_run_history,
+    save_run_history_in_progress,
+    clear_run_in_progress,
+    promote_run_in_progress_to_history,
+    set_current_run_timestamp,
+    get_current_run_file,
+    get_current_run_timestamp,
+)
 
 # Configuration
 PERFORMANCE_BASELINE_FILE = Path("tests/.performance_baseline.json")
@@ -139,8 +147,14 @@ _performance_tracker = PerformanceTracker()
 
 @pytest.hookimpl
 def pytest_configure(config):
-    """Verify plugin is loaded."""
+    """Verify plugin is loaded; promote any leftover run_in_progress; set this run's timestamped file."""
     if os.environ.get('PYTEST_SAVE_HISTORY') == 'true':
+        promoted = promote_run_in_progress_to_history()
+        if promoted:
+            print(f"\n🔍 Promoted leftover run_in_progress.json to {promoted.name} (partial run from previous session)", file=sys.stderr)
+        # Use timestamped run file (same naming as other history files: run_2026-02-03T06-10-18-158222.json)
+        run_start_ts = datetime.now().isoformat()
+        set_current_run_timestamp(run_start_ts)
         print(f"\n🔍 Performance plugin loaded (pytest_configure called)", file=sys.stderr)
         print(f"   Plugin file: {__file__}", file=sys.stderr)
 
@@ -182,7 +196,17 @@ def pytest_runtest_makereport(item, call):
                 _performance_tracker.regressions.append(regression)
             else:
                 _performance_tracker.warnings.append(regression)
-    
+
+        # Incremental save so partial data survives process kill (e.g. SIGKILL/OOM)
+        if os.environ.get('PYTEST_SAVE_HISTORY') == 'true' and not hasattr(item.config, 'workerinput'):
+            try:
+                save_run_history_in_progress(
+                    _performance_tracker.current_run,
+                    dict(_performance_tracker.suite_times)
+                )
+            except Exception:
+                pass
+
     if rep.when == "call" and rep.failed:
         # Take screenshot if driver is available
         if "driver" in item.fixturenames:
@@ -320,16 +344,20 @@ def pytest_sessionfinish(session, exitstatus):
             except Exception:
                 framework_mode = "unknown"
             
-            timestamp = datetime.now().isoformat()
+            # Write final state to same timestamped file used for incremental save (filename = session start)
+            output_path = get_current_run_file()
+            timestamp = get_current_run_timestamp() or datetime.now().isoformat()
             history_file = save_run_history(
                 tracker.current_run,
                 tracker.suite_times,
                 timestamp=timestamp,
-                framework_mode=framework_mode
+                framework_mode=framework_mode,
+                output_path=output_path,
             )
             # Only print if explicitly requested to reduce noise
             if os.environ.get('PYTEST_SAVE_HISTORY') == 'true':
                 print(f"\n📊 Performance history saved: {history_file} (Framework: {framework_mode})")
+            clear_run_in_progress()
         except Exception as e:
             # Log error for debugging if PYTEST_SAVE_HISTORY is set
             if os.environ.get('PYTEST_SAVE_HISTORY') == 'true':

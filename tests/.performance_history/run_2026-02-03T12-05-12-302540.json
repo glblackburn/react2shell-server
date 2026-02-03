@@ -1,0 +1,97 @@
+{
+  "timestamp": "2026-02-03T12:05:12.302540",
+  "framework_mode": "nextjs",
+  "tests": {
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_button_is_visible": {
+      "avg": 0.02431011199951172,
+      "min": 0.02431011199951172,
+      "max": 0.02431011199951172,
+      "runs": 1,
+      "status": "passed"
+    },
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_button_text_is_correct": {
+      "avg": 0.0216062068939209,
+      "min": 0.0216062068939209,
+      "max": 0.0216062068939209,
+      "runs": 1,
+      "status": "passed"
+    },
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_button_is_enabled": {
+      "avg": 0.0232391357421875,
+      "min": 0.0232391357421875,
+      "max": 0.0232391357421875,
+      "runs": 1,
+      "status": "passed"
+    },
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_button_click_displays_message": {
+      "avg": 1.0463240146636963,
+      "min": 1.0463240146636963,
+      "max": 1.0463240146636963,
+      "runs": 1,
+      "status": "passed"
+    },
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_button_loading_state": {
+      "avg": 3.431635856628418,
+      "min": 3.431635856628418,
+      "max": 3.431635856628418,
+      "runs": 1,
+      "status": "passed"
+    },
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_button_multiple_clicks": {
+      "avg": 1.4481878280639648,
+      "min": 1.4481878280639648,
+      "max": 1.4481878280639648,
+      "runs": 1,
+      "status": "passed"
+    },
+    "test_suites/test_hello_world.py::TestHelloWorldButton::test_message_appears_after_click": {
+      "avg": 3.806854724884033,
+      "min": 3.806854724884033,
+      "max": 3.806854724884033,
+      "runs": 1,
+      "status": "passed"
+    },
+    "test_suites/test_nextjs_16_startup.py::TestNextJS16Startup::test_switch_to_nextjs_16": {
+      "avg": 0.00417780876159668,
+      "min": 0.00417780876159668,
+      "max": 0.00417780876159668,
+      "runs": 1,
+      "status": "passed"
+    },
+    "test_suites/test_nextjs_16_startup.py::TestNextJS16Startup::test_nextjs_16_server_starts": {
+      "avg": 12.101387023925781,
+      "min": 12.101387023925781,
+      "max": 12.101387023925781,
+      "runs": 1,
+      "status": "passed"
+    },
+    "test_suites/test_nextjs_16_startup.py::TestNextJS16Startup::test_nextjs_16_homepage_loads": {
+      "avg": 9.934071779251099,
+      "min": 9.934071779251099,
+      "max": 9.934071779251099,
+      "runs": 1,
+      "status": "passed"
+    },
+    "test_suites/test_nextjs_16_startup.py::TestNextJS16Startup::test_nextjs_16_api_endpoint": {
+      "avg": 9.76321005821228,
+      "min": 9.76321005821228,
+      "max": 9.76321005821228,
+      "runs": 1,
+      "status": "passed"
+    },
+    "test_suites/test_nextjs_16_startup.py::TestNextJS16Startup::test_nextjs_16_version_api": {
+      "avg": 10.118021965026855,
+      "min": 10.118021965026855,
+      "max": 10.118021965026855,
+      "runs": 1,
+      "status": "passed"
+    }
+  },
+  "suites": {
+    "TestHelloWorldButton": 9.802157878875732,
+    "TestNextJS16Startup": 41.92086863517761
+  },
+  "total_tests": 12,
+  "total_suites": 2,
+  "partial": true
+}

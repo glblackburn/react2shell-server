@@ -1191,20 +1191,18 @@ test-performance: check-venv
 	echo "================================================================================="; \
 	echo ""; \
 	echo "Step 1: Running performance tests..."; \
-	PYTEST_SAVE_HISTORY=true $(PYTEST) $(TEST_DIR)/ -v || true; \
-	echo ""; \
 	if [ "$$UPDATE_BASELINE" = "true" ] || [ ! -f tests/.performance_baseline.json ]; then \
-		echo "Step 2: Updating performance baseline..."; \
-		PYTEST_UPDATE_BASELINE=true PYTEST_SAVE_HISTORY=true $(PYTEST) $(TEST_DIR)/ -v || true; \
-		echo "✓ Performance baseline updated!"; \
+		echo "  (Baseline will be updated at end of run)"; \
+		PYTEST_SAVE_HISTORY=true PYTEST_UPDATE_BASELINE=true $(PYTEST) $(TEST_DIR)/ -v || true; \
+		[ -f tests/.performance_baseline.json ] && echo "✓ Performance baseline updated!"; \
 	else \
-		echo "Step 2: Baseline exists, skipping update (set UPDATE_BASELINE=true to force update)"; \
+		PYTEST_SAVE_HISTORY=true $(PYTEST) $(TEST_DIR)/ -v || true; \
 	fi; \
 	echo ""; \
-	echo "Step 3: Generating comprehensive performance report..."; \
-	cd $(TEST_DIR) && ./generate_performance_report.sh || echo "⚠️  Report generation had issues, but continuing..."; \
+	echo "Step 2: Generating comprehensive performance report..."; \
+	(cd $(TEST_DIR) && ./generate_performance_report.sh) || echo "⚠️  Report generation had issues, but continuing..."; \
 	echo ""; \
-	echo "Step 4: Performance Summary:"; \
+	echo "Step 3: Performance Summary:"; \
 	echo "--------------------------------------------------------------------------------"; \
 	cd $(TEST_DIR) && ../$(VENV_BIN)/python3 performance_report.py summary --limit 5 || echo "⚠️  Summary generation had issues"; \
 	echo ""; \
