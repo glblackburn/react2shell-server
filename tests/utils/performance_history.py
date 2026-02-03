@@ -145,6 +145,32 @@ def clear_run_in_progress():
             pass
 
 
+def promote_run_in_progress_to_history() -> Optional[Path]:
+    """If run_in_progress.json exists (leftover from a killed run), save it as a permanent
+    history file and remove the in-progress file. Call at session start so the previous run's
+    partial data is not overwritten by the current run.
+    Returns the new history file path if promoted, else None.
+    """
+    if not RUN_IN_PROGRESS_FILE.exists():
+        return None
+    try:
+        with open(RUN_IN_PROGRESS_FILE, 'r') as f:
+            data = json.load(f)
+        timestamp = data.get('timestamp', datetime.now().isoformat())
+        # Same filename format as save_run_history
+        safe_ts = timestamp.replace(':', '-').replace('.', '-')
+        history_file = PERFORMANCE_HISTORY_DIR / f"run_{safe_ts}.json"
+        # Avoid overwriting an existing run file (e.g. same second)
+        if history_file.exists():
+            history_file = PERFORMANCE_HISTORY_DIR / f"run_{safe_ts}_partial.json"
+        with open(history_file, 'w') as f:
+            json.dump(data, f, indent=2)
+        RUN_IN_PROGRESS_FILE.unlink()
+        return history_file
+    except Exception:
+        return None
+
+
 def load_history_files(limit: Optional[int] = None) -> List[Dict]:
     """Load historical performance data files.
     
