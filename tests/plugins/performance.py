@@ -21,6 +21,9 @@ from utils.performance_history import (
     save_run_history_in_progress,
     clear_run_in_progress,
     promote_run_in_progress_to_history,
+    set_current_run_timestamp,
+    get_current_run_file,
+    get_current_run_timestamp,
 )
 
 # Configuration
@@ -144,11 +147,14 @@ _performance_tracker = PerformanceTracker()
 
 @pytest.hookimpl
 def pytest_configure(config):
-    """Verify plugin is loaded; promote any leftover run_in_progress to a history file."""
+    """Verify plugin is loaded; promote any leftover run_in_progress; set this run's timestamped file."""
     if os.environ.get('PYTEST_SAVE_HISTORY') == 'true':
         promoted = promote_run_in_progress_to_history()
         if promoted:
             print(f"\n🔍 Promoted leftover run_in_progress.json to {promoted.name} (partial run from previous session)", file=sys.stderr)
+        # Use timestamped run file (same naming as other history files: run_2026-02-03T06-10-18-158222.json)
+        run_start_ts = datetime.now().isoformat()
+        set_current_run_timestamp(run_start_ts)
         print(f"\n🔍 Performance plugin loaded (pytest_configure called)", file=sys.stderr)
         print(f"   Plugin file: {__file__}", file=sys.stderr)
 
@@ -338,12 +344,15 @@ def pytest_sessionfinish(session, exitstatus):
             except Exception:
                 framework_mode = "unknown"
             
-            timestamp = datetime.now().isoformat()
+            # Write final state to same timestamped file used for incremental save (filename = session start)
+            output_path = get_current_run_file()
+            timestamp = get_current_run_timestamp() or datetime.now().isoformat()
             history_file = save_run_history(
                 tracker.current_run,
                 tracker.suite_times,
                 timestamp=timestamp,
-                framework_mode=framework_mode
+                framework_mode=framework_mode,
+                output_path=output_path,
             )
             # Only print if explicitly requested to reduce noise
             if os.environ.get('PYTEST_SAVE_HISTORY') == 'true':

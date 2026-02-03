@@ -20,7 +20,34 @@ from collections import defaultdict
 _script_dir = Path(__file__).parent.parent  # Go up from utils/ to tests/
 PERFORMANCE_HISTORY_DIR = _script_dir / ".performance_history"
 PERFORMANCE_BASELINE_FILE = _script_dir / ".performance_baseline.json"
-RUN_IN_PROGRESS_FILE = PERFORMANCE_HISTORY_DIR / "run_in_progress.json"
+RUN_IN_PROGRESS_FILE = PERFORMANCE_HISTORY_DIR / "run_in_progress.json"  # legacy; promote at session start
+
+# Current run file: set at session start so incremental and final save use same timestamped name
+_current_run_timestamp: Optional[str] = None
+
+
+def _sanitize_timestamp(ts: str) -> str:
+    """Same format as other history files: run_2026-02-03T06-10-18-158222.json"""
+    return ts.replace(":", "-").replace(".", "-")
+
+
+def set_current_run_timestamp(ts: str) -> None:
+    """Set the timestamp for this session's run file (called at pytest_configure)."""
+    global _current_run_timestamp
+    _current_run_timestamp = ts
+
+
+def get_current_run_file() -> Optional[Path]:
+    """Path for this session's run file (timestamped, same naming as other history files)."""
+    if not _current_run_timestamp:
+        return None
+    ensure_history_dir()
+    return PERFORMANCE_HISTORY_DIR / f"run_{_sanitize_timestamp(_current_run_timestamp)}.json"
+
+
+def get_current_run_timestamp() -> Optional[str]:
+    """Session start timestamp (so final save JSON matches filename)."""
+    return _current_run_timestamp
 
 
 def ensure_history_dir():
@@ -28,20 +55,27 @@ def ensure_history_dir():
     PERFORMANCE_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def save_run_history(current_run: Dict, suite_times: Dict, timestamp: Optional[str] = None, framework_mode: Optional[str] = None):
+def save_run_history(
+    current_run: Dict,
+    suite_times: Dict,
+    timestamp: Optional[str] = None,
+    framework_mode: Optional[str] = None,
+    output_path: Optional[Path] = None,
+):
     """Save performance data from a test run to history.
-    
+
     Args:
         current_run: Dictionary of test_id -> list of run data
         suite_times: Dictionary of suite_name -> total_time
         timestamp: Optional timestamp string (ISO format). If None, uses current time.
         framework_mode: Optional framework mode ('vite' or 'nextjs')
+        output_path: If set, write to this path (same file as incremental save; final overwrite).
     """
     ensure_history_dir()
-    
+
     if timestamp is None:
         timestamp = datetime.now().isoformat()
-    
+
     # Detect framework mode if not provided
     if framework_mode is None:
         try:
@@ -49,8 +83,8 @@ def save_run_history(current_run: Dict, suite_times: Dict, timestamp: Optional[s
             framework_mode = get_framework_mode()
         except Exception:
             framework_mode = "unknown"
-    
-    history_file = PERFORMANCE_HISTORY_DIR / f"run_{timestamp.replace(':', '-').replace('.', '-')}.json"
+
+    history_file = output_path if output_path is not None else PERFORMANCE_HISTORY_DIR / f"run_{_sanitize_timestamp(timestamp)}.json"
     
     # Calculate averages for each test
     test_data = {}
@@ -90,10 +124,12 @@ def save_run_history(current_run: Dict, suite_times: Dict, timestamp: Optional[s
 
 
 def save_run_history_in_progress(current_run: Dict, suite_times: Dict, framework_mode: Optional[str] = None):
-    """Write current run to run_in_progress.json so partial data survives process kill (e.g. SIGKILL).
-    Call after each test when PYTEST_SAVE_HISTORY is set; sessionfinish writes the final file and clears this.
+    """Write current run to this session's run file (timestamped, same name as other history files).
+    Call after each test when PYTEST_SAVE_HISTORY is set; partial data survives process kill (e.g. SIGKILL).
+    Session finish overwrites the same file with final data.
     """
-    if not current_run:
+    run_file = get_current_run_file()
+    if not run_file or not current_run:
         return
     ensure_history_dir()
     if framework_mode is None:
@@ -102,7 +138,8 @@ def save_run_history_in_progress(current_run: Dict, suite_times: Dict, framework
             framework_mode = get_framework_mode()
         except Exception:
             framework_mode = "unknown"
-    timestamp = datetime.now().isoformat()
+    # Use session start timestamp so filename matches run_2026-02-03T06-10-18-158222.json
+    timestamp = _current_run_timestamp or datetime.now().isoformat()
     test_data = {}
     for test_id, runs in current_run.items():
         if isinstance(runs, list) and runs:
@@ -132,7 +169,7 @@ def save_run_history_in_progress(current_run: Dict, suite_times: Dict, framework
         'total_suites': len(suite_times),
         'partial': True
     }
-    with open(RUN_IN_PROGRESS_FILE, 'w') as f:
+    with open(run_file, 'w') as f:
         json.dump(history_data, f, indent=2)
 
 
@@ -185,12 +222,14 @@ def load_history_files(limit: Optional[int] = None) -> List[Dict]:
     if not PERFORMANCE_HISTORY_DIR.exists():
         return []
     
+    all_files = list(PERFORMANCE_HISTORY_DIR.glob("run_*.json"))
+    # Exclude legacy run_in_progress.json; only load timestamped run_<ts>.json files
     history_files = sorted(
-        PERFORMANCE_HISTORY_DIR.glob("run_*.json"),
+        [p for p in all_files if p.name != "run_in_progress.json"],
         key=lambda p: p.stat().st_mtime,
         reverse=True
     )
-    
+
     if limit:
         history_files = history_files[:limit]
     
