@@ -568,7 +568,7 @@ To run the full performance test suite (tests, history, baseline comparison, and
 make test-performance
 ```
 
-No other setup is required: the target ensures the correct Node.js version for Next.js, runs the tests, stores timestamped performance history, compares against the baseline, and generates an HTML report.
+No other setup is required: the target ensures the correct Node.js version for Next.js, runs the tests **once** (one run = one history file), updates the baseline at the end of that run when requested or when the baseline file is missing, and generates an HTML report.
 
 **Artifacts:**
 - [Performance history report](tests/reports/performance_history_report.html) – HTML report with trends and regression analysis
@@ -610,7 +610,7 @@ make test-open-report
 - `make test-clean` - Clean test artifacts
 
 **Performance Tracking:**
-- `make test-performance` - **Run performance tests and generate comprehensive report (RECOMMENDED)** - Unified target that runs tests, updates baseline, generates HTML report, and shows console summary
+- `make test-performance` - **Run performance tests and generate comprehensive report (RECOMMENDED)** - Single run: tests, history, optional baseline update at end, HTML report, console summary
 - `make test-update-baseline` - Quick baseline update without running full tests
 
 **Legacy Performance Targets (Deprecated - use `test-performance` instead):**

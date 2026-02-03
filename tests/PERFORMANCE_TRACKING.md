@@ -20,7 +20,7 @@ Run the full performance workflow (tests, history, baseline comparison, HTML rep
 make test-performance
 ```
 
-No other setup is required. The target ensures the correct Node.js version for Next.js, runs tests with history tracking, optionally updates the baseline, generates the HTML report, and prints a summary.
+No other setup is required. The target ensures the correct Node.js version for Next.js, runs tests **once** with history tracking, updates the baseline at the end of that run when requested (or when the baseline file is missing), then generates the HTML report and prints a summary. One run produces one history file.
 
 **Artifacts:**
 - [Performance history report](reports/performance_history_report.html) – HTML report with trends and regression analysis
@@ -96,8 +96,9 @@ make test-performance-summary LIMIT=5
 ### Primary (recommended)
 
 - **`make test-performance`** – **Run full performance workflow (recommended)**
-  - Runs tests with history tracking, optionally updates baseline, generates HTML report, shows console summary
-  - Single command for the full workflow; no other setup required
+  - Runs tests once with history tracking; baseline is updated at end of run when `UPDATE_BASELINE=true` or baseline file is missing
+  - Generates HTML report and shows console summary (Step 2: report, Step 3: summary)
+  - Single run = one history file; no duplicate run for baseline update
 - **`make test-update-baseline`** – Update the performance baseline with current test times (runs tests)
 
 ### Legacy (deprecated)
