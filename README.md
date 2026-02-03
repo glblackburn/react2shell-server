@@ -2,6 +2,8 @@
 
 **Purpose: Security Testing Project**
 
+**Repository:** [GitHub - react2shell-server](https://github.com/glblackburn/react2shell-server)
+
 This project provides a React application with easily switchable React versions, including **vulnerable versions** for security scanner testing. The primary purpose is to enable security scanners and testing tools to detect and validate detection of the React Server Components security vulnerability (CVE).
 
 A React application with a backend server that displays a big red button. When clicked, the button sends a request to the server, which responds with "Hello World!". This simple application serves as a testbed for security scanners to identify vulnerable React versions.
@@ -557,6 +559,22 @@ The Vite dev server is configured to proxy API requests to the Express server.
 ## Testing
 
 This project includes Python Selenium end-to-end tests using **pytest** framework.
+
+### Running performance tests
+
+To run the full performance test suite (tests, history, baseline comparison, and HTML report) with a single command:
+
+```bash
+make test-performance
+```
+
+No other setup is required: the target ensures the correct Node.js version for Next.js, runs the tests, stores timestamped performance history, compares against the baseline, and generates an HTML report.
+
+**Artifacts:**
+- [Performance history report](tests/reports/performance_history_report.html) – HTML report with trends and regression analysis
+- [Performance history](tests/.performance_history/) – Timestamped JSON files for each test run
+
+See [Performance Tracking Guide](tests/PERFORMANCE_TRACKING.md) for details.
 
 ### Quick Start
 
