@@ -16,7 +16,7 @@ from typing import Dict, List, Optional
 from datetime import datetime
 
 # Import performance history utilities
-from utils.performance_history import save_run_history
+from utils.performance_history import save_run_history, save_run_history_in_progress, clear_run_in_progress
 
 # Configuration
 PERFORMANCE_BASELINE_FILE = Path("tests/.performance_baseline.json")
@@ -182,7 +182,17 @@ def pytest_runtest_makereport(item, call):
                 _performance_tracker.regressions.append(regression)
             else:
                 _performance_tracker.warnings.append(regression)
-    
+
+        # Incremental save so partial data survives process kill (e.g. SIGKILL/OOM)
+        if os.environ.get('PYTEST_SAVE_HISTORY') == 'true' and not hasattr(item.config, 'workerinput'):
+            try:
+                save_run_history_in_progress(
+                    _performance_tracker.current_run,
+                    dict(_performance_tracker.suite_times)
+                )
+            except Exception:
+                pass
+
     if rep.when == "call" and rep.failed:
         # Take screenshot if driver is available
         if "driver" in item.fixturenames:
@@ -330,6 +340,7 @@ def pytest_sessionfinish(session, exitstatus):
             # Only print if explicitly requested to reduce noise
             if os.environ.get('PYTEST_SAVE_HISTORY') == 'true':
                 print(f"\n📊 Performance history saved: {history_file} (Framework: {framework_mode})")
+            clear_run_in_progress()
         except Exception as e:
             # Log error for debugging if PYTEST_SAVE_HISTORY is set
             if os.environ.get('PYTEST_SAVE_HISTORY') == 'true':

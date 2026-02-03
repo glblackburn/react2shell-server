@@ -1202,7 +1202,7 @@ test-performance: check-venv
 	fi; \
 	echo ""; \
 	echo "Step 3: Generating comprehensive performance report..."; \
-	cd $(TEST_DIR) && ./generate_performance_report.sh || echo "⚠️  Report generation had issues, but continuing..."; \
+	(cd $(TEST_DIR) && ./generate_performance_report.sh) || echo "⚠️  Report generation had issues, but continuing..."; \
 	echo ""; \
 	echo "Step 4: Performance Summary:"; \
 	echo "--------------------------------------------------------------------------------"; \

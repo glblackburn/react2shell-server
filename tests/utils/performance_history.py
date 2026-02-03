@@ -20,6 +20,7 @@ from collections import defaultdict
 _script_dir = Path(__file__).parent.parent  # Go up from utils/ to tests/
 PERFORMANCE_HISTORY_DIR = _script_dir / ".performance_history"
 PERFORMANCE_BASELINE_FILE = _script_dir / ".performance_baseline.json"
+RUN_IN_PROGRESS_FILE = PERFORMANCE_HISTORY_DIR / "run_in_progress.json"
 
 
 def ensure_history_dir():
@@ -84,8 +85,64 @@ def save_run_history(current_run: Dict, suite_times: Dict, timestamp: Optional[s
     
     with open(history_file, 'w') as f:
         json.dump(history_data, f, indent=2)
-    
+
     return history_file
+
+
+def save_run_history_in_progress(current_run: Dict, suite_times: Dict, framework_mode: Optional[str] = None):
+    """Write current run to run_in_progress.json so partial data survives process kill (e.g. SIGKILL).
+    Call after each test when PYTEST_SAVE_HISTORY is set; sessionfinish writes the final file and clears this.
+    """
+    if not current_run:
+        return
+    ensure_history_dir()
+    if framework_mode is None:
+        try:
+            from utils.framework_detector import get_framework_mode
+            framework_mode = get_framework_mode()
+        except Exception:
+            framework_mode = "unknown"
+    timestamp = datetime.now().isoformat()
+    test_data = {}
+    for test_id, runs in current_run.items():
+        if isinstance(runs, list) and runs:
+            durations = [r.get('duration', 0) for r in runs if isinstance(r, dict)]
+            if durations:
+                test_data[test_id] = {
+                    'avg': sum(durations) / len(durations),
+                    'min': min(durations),
+                    'max': max(durations),
+                    'runs': len(durations),
+                    'status': runs[0].get('status', 'unknown')
+                }
+        elif isinstance(runs, dict) and 'duration' in runs:
+            test_data[test_id] = {
+                'avg': runs['duration'],
+                'min': runs['duration'],
+                'max': runs['duration'],
+                'runs': 1,
+                'status': runs.get('status', 'unknown')
+            }
+    history_data = {
+        'timestamp': timestamp,
+        'framework_mode': framework_mode,
+        'tests': test_data,
+        'suites': dict(suite_times),
+        'total_tests': len(test_data),
+        'total_suites': len(suite_times),
+        'partial': True
+    }
+    with open(RUN_IN_PROGRESS_FILE, 'w') as f:
+        json.dump(history_data, f, indent=2)
+
+
+def clear_run_in_progress():
+    """Remove run_in_progress.json after a successful session finish."""
+    if RUN_IN_PROGRESS_FILE.exists():
+        try:
+            RUN_IN_PROGRESS_FILE.unlink()
+        except OSError:
+            pass
 
 
 def load_history_files(limit: Optional[int] = None) -> List[Dict]:
