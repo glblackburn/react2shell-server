@@ -12,7 +12,23 @@ The performance tracking system:
 
 ## Quick Start
 
-### 1. Collect Performance Data
+### Recommended: One command
+
+Run the full performance workflow (tests, history, baseline comparison, HTML report) with a single command:
+
+```bash
+make test-performance
+```
+
+No other setup is required. The target ensures the correct Node.js version for Next.js, runs tests with history tracking, optionally updates the baseline, generates the HTML report, and prints a summary.
+
+**Artifacts:**
+- [Performance history report](reports/performance_history_report.html) – HTML report with trends and regression analysis
+- [Performance history](.performance_history/) – Timestamped JSON files for each test run
+
+### Alternative: Step-by-step workflow
+
+#### 1. Collect Performance Data
 
 Run tests to collect performance metrics (history is saved automatically):
 
@@ -24,13 +40,15 @@ make test             # Runs all tests sequentially
 
 Each test run automatically saves performance data to `tests/.performance_history/`.
 
-### 2. Generate Performance Report
+#### 2. Generate Performance Report
 
-Generate and view a comprehensive HTML performance report:
+The recommended way to get a fresh report is `make test-performance` (runs tests then generates the report). To generate only the HTML report from existing history (without re-running tests), use:
 
 ```bash
 make test-performance-report
 ```
+
+*(Deprecated; use `make test-performance` when possible.)*
 
 This generates an HTML report with:
 - Recent test runs summary
@@ -39,9 +57,9 @@ This generates an HTML report with:
 - Performance trends over time
 - Baseline comparison
 
-The report automatically opens in your browser.
+The report is saved to `tests/reports/performance_history_report.html` and can be opened in your browser.
 
-### 3. Update Baseline (Optional)
+#### 3. Update Baseline (Optional)
 
 Before tracking performance regressions, establish a baseline:
 
@@ -51,7 +69,7 @@ make test-update-baseline
 
 This runs all tests and saves their execution times as the baseline for future comparisons.
 
-### 4. View Performance Data (Command Line)
+#### 4. View Performance Data (Command Line)
 
 ```bash
 # Compare latest run against baseline
@@ -75,32 +93,31 @@ make test-performance-summary LIMIT=5
 
 ## Commands Reference
 
-### Baseline Management
+### Primary (recommended)
 
-- **`make test-update-baseline`** - Update the performance baseline with current test times
-- **`make test-performance-check`** - Run tests and check for regressions (saves history)
+- **`make test-performance`** – **Run full performance workflow (recommended)**
+  - Runs tests with history tracking, optionally updates baseline, generates HTML report, shows console summary
+  - Single command for the full workflow; no other setup required
+- **`make test-update-baseline`** – Update the performance baseline with current test times (runs tests)
 
-### Performance Analysis
+### Legacy (deprecated)
 
-- **`make test-performance-report`** - **Generate and open comprehensive HTML performance report** (recommended)
-  - Includes all metrics, trends, limits, and comparisons
-  - Automatically opens in browser
-  - Shows individual test limits vs category-based limits
-- **`make test-performance-compare`** - Compare the latest test run against the baseline
-- **`make test-performance-trends [TEST_ID=...] [LIMIT=N]`** - Show performance trends
-  - `TEST_ID`: Optional specific test to analyze
-  - `LIMIT`: Number of historical runs to analyze (default: 10)
-- **`make test-performance-slowest [LIMIT=N]`** - List the slowest tests (default: 10)
-- **`make test-performance-history [LIMIT=N]`** - List recent performance history (default: 10)
-- **`make test-performance-summary [LIMIT=N]`** - Show summary of recent runs (default: 5)
+The following targets are still available but deprecated; prefer `make test-performance` when possible.
+
+- **`make test-performance-check`** – Run tests and check for regressions (saves history)
+- **`make test-performance-report`** – Generate HTML report from existing history (does not run tests)
+- **`make test-performance-compare`** – Compare the latest test run against the baseline
+- **`make test-performance-trends [TEST_ID=...] [LIMIT=N]`** – Show performance trends
+- **`make test-performance-slowest [LIMIT=N]`** – List the slowest tests (default: 10)
+- **`make test-performance-history [LIMIT=N]`** – List recent performance history (default: 10)
+- **`make test-performance-summary [LIMIT=N]`** – Show summary of recent runs (default: 5)
 
 ### Direct Python Script Usage
 
-You can also use the performance report script directly:
+You can also use the performance report script directly (from project root):
 
 ```bash
-cd tests
-venv/bin/python3 performance_report.py [command] [options]
+cd tests && ../venv/bin/python3 performance_report.py [command] [options]
 ```
 
 Commands:
@@ -189,6 +206,11 @@ Regressed (>50% slower): 1
 
 ## Data Storage
 
+### Artifacts (report and history)
+
+- **[Performance history report](reports/performance_history_report.html)** – HTML report with trends and regression analysis
+- **[Performance history](.performance_history/)** – Timestamped JSON files for each test run
+
 ### Baseline File
 
 - **Location**: `tests/.performance_baseline.json`
@@ -199,7 +221,7 @@ Regressed (>50% slower): 1
 ### History Files
 
 - **Location**: `tests/.performance_history/`
-- **Format**: Timestamped JSON files (`run_YYYY-MM-DDTHH-MM-SS.json`)
+- **Format**: Timestamped JSON files (`run_<ISO8601-with-optional-fraction>.json`, e.g. `run_2026-02-03T06-10-18-158222.json`)
 - **Purpose**: Historical record of all test runs
 - **Update**: Automatically saved on each test run (when `PYTEST_SAVE_HISTORY=true`)
 
@@ -207,6 +229,7 @@ Regressed (>50% slower): 1
 
 - **Location**: `tests/performance_config.yaml`
 - **Purpose**: Configure thresholds, limits, and reporting options
+- **Regression thresholds**: 50% slower triggers regression, 20% slower triggers warning (configurable via `regression.threshold` and `regression.warning_threshold`)
 
 ## Setting Test Time Limits
 
@@ -327,11 +350,12 @@ You can also manually edit `tests/performance_config.yaml` to set custom limits 
 
 ## Best Practices
 
-1. **Establish Baseline Early**: Run `make test-update-baseline` after initial test suite is stable
-2. **Regular Monitoring**: Check `make test-performance-compare` after significant changes
-3. **Investigate Regressions**: When regressions are detected, investigate the cause
-4. **Update Baseline**: Periodically update baseline as tests evolve (but only when performance is acceptable)
-5. **Review Trends**: Use `make test-performance-trends` to identify gradual performance degradation
+1. **Use one command for full workflow**: Prefer `make test-performance` for tests, history, baseline, and report instead of running separate targets.
+2. **Establish Baseline Early**: Run `make test-update-baseline` (or `make test-performance` with `UPDATE_BASELINE=true`) after initial test suite is stable.
+3. **Regular Monitoring**: Check `make test-performance-compare` after significant changes (or run `make test-performance` for a full run and report).
+4. **Investigate Regressions**: When regressions are detected, investigate the cause.
+5. **Update Baseline**: Periodically update baseline as tests evolve (but only when performance is acceptable).
+6. **Review Trends**: Use `make test-performance-trends` (or the HTML report from `make test-performance`) to identify gradual performance degradation.
 
 ## Troubleshooting
 
@@ -340,7 +364,7 @@ You can also manually edit `tests/performance_config.yaml` to set custom limits 
 If you see "No performance history found":
 - Ensure tests have been run with history saving enabled
 - Check that `tests/.performance_history/` directory exists
-- Verify `PYTEST_SAVE_HISTORY=true` is set (automatic in `make test-parallel`)
+- Verify `PYTEST_SAVE_HISTORY=true` is set (automatic in `make test-parallel` and `make test-performance`)
 
 ### No Baseline Found
 
@@ -357,7 +381,14 @@ If performance reports aren't appearing:
 
 ## Integration with CI/CD
 
-For CI/CD pipelines:
+For CI/CD pipelines, use a single command for the full workflow:
+
+```bash
+# Run tests, save history, generate report (recommended)
+make test-performance
+```
+
+Alternatively, run steps separately:
 
 ```bash
 # Run tests and save history
@@ -404,13 +435,14 @@ trends = get_test_trends("test_suites/test_hello_world.py::TestHelloWorldButton:
 
 ### HTML Performance Report
 
-The easiest way to view all performance metrics is to generate the comprehensive HTML report:
+The recommended way to generate the report is `make test-performance`, which runs tests and then generates the HTML report. To generate only the report from existing history (without re-running tests), use `make test-performance-report` (deprecated).
 
 ```bash
-make test-performance-report
+make test-performance        # Recommended: run tests + generate report
+make test-performance-report  # Legacy: generate report from existing history only
 ```
 
-This command:
+The report generation:
 1. Loads all performance history from `tests/.performance_history/`
 2. Generates an HTML report with:
    - Recent test runs summary
@@ -418,8 +450,7 @@ This command:
    - Slowest tests with individual limits highlighted
    - Performance trends over time
    - Baseline comparison with regressions
-3. Saves the report to `tests/reports/performance_history_report.html`
-4. Automatically opens the report in your browser
+3. Saves the report to [tests/reports/performance_history_report.html](reports/performance_history_report.html)
 
 **Report Features:**
 - **Individual test limits** shown in blue/bold (calculated from historical data)

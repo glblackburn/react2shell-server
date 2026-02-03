@@ -568,7 +568,13 @@ To run the full performance test suite (tests, history, baseline comparison, and
 make test-performance
 ```
 
-No other setup is required: the target ensures the correct Node.js version for Next.js, runs the tests, stores timestamped performance history, compares against the baseline, and generates an HTML report at `tests/reports/performance_history_report.html`. See [Performance Tracking Guide](tests/PERFORMANCE_TRACKING.md) for details.
+No other setup is required: the target ensures the correct Node.js version for Next.js, runs the tests, stores timestamped performance history, compares against the baseline, and generates an HTML report.
+
+**Artifacts:**
+- [Performance history report](tests/reports/performance_history_report.html) – HTML report with trends and regression analysis
+- [Performance history](tests/.performance_history/) – Timestamped JSON files for each test run
+
+See [Performance Tracking Guide](tests/PERFORMANCE_TRACKING.md) for details.
 
 ### Quick Start
 
