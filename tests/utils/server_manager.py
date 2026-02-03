@@ -388,10 +388,15 @@ def start_servers():
                 logger.debug("Removing stale PID file...")
                 os.remove(vite_pid_file)
             
-            # Start Next.js server
+            # Start Next.js server via start-with-nvm.sh so correct Node (>=20.9.0) is used
             nextjs_dir = os.path.join(project_root, "frameworks", "nextjs")
+            start_script = os.path.join(nextjs_dir, "start-with-nvm.sh")
+            if os.path.isfile(start_script):
+                cmd = ["bash", start_script]
+            else:
+                cmd = ["npx", "next", "dev"]
             process = subprocess.Popen(
-                ["npx", "next", "dev"],
+                cmd,
                 cwd=nextjs_dir,
                 stdout=open(server_log, "a"),
                 stderr=subprocess.STDOUT,

@@ -1182,41 +1182,40 @@ test-scanner-script:
 
 # Update performance baseline
 # Unified performance testing target - runs tests, generates reports, updates trends
+# Ensures Node >= 20.9.0 (for Next.js) in same shell so pytest and server subprocesses use correct Node
 test-performance: check-venv
-	@echo "================================================================================="
-	@echo "Running Performance Tests and Generating Reports"
-	@echo "================================================================================="
-	@echo ""
-	@# Step 1: Run tests with history tracking
-	@echo "Step 1: Running performance tests..."
-	@PYTEST_SAVE_HISTORY=true $(PYTEST) $(TEST_DIR)/ -v || true
-	@echo ""
-	@# Step 2: Update baseline if UPDATE_BASELINE is set or baseline doesn't exist
-	@if [ "$$UPDATE_BASELINE" = "true" ] || [ ! -f tests/.performance_baseline.json ]; then \
+	@. "$$HOME/.nvm/nvm.sh" 2>/dev/null || . "$$HOME/.config/nvm/nvm.sh" 2>/dev/null; \
+	(cd frameworks/nextjs && nvm use) 2>/dev/null || nvm use $(NODE_VERSION_DEFAULT) 2>/dev/null || true; \
+	echo "================================================================================="; \
+	echo "Running Performance Tests and Generating Reports"; \
+	echo "================================================================================="; \
+	echo ""; \
+	echo "Step 1: Running performance tests..."; \
+	PYTEST_SAVE_HISTORY=true $(PYTEST) $(TEST_DIR)/ -v || true; \
+	echo ""; \
+	if [ "$$UPDATE_BASELINE" = "true" ] || [ ! -f tests/.performance_baseline.json ]; then \
 		echo "Step 2: Updating performance baseline..."; \
 		PYTEST_UPDATE_BASELINE=true PYTEST_SAVE_HISTORY=true $(PYTEST) $(TEST_DIR)/ -v || true; \
 		echo "✓ Performance baseline updated!"; \
 	else \
 		echo "Step 2: Baseline exists, skipping update (set UPDATE_BASELINE=true to force update)"; \
-	fi
-	@echo ""
-	@# Step 3: Generate comprehensive HTML report
-	@echo "Step 3: Generating comprehensive performance report..."
-	@cd $(TEST_DIR) && ./generate_performance_report.sh || echo "⚠️  Report generation had issues, but continuing..."
-	@echo ""
-	@# Step 4: Show summary in console
-	@echo "Step 4: Performance Summary:"
-	@echo "--------------------------------------------------------------------------------"
-	@cd $(TEST_DIR) && $(VENV_BIN)/python3 performance_report.py summary --limit 5 || echo "⚠️  Summary generation had issues"
-	@echo ""
-	@echo "================================================================================="
-	@echo "✓ Performance testing complete!"
-	@echo "================================================================================="
-	@echo "  - HTML Report: tests/reports/performance_history_report.html"
-	@echo "  - Baseline: tests/.performance_baseline.json"
-	@echo "  - History: tests/.performance_history/"
-	@echo ""
-	@echo "To update baseline: UPDATE_BASELINE=true make test-performance"
+	fi; \
+	echo ""; \
+	echo "Step 3: Generating comprehensive performance report..."; \
+	cd $(TEST_DIR) && ./generate_performance_report.sh || echo "⚠️  Report generation had issues, but continuing..."; \
+	echo ""; \
+	echo "Step 4: Performance Summary:"; \
+	echo "--------------------------------------------------------------------------------"; \
+	cd $(TEST_DIR) && ../$(VENV_BIN)/python3 performance_report.py summary --limit 5 || echo "⚠️  Summary generation had issues"; \
+	echo ""; \
+	echo "================================================================================="; \
+	echo "✓ Performance testing complete!"; \
+	echo "================================================================================="; \
+	echo "  - HTML Report: tests/reports/performance_history_report.html"; \
+	echo "  - Baseline: tests/.performance_baseline.json"; \
+	echo "  - History: tests/.performance_history/"; \
+	echo ""; \
+	echo "To update baseline: UPDATE_BASELINE=true make test-performance"
 
 # Quick baseline update (convenience target - no test execution)
 test-update-baseline: check-venv
